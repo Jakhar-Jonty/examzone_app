@@ -6,13 +6,12 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  SafeAreaView,
-  StatusBar,
   TextInput,
   Image,
   Alert,
   Modal,
 } from 'react-native';
+import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
@@ -37,7 +36,7 @@ export default function QuestionDetailScreen({ route, navigation }) {
   const fetchQuestion = async () => {
     try {
       setLoading(true);
-      
+
       // If we have savedQuestionId, fetch the saved question which includes the question
       if (savedQuestionId) {
         const response = await api.get('/user/questions/saved');
@@ -73,7 +72,7 @@ export default function QuestionDetailScreen({ route, navigation }) {
 
   const handleSave = async () => {
     if (!savedQuestion?._id) return;
-    
+
     try {
       const tagsArray = tags.split(',').map(t => t.trim()).filter(t => t);
       await api.put(`/user/questions/saved/${savedQuestion._id}`, {
@@ -92,7 +91,7 @@ export default function QuestionDetailScreen({ route, navigation }) {
 
   const handleUnsave = () => {
     if (!question?._id) return;
-    
+
     Alert.alert(
       'Remove Question',
       'Are you sure you want to remove this question from your question bank?',
@@ -116,8 +115,7 @@ export default function QuestionDetailScreen({ route, navigation }) {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
-        <StatusBar barStyle="dark-content" />
+      <ScreenWrapper>
         <View style={styles.container}>
           <View style={styles.header}>
             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
@@ -130,14 +128,13 @@ export default function QuestionDetailScreen({ route, navigation }) {
             <ActivityIndicator size="large" color={colors.primary} />
           </View>
         </View>
-      </SafeAreaView>
+      </ScreenWrapper>
     );
   }
 
   if (!question) {
     return (
-      <SafeAreaView style={styles.safeArea}>
-        <StatusBar barStyle="dark-content" />
+      <ScreenWrapper>
         <View style={styles.container}>
           <View style={styles.header}>
             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
@@ -150,7 +147,7 @@ export default function QuestionDetailScreen({ route, navigation }) {
             <Text style={styles.emptyText}>Question not found</Text>
           </View>
         </View>
-      </SafeAreaView>
+      </ScreenWrapper>
     );
   }
 
@@ -168,8 +165,7 @@ export default function QuestionDetailScreen({ route, navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" />
+    <ScreenWrapper>
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
@@ -181,10 +177,10 @@ export default function QuestionDetailScreen({ route, navigation }) {
             onPress={() => setEditing(!editing)}
             style={styles.editButton}
           >
-            <Ionicons 
-              name={editing ? "close" : "create-outline"} 
-              size={24} 
-              color={colors.primary} 
+            <Ionicons
+              name={editing ? "close" : "create-outline"}
+              size={24}
+              color={colors.primary}
             />
           </TouchableOpacity>
         </View>
@@ -285,7 +281,7 @@ export default function QuestionDetailScreen({ route, navigation }) {
           {savedQuestion && (
             <View style={styles.notesSection}>
               <Text style={styles.sectionTitle}>My Notes & Tags</Text>
-              
+
               {editing ? (
                 <>
                   <View style={styles.inputGroup}>
@@ -392,16 +388,12 @@ export default function QuestionDetailScreen({ route, navigation }) {
           )}
         </ScrollView>
       </View>
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 }
 
 const createStyles = (colors) =>
   StyleSheet.create({
-    safeArea: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
     container: {
       flex: 1,
       backgroundColor: colors.background,

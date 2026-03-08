@@ -7,10 +7,9 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  SafeAreaView,
-  StatusBar,
   Platform,
 } from 'react-native';
+import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { CommonActions } from '@react-navigation/native';
@@ -107,8 +106,7 @@ export default function ExamDetailScreen({ route, navigation }) {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
-        <StatusBar barStyle="dark-content" />
+      <ScreenWrapper>
         <View style={styles.container}>
           <View style={styles.header}>
             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
@@ -121,14 +119,13 @@ export default function ExamDetailScreen({ route, navigation }) {
             <ActivityIndicator size="large" color={colors.primary} />
           </View>
         </View>
-      </SafeAreaView>
+      </ScreenWrapper>
     );
   }
 
   if (!exam) {
     return (
-      <SafeAreaView style={styles.safeArea}>
-        <StatusBar barStyle="dark-content" />
+      <ScreenWrapper>
         <View style={styles.container}>
           <View style={styles.header}>
             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
@@ -141,15 +138,14 @@ export default function ExamDetailScreen({ route, navigation }) {
             <Text style={styles.emptyText}>Exam not found</Text>
           </View>
         </View>
-      </SafeAreaView>
+      </ScreenWrapper>
     );
   }
 
   const questionCount = typeof exam.questions === 'number' ? exam.questions : exam.questions?.length || 0;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" />
+    <ScreenWrapper>
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
@@ -161,250 +157,246 @@ export default function ExamDetailScreen({ route, navigation }) {
           <View style={{ width: 24 }} />
         </View>
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Exam Info */}
-        <View style={styles.infoCard}>
-          <View style={styles.infoRow}>
-            <Ionicons name="document-text-outline" size={20} color={colors.primary} />
-            <Text style={styles.infoText}>
-              Total Questions: <Text style={styles.infoValue}>{questionCount}</Text>
-            </Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Ionicons name="time-outline" size={20} color={colors.primary} />
-            <Text style={styles.infoText}>
-              Duration: <Text style={styles.infoValue}>{exam.duration} minutes</Text>
-            </Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Ionicons name="trophy-outline" size={20} color={colors.primary} />
-            <Text style={styles.infoText}>
-              Total Marks: <Text style={styles.infoValue}>{exam.totalMarks}</Text>
-            </Text>
-          </View>
-          {exam.scheduledTime && (
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Exam Info */}
+          <View style={styles.infoCard}>
             <View style={styles.infoRow}>
-              <Ionicons name="calendar-outline" size={20} color={colors.primary} />
+              <Ionicons name="document-text-outline" size={20} color={colors.primary} />
               <Text style={styles.infoText}>
-                Scheduled: <Text style={styles.infoValue}>{formatDate(exam.scheduledTime)}</Text>
+                Total Questions: <Text style={styles.infoValue}>{questionCount}</Text>
               </Text>
             </View>
-          )}
-        </View>
-
-        {/* Instructions */}
-        <View style={styles.instructionsCard}>
-          <Text style={styles.instructionsTitle}>Instructions:</Text>
-          <View style={styles.instructionsList}>
-            <View style={styles.instructionItem}>
-              <Ionicons name="checkmark-circle" size={16} color={colors.primary} />
-              <Text style={styles.instructionText}>
-                Read each question carefully before answering
+            <View style={styles.infoRow}>
+              <Ionicons name="time-outline" size={20} color={colors.primary} />
+              <Text style={styles.infoText}>
+                Duration: <Text style={styles.infoValue}>{exam.duration} minutes</Text>
               </Text>
             </View>
-            <View style={styles.instructionItem}>
-              <Ionicons name="checkmark-circle" size={16} color={colors.primary} />
-              <Text style={styles.instructionText}>
-                You can navigate between questions using Previous/Next buttons
+            <View style={styles.infoRow}>
+              <Ionicons name="trophy-outline" size={20} color={colors.primary} />
+              <Text style={styles.infoText}>
+                Total Marks: <Text style={styles.infoValue}>{exam.totalMarks}</Text>
               </Text>
             </View>
-            <View style={styles.instructionItem}>
-              <Ionicons name="checkmark-circle" size={16} color={colors.primary} />
-              <Text style={styles.instructionText}>
-                Use "Mark for Review" to flag questions you want to revisit
-              </Text>
-            </View>
-            <View style={styles.instructionItem}>
-              <Ionicons name="checkmark-circle" size={16} color={colors.primary} />
-              <Text style={styles.instructionText}>
-                You can change your answers before submitting
-              </Text>
-            </View>
-            <View style={styles.instructionItem}>
-              <Ionicons name="checkmark-circle" size={16} color={colors.primary} />
-              <Text style={styles.instructionText}>
-                The exam will auto-submit when time runs out
-              </Text>
-            </View>
-            <View style={styles.instructionItem}>
-              <Ionicons name="checkmark-circle" size={16} color={colors.primary} />
-              <Text style={styles.instructionText}>
-                Once submitted, you cannot go back to change answers
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Status and Actions */}
-        {examStatus === 'completed' ? (
-          <View style={styles.statusCard}>
-            <View style={styles.completedHeader}>
-              <Ionicons name="checkmark-circle" size={24} color="#10b981" />
-              <Text style={styles.completedTitle}>Exam Already Completed</Text>
-            </View>
-            {attemptStatus && (
-              <View style={styles.attemptStats}>
-                <View style={styles.statRow}>
-                  <Text style={styles.statLabel}>Attempts:</Text>
-                  <Text style={styles.statValue}>
-                    {attemptStatus.attemptCount} / {attemptStatus.maxAttempts}
-                    {attemptStatus.attemptsRemaining > 0 && (
-                      <Text style={styles.attemptsRemainingText}>
-                        {' '}({attemptStatus.attemptsRemaining} remaining)
-                      </Text>
-                    )}
-                  </Text>
-                </View>
-                {attemptStatus.bestScore !== null && attemptStatus.latestScore !== null && (
-                  <View style={styles.scoreGrid}>
-                    <View style={styles.scoreCard}>
-                      <View style={styles.scoreCardHeader}>
-                        <Ionicons name="trophy" size={16} color="#f59e0b" />
-                        <Text style={styles.scoreCardLabel}>Best Score</Text>
-                      </View>
-                      <Text style={styles.scoreCardValue}>
-                        {attemptStatus.bestScore} / {exam.totalMarks}
-                      </Text>
-                      <Text style={styles.scoreCardPercentage}>
-                        {attemptStatus.bestScore && exam.totalMarks
-                          ? `${Math.round((attemptStatus.bestScore / exam.totalMarks) * 100)}%`
-                          : 'N/A'}
-                      </Text>
-                    </View>
-                    <View style={styles.scoreCard}>
-                      <View style={styles.scoreCardHeader}>
-                        <Ionicons name="trending-up" size={16} color={colors.primary} />
-                        <Text style={styles.scoreCardLabel}>Latest Score</Text>
-                      </View>
-                      <Text style={[styles.scoreCardValue, { color: colors.primary }]}>
-                        {attemptStatus.latestScore} / {exam.totalMarks}
-                      </Text>
-                      <Text style={styles.scoreCardPercentage}>
-                        {attemptStatus.latestPercentage !== null
-                          ? `${Math.round(attemptStatus.latestPercentage)}%`
-                          : 'N/A'}
-                      </Text>
-                    </View>
-                  </View>
-                )}
+            {exam.scheduledTime && (
+              <View style={styles.infoRow}>
+                <Ionicons name="calendar-outline" size={20} color={colors.primary} />
+                <Text style={styles.infoText}>
+                  Scheduled: <Text style={styles.infoValue}>{formatDate(exam.scheduledTime)}</Text>
+                </Text>
               </View>
             )}
+          </View>
 
-            <View style={styles.actionButtons}>
-              <TouchableOpacity
-                style={[styles.actionButton, styles.viewResultButton]}
-                onPress={() => {
-                  if (completedAttemptId) {
-                    navigation.navigate('Result', { attemptId: completedAttemptId });
-                  }
-                }}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="eye-outline" size={20} color="#FFFFFF" />
-                <Text style={styles.viewResultButtonText}>View Result</Text>
-              </TouchableOpacity>
-              {attemptStatus?.canReattempt && (
+          {/* Instructions */}
+          <View style={styles.instructionsCard}>
+            <Text style={styles.instructionsTitle}>Instructions:</Text>
+            <View style={styles.instructionsList}>
+              <View style={styles.instructionItem}>
+                <Ionicons name="checkmark-circle" size={16} color={colors.primary} />
+                <Text style={styles.instructionText}>
+                  Read each question carefully before answering
+                </Text>
+              </View>
+              <View style={styles.instructionItem}>
+                <Ionicons name="checkmark-circle" size={16} color={colors.primary} />
+                <Text style={styles.instructionText}>
+                  You can navigate between questions using Previous/Next buttons
+                </Text>
+              </View>
+              <View style={styles.instructionItem}>
+                <Ionicons name="checkmark-circle" size={16} color={colors.primary} />
+                <Text style={styles.instructionText}>
+                  Use "Mark for Review" to flag questions you want to revisit
+                </Text>
+              </View>
+              <View style={styles.instructionItem}>
+                <Ionicons name="checkmark-circle" size={16} color={colors.primary} />
+                <Text style={styles.instructionText}>
+                  You can change your answers before submitting
+                </Text>
+              </View>
+              <View style={styles.instructionItem}>
+                <Ionicons name="checkmark-circle" size={16} color={colors.primary} />
+                <Text style={styles.instructionText}>
+                  The exam will auto-submit when time runs out
+                </Text>
+              </View>
+              <View style={styles.instructionItem}>
+                <Ionicons name="checkmark-circle" size={16} color={colors.primary} />
+                <Text style={styles.instructionText}>
+                  Once submitted, you cannot go back to change answers
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Status and Actions */}
+          {examStatus === 'completed' ? (
+            <View style={styles.statusCard}>
+              <View style={styles.completedHeader}>
+                <Ionicons name="checkmark-circle" size={24} color="#10b981" />
+                <Text style={styles.completedTitle}>Exam Already Completed</Text>
+              </View>
+              {attemptStatus && (
+                <View style={styles.attemptStats}>
+                  <View style={styles.statRow}>
+                    <Text style={styles.statLabel}>Attempts:</Text>
+                    <Text style={styles.statValue}>
+                      {attemptStatus.attemptCount} / {attemptStatus.maxAttempts}
+                      {attemptStatus.attemptsRemaining > 0 && (
+                        <Text style={styles.attemptsRemainingText}>
+                          {' '}({attemptStatus.attemptsRemaining} remaining)
+                        </Text>
+                      )}
+                    </Text>
+                  </View>
+                  {attemptStatus.bestScore !== null && attemptStatus.latestScore !== null && (
+                    <View style={styles.scoreGrid}>
+                      <View style={styles.scoreCard}>
+                        <View style={styles.scoreCardHeader}>
+                          <Ionicons name="trophy" size={16} color="#f59e0b" />
+                          <Text style={styles.scoreCardLabel}>Best Score</Text>
+                        </View>
+                        <Text style={styles.scoreCardValue}>
+                          {attemptStatus.bestScore} / {exam.totalMarks}
+                        </Text>
+                        <Text style={styles.scoreCardPercentage}>
+                          {attemptStatus.bestScore && exam.totalMarks
+                            ? `${Math.round((attemptStatus.bestScore / exam.totalMarks) * 100)}%`
+                            : 'N/A'}
+                        </Text>
+                      </View>
+                      <View style={styles.scoreCard}>
+                        <View style={styles.scoreCardHeader}>
+                          <Ionicons name="trending-up" size={16} color={colors.primary} />
+                          <Text style={styles.scoreCardLabel}>Latest Score</Text>
+                        </View>
+                        <Text style={[styles.scoreCardValue, { color: colors.primary }]}>
+                          {attemptStatus.latestScore} / {exam.totalMarks}
+                        </Text>
+                        <Text style={styles.scoreCardPercentage}>
+                          {attemptStatus.latestPercentage !== null
+                            ? `${Math.round(attemptStatus.latestPercentage)}%`
+                            : 'N/A'}
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+                </View>
+              )}
+
+              <View style={styles.actionButtons}>
                 <TouchableOpacity
-                  style={[styles.actionButton, styles.retryButton]}
-                  onPress={handleStartExam}
-                  disabled={starting}
+                  style={[styles.actionButton, styles.viewResultButton]}
+                  onPress={() => {
+                    if (completedAttemptId) {
+                      navigation.navigate('Result', { attemptId: completedAttemptId });
+                    }
+                  }}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="refresh-outline" size={20} color={colors.primary} />
-                  <Text style={styles.retryButtonText}>
-                    {starting ? 'Starting...' : 'Re-attempt Exam'}
-                  </Text>
+                  <Ionicons name="eye-outline" size={20} color="#FFFFFF" />
+                  <Text style={styles.viewResultButtonText}>View Result</Text>
                 </TouchableOpacity>
+                {attemptStatus?.canReattempt && (
+                  <TouchableOpacity
+                    style={[styles.actionButton, styles.retryButton]}
+                    onPress={handleStartExam}
+                    disabled={starting}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="refresh-outline" size={20} color={colors.primary} />
+                    <Text style={styles.retryButtonText}>
+                      {starting ? 'Starting...' : 'Re-attempt Exam'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {/* Attempt History */}
+              {attemptHistory && attemptHistory.length > 0 && (
+                <View style={styles.historySection}>
+                  <View style={styles.historyHeader}>
+                    <Ionicons name="time-outline" size={20} color={colors.textSecondary} />
+                    <Text style={styles.historyTitle}>Attempt History</Text>
+                  </View>
+                  <View style={styles.historyList}>
+                    {attemptHistory.map((historyItem) => (
+                      <TouchableOpacity
+                        key={historyItem._id}
+                        style={styles.historyItem}
+                        onPress={() => navigation.navigate('Result', { attemptId: historyItem._id })}
+                        activeOpacity={0.7}
+                      >
+                        <View style={styles.historyItemLeft}>
+                          <Text style={styles.historyItemAttempt}>
+                            Attempt {historyItem.attemptNumber}
+                          </Text>
+                          <Text style={styles.historyItemDate}>
+                            {formatDate(historyItem.date)}
+                          </Text>
+                        </View>
+                        <View style={styles.historyItemRight}>
+                          <Text style={styles.historyItemScore}>
+                            {historyItem.score} / {exam.totalMarks}
+                          </Text>
+                          <Text style={styles.historyItemPercentage}>
+                            ({Math.round(historyItem.percentage)}%)
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
               )}
             </View>
-
-            {/* Attempt History */}
-            {attemptHistory && attemptHistory.length > 0 && (
-              <View style={styles.historySection}>
-                <View style={styles.historyHeader}>
-                  <Ionicons name="time-outline" size={20} color={colors.textSecondary} />
-                  <Text style={styles.historyTitle}>Attempt History</Text>
-                </View>
-                <View style={styles.historyList}>
-                  {attemptHistory.map((historyItem) => (
-                    <TouchableOpacity
-                      key={historyItem._id}
-                      style={styles.historyItem}
-                      onPress={() => navigation.navigate('Result', { attemptId: historyItem._id })}
-                      activeOpacity={0.7}
-                    >
-                      <View style={styles.historyItemLeft}>
-                        <Text style={styles.historyItemAttempt}>
-                          Attempt {historyItem.attemptNumber}
-                        </Text>
-                        <Text style={styles.historyItemDate}>
-                          {formatDate(historyItem.date)}
-                        </Text>
-                      </View>
-                      <View style={styles.historyItemRight}>
-                        <Text style={styles.historyItemScore}>
-                          {historyItem.score} / {exam.totalMarks}
-                        </Text>
-                        <Text style={styles.historyItemPercentage}>
-                          ({Math.round(historyItem.percentage)}%)
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-                  ))}
-                </View>
+          ) : examStatus === 'paused' ? (
+            <View style={styles.statusCard}>
+              <View style={styles.pausedHeader}>
+                <Ionicons name="pause-circle" size={24} color="#f59e0b" />
+                <Text style={styles.pausedTitle}>Exam Paused</Text>
               </View>
-            )}
-          </View>
-        ) : examStatus === 'paused' ? (
-          <View style={styles.statusCard}>
-            <View style={styles.pausedHeader}>
-              <Ionicons name="pause-circle" size={24} color="#f59e0b" />
-              <Text style={styles.pausedTitle}>Exam Paused</Text>
+              <Text style={styles.pausedSubtitle}>
+                Your exam progress has been saved. Continue where you left off.
+              </Text>
+              <TouchableOpacity
+                style={[styles.actionButton, styles.startButton]}
+                onPress={handleStartExam}
+                disabled={starting}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="play" size={20} color="#FFFFFF" />
+                <Text style={styles.startButtonText}>
+                  {starting ? 'Resuming...' : 'Resume Exam'}
+                </Text>
+              </TouchableOpacity>
             </View>
-            <Text style={styles.pausedSubtitle}>
-              Your exam progress has been saved. Continue where you left off.
-            </Text>
+          ) : (
             <TouchableOpacity
               style={[styles.actionButton, styles.startButton]}
               onPress={handleStartExam}
               disabled={starting}
               activeOpacity={0.7}
             >
-              <Ionicons name="play" size={20} color="#FFFFFF" />
+              <Ionicons name="play-circle" size={20} color="#FFFFFF" />
               <Text style={styles.startButtonText}>
-                {starting ? 'Resuming...' : 'Resume Exam'}
+                {starting ? 'Starting...' : 'Start Exam'}
               </Text>
             </TouchableOpacity>
-          </View>
-        ) : (
-          <TouchableOpacity
-            style={[styles.actionButton, styles.startButton]}
-            onPress={handleStartExam}
-            disabled={starting}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="play-circle" size={20} color="#FFFFFF" />
-            <Text style={styles.startButtonText}>
-              {starting ? 'Starting...' : 'Start Exam'}
-            </Text>
-          </TouchableOpacity>
-        )}
-      </ScrollView>
+          )}
+        </ScrollView>
       </View>
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 }
 
 const createStyles = (colors) =>
   StyleSheet.create({
-    safeArea: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
     container: {
       flex: 1,
       backgroundColor: colors.background,

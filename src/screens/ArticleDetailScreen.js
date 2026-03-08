@@ -6,11 +6,10 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  SafeAreaView,
-  StatusBar,
   Linking,
   Image,
 } from 'react-native';
+import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
@@ -54,8 +53,7 @@ export default function ArticleDetailScreen({ route, navigation }) {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
-        <StatusBar barStyle="dark-content" />
+      <ScreenWrapper>
         <View style={styles.container}>
           <View style={styles.header}>
             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
@@ -68,14 +66,13 @@ export default function ArticleDetailScreen({ route, navigation }) {
             <ActivityIndicator size="large" color={colors.primary} />
           </View>
         </View>
-      </SafeAreaView>
+      </ScreenWrapper>
     );
   }
 
   if (!article) {
     return (
-      <SafeAreaView style={styles.safeArea}>
-        <StatusBar barStyle="dark-content" />
+      <ScreenWrapper>
         <View style={styles.container}>
           <View style={styles.header}>
             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
@@ -88,7 +85,7 @@ export default function ArticleDetailScreen({ route, navigation }) {
             <Text style={styles.emptyText}>Article not found</Text>
           </View>
         </View>
-      </SafeAreaView>
+      </ScreenWrapper>
     );
   }
 
@@ -99,8 +96,7 @@ export default function ArticleDetailScreen({ route, navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" />
+    <ScreenWrapper>
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
@@ -160,7 +156,7 @@ export default function ArticleDetailScreen({ route, navigation }) {
           {/* Article Content */}
           <View style={styles.contentContainer}>
             <Text style={styles.contentText}>
-              {article.content 
+              {article.content
                 ? article.content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
                 : 'No content available.'}
             </Text>
@@ -198,16 +194,12 @@ export default function ArticleDetailScreen({ route, navigation }) {
           )}
         </ScrollView>
       </View>
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 }
 
 const createStyles = (colors) =>
   StyleSheet.create({
-    safeArea: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
     container: {
       flex: 1,
       backgroundColor: colors.background,

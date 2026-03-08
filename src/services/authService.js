@@ -1,13 +1,14 @@
 import api from './api';
 
 export const authService = {
-  register: async (phoneNumber, password, name, examPreparations, preferredLanguage) => {
+  register: async (phoneNumber, password, name, examPreparations, preferredLanguage, extras = {}) => {
     const response = await api.post('/auth/register', {
       phoneNumber,
       password,
       name,
       examPreparations,
       preferredLanguage,
+      ...extras,
     });
     return response.data;
   },
@@ -30,6 +31,7 @@ export const authService = {
 
   login: async (phoneNumber, password) => {
     const response = await api.post('/auth/login', { phoneNumber, password });
+
     return response.data;
   },
 

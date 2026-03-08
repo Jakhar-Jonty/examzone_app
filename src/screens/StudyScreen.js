@@ -7,11 +7,10 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
-  SafeAreaView,
-  StatusBar,
   TextInput,
   Modal,
 } from 'react-native';
+import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
@@ -28,7 +27,7 @@ export default function StudyScreen({ navigation, route }) {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  
+
   // Article filters
   const [articleFilters, setArticleFilters] = useState({
     category: '',
@@ -36,7 +35,7 @@ export default function StudyScreen({ navigation, route }) {
     sortBy: 'createdAt',
     sortOrder: 'desc',
   });
-  
+
   // Question filters
   const [questionFilters, setQuestionFilters] = useState({
     category: '',
@@ -47,11 +46,11 @@ export default function StudyScreen({ navigation, route }) {
     sortBy: 'savedAt',
     sortOrder: 'desc',
   });
-  
+
   const [subjectsAndTopics, setSubjectsAndTopics] = useState([]);
   const [availableSubjects, setAvailableSubjects] = useState([]);
   const [availableTopics, setAvailableTopics] = useState([]);
-  
+
   const [filteredArticles, setFilteredArticles] = useState([]);
   const [filteredQuestions, setFilteredQuestions] = useState([]);
 
@@ -151,11 +150,11 @@ export default function StudyScreen({ navigation, route }) {
       if (questionFilters.status) params.append('status', questionFilters.status);
       if (questionFilters.sortBy) params.append('sortBy', questionFilters.sortBy);
       if (questionFilters.sortOrder) params.append('sortOrder', questionFilters.sortOrder);
-      
+
       const response = await api.get(`/user/questions/saved?${params.toString()}`);
       const questions = response.data.savedQuestions || [];
       setSavedQuestions(questions);
-      
+
       // If subjects/topics API failed, extract from saved questions as fallback
       if (questionFilters.category && subjectsAndTopics.length === 0 && questions.length > 0) {
         const extracted = extractSubjectsAndTopics(questions, questionFilters.category);
@@ -176,18 +175,18 @@ export default function StudyScreen({ navigation, route }) {
     questions.forEach(item => {
       const question = item.question;
       if (!question) return;
-      
+
       const questionCategory = question.category?.toString() || question.category || '';
       const filterCategory = categoryFilter?.toString() || categoryFilter || '';
-      
+
       // Only include if category matches
       if (questionCategory !== filterCategory && question.category !== filterCategory) {
         return;
       }
-      
+
       const subject = question.subject;
       if (!subject) return;
-      
+
       if (!grouped[subject]) {
         grouped[subject] = {
           subject: subject,
@@ -195,12 +194,12 @@ export default function StudyScreen({ navigation, route }) {
           category: filterCategory,
         };
       }
-      
+
       if (question.topic && !grouped[subject].topics.includes(question.topic)) {
         grouped[subject].topics.push(question.topic);
       }
     });
-    
+
     return Object.values(grouped).map(item => ({
       ...item,
       topics: item.topics.sort(),
@@ -274,14 +273,14 @@ export default function StudyScreen({ navigation, route }) {
 
     // Subject filter
     if (questionFilters.subject) {
-      filtered = filtered.filter(item => 
+      filtered = filtered.filter(item =>
         item.question?.subject?.toLowerCase() === questionFilters.subject.toLowerCase()
       );
     }
 
     // Topic filter
     if (questionFilters.topic) {
-      filtered = filtered.filter(item => 
+      filtered = filtered.filter(item =>
         item.question?.topic?.toLowerCase() === questionFilters.topic.toLowerCase()
       );
     }
@@ -293,7 +292,7 @@ export default function StudyScreen({ navigation, route }) {
 
     // Difficulty filter
     if (questionFilters.difficulty) {
-      filtered = filtered.filter(item => 
+      filtered = filtered.filter(item =>
         item.question?.difficulty === questionFilters.difficulty
       );
     }
@@ -379,8 +378,7 @@ export default function StudyScreen({ navigation, route }) {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" />
+    <ScreenWrapper>
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
@@ -394,10 +392,10 @@ export default function StudyScreen({ navigation, route }) {
             onPress={() => setActiveTab('articles')}
             activeOpacity={0.7}
           >
-            <Ionicons 
-              name="document-text-outline" 
-              size={20} 
-              color={activeTab === 'articles' ? colors.primary : colors.textSecondary} 
+            <Ionicons
+              name="document-text-outline"
+              size={20}
+              color={activeTab === 'articles' ? colors.primary : colors.textSecondary}
             />
             <Text style={[styles.tabText, activeTab === 'articles' && styles.tabTextActive]}>
               Articles
@@ -408,10 +406,10 @@ export default function StudyScreen({ navigation, route }) {
             onPress={() => setActiveTab('questionBank')}
             activeOpacity={0.7}
           >
-            <Ionicons 
-              name="bookmark" 
-              size={20} 
-              color={activeTab === 'questionBank' ? colors.primary : colors.textSecondary} 
+            <Ionicons
+              name="bookmark"
+              size={20}
+              color={activeTab === 'questionBank' ? colors.primary : colors.textSecondary}
             />
             <Text style={[styles.tabText, activeTab === 'questionBank' && styles.tabTextActive]}>
               Question Bank
@@ -474,8 +472,8 @@ export default function StudyScreen({ navigation, route }) {
                   <Ionicons name="document-text-outline" size={64} color={colors.textSecondary} />
                   <Text style={styles.emptyText}>No articles found</Text>
                   <Text style={styles.emptySubtext}>
-                    {searchQuery || getActiveFiltersCount() > 0 
-                      ? 'Try adjusting your search or filters' 
+                    {searchQuery || getActiveFiltersCount() > 0
+                      ? 'Try adjusting your search or filters'
                       : 'Check back later for new articles'}
                   </Text>
                 </View>
@@ -541,7 +539,7 @@ export default function StudyScreen({ navigation, route }) {
                 filteredQuestions.map((savedQuestion) => {
                   const question = savedQuestion.question;
                   if (!question) return null;
-                  
+
                   return (
                     <View key={savedQuestion._id} style={styles.questionCard}>
                       <TouchableOpacity
@@ -647,7 +645,7 @@ export default function StudyScreen({ navigation, route }) {
                             styles.filterChip,
                             !articleFilters.category && styles.filterChipActive,
                           ]}
-                          onPress={() => setArticleFilters({...articleFilters, category: ''})}
+                          onPress={() => setArticleFilters({ ...articleFilters, category: '' })}
                         >
                           <Text style={[
                             styles.filterChipText,
@@ -661,7 +659,7 @@ export default function StudyScreen({ navigation, route }) {
                               styles.filterChip,
                               articleFilters.category === cat && styles.filterChipActive,
                             ]}
-                            onPress={() => setArticleFilters({...articleFilters, category: cat})}
+                            onPress={() => setArticleFilters({ ...articleFilters, category: cat })}
                           >
                             <Text style={[
                               styles.filterChipText,
@@ -683,7 +681,7 @@ export default function StudyScreen({ navigation, route }) {
                               styles.filterOption,
                               articleFilters.isPremium === type && styles.filterOptionActive,
                             ]}
-                            onPress={() => setArticleFilters({...articleFilters, isPremium: type})}
+                            onPress={() => setArticleFilters({ ...articleFilters, isPremium: type })}
                           >
                             <Text style={[
                               styles.filterOptionText,
@@ -707,7 +705,7 @@ export default function StudyScreen({ navigation, route }) {
                               styles.filterOption,
                               articleFilters.sortBy === sort && styles.filterOptionActive,
                             ]}
-                            onPress={() => setArticleFilters({...articleFilters, sortBy: sort})}
+                            onPress={() => setArticleFilters({ ...articleFilters, sortBy: sort })}
                           >
                             <Text style={[
                               styles.filterOptionText,
@@ -730,7 +728,7 @@ export default function StudyScreen({ navigation, route }) {
                               styles.filterOption,
                               articleFilters.sortOrder === order && styles.filterOptionActive,
                             ]}
-                            onPress={() => setArticleFilters({...articleFilters, sortOrder: order})}
+                            onPress={() => setArticleFilters({ ...articleFilters, sortOrder: order })}
                           >
                             <Text style={[
                               styles.filterOptionText,
@@ -754,7 +752,7 @@ export default function StudyScreen({ navigation, route }) {
                             styles.filterChip,
                             !questionFilters.category && styles.filterChipActive,
                           ]}
-                          onPress={() => setQuestionFilters({...questionFilters, category: '', subject: '', topic: ''})}
+                          onPress={() => setQuestionFilters({ ...questionFilters, category: '', subject: '', topic: '' })}
                         >
                           <Text style={[
                             styles.filterChipText,
@@ -768,7 +766,7 @@ export default function StudyScreen({ navigation, route }) {
                               styles.filterChip,
                               questionFilters.category === cat && styles.filterChipActive,
                             ]}
-                            onPress={() => setQuestionFilters({...questionFilters, category: cat, subject: '', topic: ''})}
+                            onPress={() => setQuestionFilters({ ...questionFilters, category: cat, subject: '', topic: '' })}
                           >
                             <Text style={[
                               styles.filterChipText,
@@ -789,7 +787,7 @@ export default function StudyScreen({ navigation, route }) {
                               styles.filterChip,
                               !questionFilters.subject && styles.filterChipActive,
                             ]}
-                            onPress={() => setQuestionFilters({...questionFilters, subject: '', topic: ''})}
+                            onPress={() => setQuestionFilters({ ...questionFilters, subject: '', topic: '' })}
                           >
                             <Text style={[
                               styles.filterChipText,
@@ -803,7 +801,7 @@ export default function StudyScreen({ navigation, route }) {
                                 styles.filterChip,
                                 questionFilters.subject === subject && styles.filterChipActive,
                               ]}
-                              onPress={() => setQuestionFilters({...questionFilters, subject, topic: ''})}
+                              onPress={() => setQuestionFilters({ ...questionFilters, subject, topic: '' })}
                             >
                               <Text style={[
                                 styles.filterChipText,
@@ -825,7 +823,7 @@ export default function StudyScreen({ navigation, route }) {
                               styles.filterChip,
                               !questionFilters.topic && styles.filterChipActive,
                             ]}
-                            onPress={() => setQuestionFilters({...questionFilters, topic: ''})}
+                            onPress={() => setQuestionFilters({ ...questionFilters, topic: '' })}
                           >
                             <Text style={[
                               styles.filterChipText,
@@ -839,7 +837,7 @@ export default function StudyScreen({ navigation, route }) {
                                 styles.filterChip,
                                 questionFilters.topic === topic && styles.filterChipActive,
                               ]}
-                              onPress={() => setQuestionFilters({...questionFilters, topic})}
+                              onPress={() => setQuestionFilters({ ...questionFilters, topic })}
                             >
                               <Text style={[
                                 styles.filterChipText,
@@ -862,7 +860,7 @@ export default function StudyScreen({ navigation, route }) {
                               styles.filterOption,
                               questionFilters.status === status && styles.filterOptionActive,
                             ]}
-                            onPress={() => setQuestionFilters({...questionFilters, status})}
+                            onPress={() => setQuestionFilters({ ...questionFilters, status })}
                           >
                             <Text style={[
                               styles.filterOptionText,
@@ -886,7 +884,7 @@ export default function StudyScreen({ navigation, route }) {
                               styles.filterOption,
                               questionFilters.difficulty === difficulty && styles.filterOptionActive,
                             ]}
-                            onPress={() => setQuestionFilters({...questionFilters, difficulty})}
+                            onPress={() => setQuestionFilters({ ...questionFilters, difficulty })}
                           >
                             <Text style={[
                               styles.filterOptionText,
@@ -910,7 +908,7 @@ export default function StudyScreen({ navigation, route }) {
                               styles.filterOption,
                               questionFilters.sortBy === sort && styles.filterOptionActive,
                             ]}
-                            onPress={() => setQuestionFilters({...questionFilters, sortBy: sort})}
+                            onPress={() => setQuestionFilters({ ...questionFilters, sortBy: sort })}
                           >
                             <Text style={[
                               styles.filterOptionText,
@@ -933,7 +931,7 @@ export default function StudyScreen({ navigation, route }) {
                               styles.filterOption,
                               questionFilters.sortOrder === order && styles.filterOptionActive,
                             ]}
-                            onPress={() => setQuestionFilters({...questionFilters, sortOrder: order})}
+                            onPress={() => setQuestionFilters({ ...questionFilters, sortOrder: order })}
                           >
                             <Text style={[
                               styles.filterOptionText,
@@ -974,16 +972,12 @@ export default function StudyScreen({ navigation, route }) {
           </View>
         </Modal>
       </View>
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 }
 
 const createStyles = (colors) =>
   StyleSheet.create({
-    safeArea: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
     container: {
       flex: 1,
       backgroundColor: colors.background,

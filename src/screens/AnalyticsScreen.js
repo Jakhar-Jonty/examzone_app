@@ -7,9 +7,8 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
-  SafeAreaView,
-  StatusBar,
 } from 'react-native';
+import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
@@ -61,8 +60,7 @@ export default function AnalyticsScreen({ navigation }) {
 
   if (loading && !analytics) {
     return (
-      <SafeAreaView style={styles.safeArea}>
-        <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+      <ScreenWrapper>
         <View style={styles.container}>
           <View style={styles.header}>
             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
@@ -75,13 +73,12 @@ export default function AnalyticsScreen({ navigation }) {
             <ActivityIndicator size="large" color={colors.primary} />
           </View>
         </View>
-      </SafeAreaView>
+      </ScreenWrapper>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+    <ScreenWrapper>
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
@@ -285,16 +282,12 @@ export default function AnalyticsScreen({ navigation }) {
           )}
         </ScrollView>
       </View>
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 }
 
 const createStyles = (colors) =>
   StyleSheet.create({
-    safeArea: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
     container: {
       flex: 1,
       backgroundColor: colors.background,
