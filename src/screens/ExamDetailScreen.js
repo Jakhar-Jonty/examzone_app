@@ -11,14 +11,16 @@ import {
 } from 'react-native';
 import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
-import { CommonActions } from '@react-navigation/native';
 import api from '../services/api';
 import { formatDate } from '../utils/helpers';
+import ReviewSection from '../components/ReviewSection';
 
 export default function ExamDetailScreen({ route, navigation }) {
   const { examId } = route.params;
   const { colors } = useTheme();
+  const { isPremium } = useAuth();
   const [exam, setExam] = useState(null);
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
@@ -72,6 +74,13 @@ export default function ExamDetailScreen({ route, navigation }) {
   };
 
   const handleStartExam = async () => {
+    // Gate premium exams behind the paywall for non-premium users.
+    if (exam?.isPremium && !isPremium) {
+      navigation.navigate('Paywall', {
+        reason: 'This exam is Premium. Upgrade to unlock it.',
+      });
+      return;
+    }
     try {
       setStarting(true);
       const response = await api.post(`/exams/${examId}/start`);
@@ -85,17 +94,8 @@ export default function ExamDetailScreen({ route, navigation }) {
         isResumed: response.data.isResumed || false,
       };
 
-      // Use CommonActions to navigate to ExamsStack -> ExamInterface
-      // This works regardless of which stack we're currently in
-      navigation.dispatch(
-        CommonActions.navigate({
-          name: 'ExamsStack',
-          params: {
-            screen: 'ExamInterface',
-            params,
-          },
-        })
-      );
+      // ExamInterface is a root-stack screen (above the tabs).
+      navigation.navigate('ExamInterface', params);
     } catch (error) {
       console.error('Failed to start/resume exam:', error);
       Alert.alert('Error', error.response?.data?.message || 'Failed to start/resume exam');
@@ -383,11 +383,31 @@ export default function ExamDetailScreen({ route, navigation }) {
               disabled={starting}
               activeOpacity={0.7}
             >
-              <Ionicons name="play-circle" size={20} color="#FFFFFF" />
-              <Text style={styles.startButtonText}>
-                {starting ? 'Starting...' : 'Start Exam'}
-              </Text>
+              {exam?.isPremium && !isPremium ? (
+                <>
+                  <Ionicons name="lock-closed" size={20} color="#FFFFFF" />
+                  <Text style={styles.startButtonText}>Unlock with Premium</Text>
+                </>
+              ) : (
+                <>
+                  <Ionicons name="play-circle" size={20} color="#FFFFFF" />
+                  <Text style={styles.startButtonText}>
+                    {starting ? 'Starting...' : 'Start Exam'}
+                  </Text>
+                </>
+              )}
             </TouchableOpacity>
+          )}
+
+          {/* Reviews */}
+          {exam?._id && (
+            <View style={{ paddingHorizontal: 16, paddingBottom: 32 }}>
+              <ReviewSection
+                targetType="exam"
+                targetId={exam._id}
+                canReview={(attemptStatus?.attemptCount ?? 0) > 0}
+              />
+            </View>
           )}
         </ScrollView>
       </View>

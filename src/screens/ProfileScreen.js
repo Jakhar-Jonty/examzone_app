@@ -21,11 +21,11 @@ const THEME_OPTIONS = [
 
 export default function ProfileScreen({ navigation }) {
   const { colors, theme, toggleTheme } = useTheme();
-  const { user, logout } = useAuth();
+  const { user, logout, isPremium } = useAuth();
 
   const getInitials = (name) => {
     if (!name) return 'U';
-    return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
+    return name.split(' ').map((n) => n[0] || '').join('').toUpperCase().slice(0, 2) || 'U';
   };
 
   const handleLogout = () => {
@@ -37,6 +37,17 @@ export default function ProfileScreen({ navigation }) {
 
   const menuSections = [
     {
+      title: 'Membership',
+      items: [
+        {
+          icon: isPremium ? 'diamond' : 'diamond-outline',
+          label: isPremium ? 'Premium Active' : 'Go Premium',
+          onPress: () => navigation.navigate('Paywall'),
+          badge: isPremium ? null : 'Upgrade',
+        },
+      ],
+    },
+    {
       title: 'Account',
       items: [
         {
@@ -47,14 +58,23 @@ export default function ProfileScreen({ navigation }) {
         {
           icon: 'notifications-outline',
           label: 'Notifications',
-          onPress: () => Alert.alert('Coming Soon', 'Notifications settings coming soon.'),
-          badge: null,
+          onPress: () => navigation.navigate('Notifications'),
         },
       ],
     },
     {
       title: 'Study',
       items: [
+        {
+          icon: 'trophy-outline',
+          label: 'Leaderboard',
+          onPress: () => navigation.navigate('Leaderboard'),
+        },
+        {
+          icon: 'ribbon-outline',
+          label: 'Badges',
+          onPress: () => navigation.navigate('Badges'),
+        },
         {
           icon: 'time-outline',
           label: 'Exam History',
@@ -73,6 +93,18 @@ export default function ProfileScreen({ navigation }) {
               screen: 'StudyMain',
               params: { initialTab: 'questionBank' },
             }),
+        },
+        {
+          icon: 'flash-outline',
+          label: 'Practice Sessions',
+          onPress: () =>
+            navigation.navigate('StudyTab', { screen: 'PracticeSessions' }),
+        },
+        {
+          icon: 'calendar-outline',
+          label: 'Study Plans',
+          onPress: () =>
+            navigation.navigate('StudyTab', { screen: 'StudyPlans' }),
         },
       ],
     },
@@ -224,6 +256,16 @@ export default function ProfileScreen({ navigation }) {
                   <Text style={[tw`flex-1 text-sm font-medium`, { color: colors.text }]}>
                     {item.label}
                   </Text>
+                  {item.badge ? (
+                    <View
+                      style={[
+                        tw`px-2 py-0.5 rounded-full mr-1.5`,
+                        { backgroundColor: colors.primary },
+                      ]}
+                    >
+                      <Text style={tw`text-xs font-bold text-white`}>{item.badge}</Text>
+                    </View>
+                  ) : null}
                   <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
                 </TouchableOpacity>
               ))}

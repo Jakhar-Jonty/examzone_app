@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,17 +8,73 @@ import {
   RefreshControl,
   Image,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import tw from 'twrnc';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { ImageBackground } from 'react-native';
 import ScreenWrapper from '../components/ScreenWrapper';
-import { formatDate, getExamStatus } from '../utils/helpers';
+import { formatDate, getExamStatus, getStreakBadge } from '../utils/helpers';
+import { gamificationService } from '../services/gamificationService';
+import { testSeriesService } from '../services/testSeriesService';
+import { notificationApi } from '../services/notificationService';
+import { practiceSessionService } from '../services/practiceSessionService';
+import { studyPlanService } from '../services/studyPlanService';
+
+const PRACTICE_TYPE_LABELS = {
+  random: 'Random',
+  'subject-wise': 'Subject Wise',
+  'topic-wise': 'Topic Wise',
+  'difficulty-based': 'By Difficulty',
+  'weak-areas': 'Weak Areas',
+};
+
+function computePlanProgress(plan) {
+  const total =
+    plan.progress?.totalTopics ??
+    (plan.subjects || []).reduce((n, s) => n + (s.topics?.length || 0), 0);
+  const completed =
+    plan.progress?.completedTopics ??
+    (plan.subjects || []).reduce(
+      (n, s) => n + (s.topics?.filter((t) => t.status === 'completed').length || 0),
+      0,
+    );
+  const pct = total
+    ? Math.round((completed / total) * 100)
+    : plan.progress?.overallProgress ?? 0;
+  return { total, completed, pct };
+}
+
+function pickActiveStudyPlan(plans) {
+  if (!plans?.length) return null;
+  const active = plans.filter((p) => p.status === 'active' || !p.status);
+  const pool = active.length ? active : plans.filter((p) => p.status !== 'completed');
+  if (!pool.length) return null;
+  return pool.sort((a, b) => {
+    const pa = computePlanProgress(a).pct;
+    const pb = computePlanProgress(b).pct;
+    if (pa !== pb) return pa - pb;
+    return new Date(a.endDate) - new Date(b.endDate);
+  })[0];
+}
+
+function getNextMilestone(plan) {
+  return (plan.milestones || [])
+    .filter((m) => !m.isCompleted)
+    .sort((a, b) => new Date(a.targetDate) - new Date(b.targetDate))[0];
+}
+
+function formatShortDate(d) {
+  if (!d) return '';
+  return new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+}
 
 export default function DashboardScreen({ navigation }) {
   const { colors, isDark } = useTheme();
-  const { user } = useAuth();
+  const { user, isPremium } = useAuth();
 
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -28,22 +84,62 @@ export default function DashboardScreen({ navigation }) {
   const [quote, setQuote] = useState(null);
   const [recentResults, setRecentResults] = useState([]);
   const [recentPublishedExams, setRecentPublishedExams] = useState([]);
+  const [progress, setProgress] = useState(null);
+  const [testSeries, setTestSeries] = useState([]);
+  const [activeAttempt, setActiveAttempt] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [leaderboard, setLeaderboard] = useState({ top: [], me: null });
+  const [resuming, setResuming] = useState(false);
+  const [activePractice, setActivePractice] = useState(null);
+  const [studyPlanHighlight, setStudyPlanHighlight] = useState(null);
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchDashboardData();
+    }, [])
+  );
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const [statsRes, wordRes, quoteRes, examsRes] = await Promise.all([
+      const [statsRes, wordRes, quoteRes, examsRes, progressData, seriesRes, activeRes, unreadRes, lbRes, practiceRes, plansRes] = await Promise.all([
         api.get('/user/dashboard-stats').catch(() => ({ data: null })),
         api.get('/user/word-of-day').catch(() => ({ data: null })),
         api.get('/user/motivational-quote').catch(() => ({ data: null })),
         api.get('/user/exams').catch(() => ({ data: { exams: [] } })),
+        gamificationService.getMyProgress().catch(() => null),
+        testSeriesService.list({ limit: 6 }).catch(() => ({ series: [] })),
+        api.get('/exams/active-attempt').then((r) => r.data).catch(() => null),
+        notificationApi.unreadCount().catch(() => ({ unreadCount: 0 })),
+        gamificationService.getLeaderboard(5).catch(() => null),
+        practiceSessionService.list({ limit: 8 }).catch(() => ({ sessions: [] })),
+        studyPlanService.list().catch(() => ({ plans: [] })),
       ]);
+
+      setProgress(progressData);
+      setTestSeries(seriesRes?.series || []);
+      setActiveAttempt(activeRes?.attempt || null);
+      setUnreadCount(unreadRes?.unreadCount || 0);
+      if (lbRes) setLeaderboard({ top: (lbRes.leaderboard || []).slice(0, 3), me: lbRes.me || null });
+
+      const inProgressPractice = (practiceRes?.sessions || []).find((s) => !s.isCompleted);
+      if (inProgressPractice) {
+        try {
+          const detail = await practiceSessionService.get(inProgressPractice._id);
+          setActivePractice({
+            ...inProgressPractice,
+            answeredCount: detail?.session?.answers?.length || 0,
+          });
+        } catch {
+          setActivePractice(inProgressPractice);
+        }
+      } else {
+        setActivePractice(null);
+      }
+
+      setStudyPlanHighlight(pickActiveStudyPlan(plansRes?.plans || []));
 
       if (statsRes.data) {
         setStats(statsRes.data);
@@ -81,15 +177,57 @@ export default function DashboardScreen({ navigation }) {
     fetchDashboardData();
   };
 
+  // Resume an in-progress attempt — the start endpoint resumes existing ones.
+  const handleResume = async () => {
+    if (!activeAttempt || resuming) return;
+    try {
+      setResuming(true);
+      const res = await api.post(`/exams/${activeAttempt.examId}/start`);
+      const attemptData = res.data.attempt;
+      // ExamInterface is a root-stack screen (above the tabs).
+      navigation.navigate('ExamInterface', {
+        examId: activeAttempt.examId,
+        attemptId: attemptData._id,
+        exam: res.data.exam,
+        attempt: attemptData,
+        isResumed: res.data.isResumed ?? true,
+      });
+    } catch (e) {
+      // fall back to the exam detail screen
+      navigation.navigate('ExamDetail', { examId: activeAttempt.examId });
+    } finally {
+      setResuming(false);
+    }
+  };
+
+  const openPractice = () => {
+    navigation.navigate('StudyTab', { screen: 'PracticeSessions' });
+  };
+
+  const resumePractice = () => {
+    if (!activePractice) return;
+    navigation.navigate('StudyTab', {
+      screen: 'PracticeInterface',
+      params: {
+        sessionId: activePractice._id,
+        sessionType: activePractice.sessionType,
+      },
+    });
+  };
+
+  const openStudyPlans = () => {
+    navigation.navigate('StudyTab', { screen: 'StudyPlans' });
+  };
+
   // ─── Helpers ───────────────────────────────────────────
   const getInitials = (name) => {
     if (!name) return 'U';
     return name
       .split(' ')
-      .map((n) => n[0])
+      .map((n) => n[0] || '')
       .join('')
       .toUpperCase()
-      .slice(0, 2);
+      .slice(0, 2) || 'U';
   };
 
   const getScoreColor = (pct) => {
@@ -122,6 +260,47 @@ export default function DashboardScreen({ navigation }) {
   const totalExamsAttempted = stats?.totalExamsAttempted || stats?.examsAttempted || 0;
   const averageScore = stats?.averageScore || stats?.averagePercentage || 0;
   const totalStudyDays = streak?.totalStudyDays || 0;
+  const streakBadge = getStreakBadge(currentStreak);
+  const xp = progress?.xp || 0;
+  const rank = progress?.rank || 'Beginner';
+  const nextRank = progress?.nextRank || null;
+  const xpToNext = progress?.xpToNextRank || 0;
+  const rankProgress = Math.max(0, Math.min(1, progress?.progressToNext || 0));
+  const primaryAction = (() => {
+    if (activeAttempt) {
+      return {
+        kind: 'resume-exam',
+        badge: activeAttempt.isPaused ? 'PAUSED EXAM' : 'EXAM IN PROGRESS',
+        title: activeAttempt.examTitle || 'Resume your mock test',
+        subtitle: `${activeAttempt.answeredCount || 0} answered`,
+        icon: 'play',
+        color: '#f59e0b',
+        onPress: handleResume,
+      };
+    }
+    if (activePractice) {
+      const answered = activePractice.answeredCount || 0;
+      const total = activePractice.totalQuestions || 0;
+      return {
+        kind: 'resume-practice',
+        badge: 'PRACTICE IN PROGRESS',
+        title: `${PRACTICE_TYPE_LABELS[activePractice.sessionType] || 'Practice'} Session`,
+        subtitle: total ? `${answered}/${total} answered` : `${answered} answered`,
+        icon: 'flash',
+        color: colors.primary,
+        onPress: resumePractice,
+      };
+    }
+    return {
+      kind: 'start-mock',
+      badge: 'TODAY FOCUS',
+      title: 'Start your next mock test',
+      subtitle: 'Track progress and improve accuracy',
+      icon: 'play-circle',
+      color: colors.primary,
+      onPress: () => navigation.navigate('ExamsTab'),
+    };
+  })();
 
   // ─── Loading ───────────────────────────────────────────
   if (loading && !stats) {
@@ -169,20 +348,91 @@ export default function DashboardScreen({ navigation }) {
                   {user?.name?.split(' ')[0] || 'User'} 👋
                 </Text>
               </View>
-              <TouchableOpacity
-                style={[
-                  tw`w-11 h-11 rounded-full items-center justify-center`,
-                  { backgroundColor: colors.primary + '15' },
-                ]}
-                onPress={() => navigation.navigate('ProfileTab')}
-                activeOpacity={0.7}
-              >
-                <Text style={[tw`text-sm font-bold`, { color: colors.primary }]}>
-                  {getInitials(user?.name)}
-                </Text>
-              </TouchableOpacity>
+              <View style={tw`flex-row items-center gap-3`}>
+                {/* Notification bell */}
+                <TouchableOpacity
+                  style={[
+                    tw`w-11 h-11 rounded-full items-center justify-center`,
+                    { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+                  ]}
+                  onPress={() => navigation.navigate('ProfileTab', { screen: 'Notifications' })}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="notifications-outline" size={20} color={colors.text} />
+                  {unreadCount > 0 && (
+                    <View
+                      style={[
+                        tw`absolute -top-0.5 -right-0.5 rounded-full items-center justify-center px-1`,
+                        { minWidth: 18, height: 18, backgroundColor: '#ef4444', borderWidth: 2, borderColor: colors.background },
+                      ]}
+                    >
+                      <Text style={tw`text-[10px] font-bold text-white`}>
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+
+                {/* Avatar */}
+                <TouchableOpacity
+                  style={[
+                    tw`w-11 h-11 rounded-full items-center justify-center overflow-hidden`,
+                    { backgroundColor: colors.primary + '15' },
+                  ]}
+                  onPress={() => navigation.navigate('ProfileTab')}
+                  activeOpacity={0.7}
+                >
+                  {user?.profileImage ? (
+                    <Image source={{ uri: user.profileImage }} style={tw`w-11 h-11`} />
+                  ) : (
+                    <Text style={[tw`text-sm font-bold`, { color: colors.primary }]}>
+                      {getInitials(user?.name)}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
+
+          {/* ─── Primary Action ───────────────────────── */}
+          <TouchableOpacity
+            style={tw`px-5 mb-5`}
+            activeOpacity={0.9}
+            onPress={primaryAction.onPress}
+            disabled={resuming && primaryAction.kind === 'resume-exam'}
+          >
+            <View
+              style={[
+                tw`flex-row items-center p-4 rounded-2xl`,
+                { backgroundColor: primaryAction.color + '14', borderWidth: 1, borderColor: primaryAction.color + '40' },
+              ]}
+            >
+              <View
+                style={[
+                  tw`w-11 h-11 rounded-full items-center justify-center`,
+                  { backgroundColor: primaryAction.color + '22' },
+                ]}
+              >
+                <Ionicons name={primaryAction.icon} size={20} color={primaryAction.color} />
+              </View>
+              <View style={tw`flex-1 ml-3`}>
+                <Text style={[tw`text-xs font-semibold`, { color: primaryAction.color }]}>
+                  {primaryAction.badge}
+                </Text>
+                <Text style={[tw`text-sm font-bold mt-0.5`, { color: colors.text }]} numberOfLines={1}>
+                  {primaryAction.title}
+                </Text>
+                <Text style={[tw`text-xs mt-0.5`, { color: colors.textSecondary }]}>
+                  {primaryAction.subtitle} · {primaryAction.kind === 'start-mock' ? 'tap to begin' : 'tap to continue'}
+                </Text>
+              </View>
+              {resuming && primaryAction.kind === 'resume-exam' ? (
+                <ActivityIndicator color={primaryAction.color} />
+              ) : (
+                <Ionicons name="arrow-forward-circle" size={26} color={primaryAction.color} />
+              )}
+            </View>
+          </TouchableOpacity>
 
           {/* ─── Streak + Stats Row ───────────────────── */}
           <View style={tw`px-5 mb-5`}>
@@ -194,19 +444,28 @@ export default function DashboardScreen({ navigation }) {
                   { backgroundColor: colors.primary + '10' },
                 ]}
               >
-                <View style={tw`flex-row items-center gap-1.5 mb-1`}>
-                  <Ionicons name="flame" size={16} color={colors.primary} />
-                  <Text style={[tw`text-[11px] font-medium`, { color: colors.primary }]}>Streak</Text>
+                <View style={tw`flex-row items-center justify-between mb-1`}>
+                  <View style={tw`flex-row items-center gap-1.5`}>
+                    <Ionicons name="flame" size={16} color={colors.primary} />
+                    <Text style={[tw`text-[11px] font-medium`, { color: colors.primary }]}>Streak</Text>
+                  </View>
+                  {streakBadge.current && (
+                    <Text style={tw`text-base`}>{streakBadge.current.icon}</Text>
+                  )}
                 </View>
                 <Text style={[tw`text-2xl font-bold`, { color: colors.primary }]}>
                   {currentStreak}
                   <Text style={[tw`text-xs font-medium`, { color: colors.primary }]}> days</Text>
                 </Text>
-                {longestStreak > currentStreak && (
+                {streakBadge.current ? (
+                  <Text style={[tw`text-[10px] mt-0.5`, { color: colors.primary, opacity: 0.8 }]} numberOfLines={1}>
+                    {streakBadge.current.name}
+                  </Text>
+                ) : longestStreak > currentStreak ? (
                   <Text style={[tw`text-[10px] mt-0.5`, { color: colors.primary, opacity: 0.7 }]}>
                     Best: {longestStreak}
                   </Text>
-                )}
+                ) : null}
               </View>
 
               {/* Exams Done */}
@@ -250,34 +509,188 @@ export default function DashboardScreen({ navigation }) {
             </View>
           </View>
 
-          {/* ─── Quick Actions ────────────────────────── */}
-          <View style={tw`px-5 mb-6`}>
-            <View style={tw`flex-row gap-2.5`}>
-              <TouchableOpacity
+          {/* ─── Rank & XP ────────────────────────────── */}
+          <TouchableOpacity
+            style={tw`px-5 mb-5`}
+            activeOpacity={0.85}
+            onPress={() => navigation.navigate('ProfileTab', { screen: 'Leaderboard' })}
+          >
+            <View
+              style={[
+                tw`p-4 rounded-2xl`,
+                { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
+              ]}
+            >
+              <View style={tw`flex-row items-center justify-between mb-2.5`}>
+                <View style={tw`flex-row items-center gap-2`}>
+                  <Ionicons name="trophy" size={18} color={colors.primary} />
+                  <Text style={[tw`text-base font-bold`, { color: colors.text }]}>{rank}</Text>
+                </View>
+                <View style={tw`flex-row items-center gap-1`}>
+                  <Text style={[tw`text-sm font-bold`, { color: colors.primary }]}>{xp} XP</Text>
+                  <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
+                </View>
+              </View>
+              {/* Progress bar */}
+              <View
                 style={[
-                  tw`flex-1 flex-row items-center justify-center py-3 rounded-2xl gap-2`,
+                  tw`h-2 rounded-full overflow-hidden`,
+                  { backgroundColor: colors.border },
+                ]}
+              >
+                <View
+                  style={[
+                    tw`h-full rounded-full`,
+                    { width: `${rankProgress * 100}%`, backgroundColor: colors.primary },
+                  ]}
+                />
+              </View>
+              <Text style={[tw`text-[11px] mt-1.5`, { color: colors.textSecondary }]}>
+                {nextRank ? `${xpToNext} XP to ${nextRank}` : 'Max rank reached 🎉'}
+              </Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* ─── Go Premium banner ────────────────────── */}
+          {!isPremium && (
+            <TouchableOpacity
+              style={tw`px-5 mb-5`}
+              activeOpacity={0.85}
+              onPress={() => navigation.navigate('Paywall')}
+            >
+              <View
+                style={[
+                  tw`flex-row items-center p-4 rounded-2xl`,
                   { backgroundColor: colors.primary },
                 ]}
-                onPress={() => navigation.navigate('Exams')}
-                activeOpacity={0.7}
               >
-                <Ionicons name="play-circle" size={18} color="#fff" />
-                <Text style={tw`text-sm font-semibold text-white`}>Start Exam</Text>
-              </TouchableOpacity>
+                <Ionicons name="diamond" size={22} color="#fff" />
+                <View style={tw`flex-1 ml-3`}>
+                  <Text style={tw`text-sm font-bold text-white`}>Go Premium</Text>
+                  <Text style={tw`text-xs text-white opacity-90 mt-0.5`}>
+                    Unlimited exams · all study material · ad-free
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color="#fff" />
+              </View>
+            </TouchableOpacity>
+          )}
 
-              <TouchableOpacity
-                style={[
-                  tw`flex-1 flex-row items-center justify-center py-3 rounded-2xl gap-2 border`,
-                  { borderColor: colors.border, backgroundColor: colors.surface },
-                ]}
+          {/* ─── Quick Actions ────────────────────────── */}
+          <View style={tw`px-5 mb-6`}>
+            <Text style={[tw`text-base font-bold mb-3`, { color: colors.text }]}>
+              Quick Start
+            </Text>
+            <View style={tw`flex-row gap-2.5`}>
+              <QuickActionTile
+                icon="play-circle"
+                label="Mock Test"
+                subtitle="Full exam"
+                colors={colors}
+                primary
+                onPress={() => navigation.navigate('ExamsTab')}
+              />
+              <QuickActionTile
+                icon="flash"
+                label="Practice"
+                subtitle="Quick drill"
+                colors={colors}
+                accent={colors.primary}
+                onPress={openPractice}
+              />
+              <QuickActionTile
+                icon="time-outline"
+                label="History"
+                subtitle="Past attempts"
+                colors={colors}
                 onPress={() => navigation.navigate('ExamHistory')}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="time" size={18} color={colors.text} />
-                <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>History</Text>
-              </TouchableOpacity>
+              />
             </View>
           </View>
+
+          {/* ─── Active study plan ────────────────────── */}
+          {studyPlanHighlight && (() => {
+            const { total, completed, pct } = computePlanProgress(studyPlanHighlight);
+            const nextMilestone = getNextMilestone(studyPlanHighlight);
+            const daysLeft = studyPlanHighlight.endDate
+              ? Math.max(0, Math.ceil((new Date(studyPlanHighlight.endDate) - new Date()) / 86400000))
+              : null;
+
+            return (
+              <TouchableOpacity
+                style={tw`px-5 mb-6`}
+                activeOpacity={0.88}
+                onPress={openStudyPlans}
+              >
+                <View
+                  style={[
+                    tw`p-4 rounded-2xl`,
+                    { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
+                  ]}
+                >
+                  <View style={tw`flex-row items-center justify-between mb-3`}>
+                    <View style={tw`flex-row items-center gap-2`}>
+                      <View
+                        style={[
+                          tw`w-9 h-9 rounded-xl items-center justify-center`,
+                          { backgroundColor: '#3b82f6' + '18' },
+                        ]}
+                      >
+                        <Ionicons name="calendar" size={18} color="#3b82f6" />
+                      </View>
+                      <View>
+                        <Text style={[tw`text-[11px] font-semibold uppercase tracking-wide`, { color: '#3b82f6' }]}>
+                          Study Plan
+                        </Text>
+                        <Text style={[tw`text-sm font-bold`, { color: colors.text }]} numberOfLines={1}>
+                          {studyPlanHighlight.title}
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={tw`items-end`}>
+                      <Text style={[tw`text-lg font-bold`, { color: colors.primary }]}>{pct}%</Text>
+                      {daysLeft != null && (
+                        <Text style={[tw`text-[10px]`, { color: colors.textSecondary }]}>
+                          {daysLeft === 0 ? 'Ends today' : `${daysLeft}d left`}
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+
+                  <View style={[tw`h-2 rounded-full overflow-hidden mb-2`, { backgroundColor: colors.border }]}>
+                    <View
+                      style={[
+                        tw`h-full rounded-full`,
+                        { width: `${pct}%`, backgroundColor: colors.primary },
+                      ]}
+                    />
+                  </View>
+
+                  <View style={tw`flex-row items-center justify-between`}>
+                    <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>
+                      {completed} of {total} topics completed
+                    </Text>
+                    <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
+                  </View>
+
+                  {nextMilestone && (
+                    <View
+                      style={[
+                        tw`flex-row items-center gap-2 mt-3 pt-3`,
+                        { borderTopWidth: 1, borderTopColor: colors.border },
+                      ]}
+                    >
+                      <Ionicons name="flag-outline" size={14} color="#f59e0b" />
+                      <Text style={[tw`text-xs flex-1`, { color: colors.textSecondary }]} numberOfLines={1}>
+                        Next: <Text style={{ fontWeight: '600', color: colors.text }}>{nextMilestone.title}</Text>
+                        {nextMilestone.targetDate ? ` · ${formatShortDate(nextMilestone.targetDate)}` : ''}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </TouchableOpacity>
+            );
+          })()}
 
           {/* ─── Daily Insights ───────────────────────── */}
           {(wordOfDay || quote) && (
@@ -421,6 +834,202 @@ export default function DashboardScreen({ navigation }) {
             </View>
           )}
 
+          {/* ─── Test Series (featured banner) ────────── */}
+          {testSeries.length > 0 && (() => {
+            // Feature the first not-yet-enrolled series, else the first one.
+            const featured = testSeries.find((s) => !s.isEnrolled) || testSeries[0];
+            const paid = featured.accessType === 'paid' || featured.isPremium || featured.price > 0;
+            const priceText = !paid
+              ? 'Free'
+              : `₹${featured.discountPrice && featured.discountPrice < featured.price ? featured.discountPrice : featured.price}`;
+            const goDetail = () =>
+              navigation.navigate('SeriesTab', {
+                screen: 'TestSeriesDetail',
+                params: { id: featured._id },
+              });
+
+            const Banner = ({ children }) =>
+              featured.thumbnail ? (
+                <ImageBackground
+                  source={{ uri: featured.thumbnail }}
+                  style={tw`w-full`}
+                  imageStyle={tw`rounded-3xl`}
+                >
+                  <LinearGradient
+                    colors={['rgba(0,0,0,0.15)', 'rgba(0,0,0,0.78)']}
+                    style={tw`rounded-3xl p-5`}
+                  >
+                    {children}
+                  </LinearGradient>
+                </ImageBackground>
+              ) : (
+                <LinearGradient
+                  colors={[colors.primary, colors.primaryDark]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={tw`rounded-3xl p-5`}
+                >
+                  {children}
+                </LinearGradient>
+              );
+
+            return (
+              <View style={tw`px-5 mb-6`}>
+                {/* Header */}
+                <View style={tw`flex-row items-center justify-between mb-3`}>
+                  <View style={tw`flex-row items-center gap-2`}>
+                    <Ionicons name="albums" size={18} color={colors.primary} />
+                    <Text style={[tw`text-base font-bold`, { color: colors.text }]}>Test Series</Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate('SeriesTab', { screen: 'TestSeriesList' })}
+                    hitSlop={8}
+                  >
+                    <Text style={[tw`text-sm font-semibold`, { color: colors.primary }]}>See all ›</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Hero card */}
+                <TouchableOpacity activeOpacity={0.9} onPress={goDetail}>
+                  <View style={tw`rounded-3xl overflow-hidden`}>
+                    <Banner>
+                      {/* top row: type + enrolled */}
+                      <View style={tw`flex-row items-center justify-between`}>
+                        <View style={[tw`px-2.5 py-1 rounded-lg`, { backgroundColor: 'rgba(255,255,255,0.25)' }]}>
+                          <Text style={tw`text-[11px] font-bold text-white uppercase`}>
+                            {featured.seriesType || 'mock'}
+                          </Text>
+                        </View>
+                        {featured.isEnrolled && (
+                          <View style={[tw`px-2.5 py-1 rounded-lg flex-row items-center gap-1`, { backgroundColor: 'rgba(255,255,255,0.25)' }]}>
+                            <Ionicons name="checkmark-circle" size={13} color="#fff" />
+                            <Text style={tw`text-[11px] font-bold text-white`}>Enrolled</Text>
+                          </View>
+                        )}
+                      </View>
+
+                      {/* title */}
+                      <Text style={tw`text-xl font-extrabold text-white mt-4`} numberOfLines={2}>
+                        {featured.title}
+                      </Text>
+
+                      {/* meta */}
+                      <View style={tw`flex-row items-center gap-4 mt-2`}>
+                        <View style={tw`flex-row items-center gap-1`}>
+                          <Ionicons name="document-text" size={14} color="rgba(255,255,255,0.9)" />
+                          <Text style={[tw`text-xs`, { color: 'rgba(255,255,255,0.9)' }]}>{featured.totalTests || 0} tests</Text>
+                        </View>
+                        {featured.estimatedDuration ? (
+                          <View style={tw`flex-row items-center gap-1`}>
+                            <Ionicons name="time" size={14} color="rgba(255,255,255,0.9)" />
+                            <Text style={[tw`text-xs`, { color: 'rgba(255,255,255,0.9)' }]}>{featured.estimatedDuration}h</Text>
+                          </View>
+                        ) : null}
+                        {featured.enrollments ? (
+                          <View style={tw`flex-row items-center gap-1`}>
+                            <Ionicons name="people" size={14} color="rgba(255,255,255,0.9)" />
+                            <Text style={[tw`text-xs`, { color: 'rgba(255,255,255,0.9)' }]}>{featured.enrollments}</Text>
+                          </View>
+                        ) : null}
+                      </View>
+
+                      {/* CTA row */}
+                      <View style={tw`flex-row items-center justify-between mt-5`}>
+                        <Text style={tw`text-2xl font-extrabold text-white`}>{priceText}</Text>
+                        <View style={tw`bg-white px-5 py-2.5 rounded-xl flex-row items-center gap-1.5`}>
+                          <Text style={[tw`text-sm font-bold`, { color: colors.primary }]}>
+                            {featured.isEnrolled ? 'Continue' : 'Enroll Now'}
+                          </Text>
+                          <Ionicons name="arrow-forward" size={15} color={colors.primary} />
+                        </View>
+                      </View>
+                    </Banner>
+                  </View>
+                </TouchableOpacity>
+
+                {/* tiny dots if more than one */}
+                {testSeries.length > 1 && (
+                  <View style={tw`flex-row justify-center gap-1.5 mt-3`}>
+                    {testSeries.slice(0, 5).map((s, i) => (
+                      <View
+                        key={s._id}
+                        style={[
+                          tw`h-1.5 rounded-full`,
+                          {
+                            width: s._id === featured._id ? 16 : 6,
+                            backgroundColor: s._id === featured._id ? colors.primary : colors.border,
+                          },
+                        ]}
+                      />
+                    ))}
+                  </View>
+                )}
+              </View>
+            );
+          })()}
+
+          {/* ─── Leaderboard snapshot ─────────────────── */}
+          {leaderboard.top.length > 0 && (
+            <View style={tw`px-5 mb-6`}>
+              <View style={tw`flex-row items-center justify-between mb-3`}>
+                <View style={tw`flex-row items-center gap-2`}>
+                  <Ionicons name="trophy" size={18} color={colors.primary} />
+                  <Text style={[tw`text-base font-bold`, { color: colors.text }]}>Leaderboard</Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('ProfileTab', { screen: 'Leaderboard' })}
+                  hitSlop={8}
+                >
+                  <Text style={[tw`text-sm font-semibold`, { color: colors.primary }]}>See all ›</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={[tw`rounded-2xl border overflow-hidden`, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                {leaderboard.top.map((u, i) => {
+                  const medal = ['#FFD700', '#C0C0C0', '#CD7F32'][i];
+                  const isMe = leaderboard.me && String(u.userId) === String(leaderboard.me.userId);
+                  return (
+                    <View
+                      key={String(u.userId)}
+                      style={[
+                        tw`flex-row items-center px-3 py-2.5`,
+                        i < leaderboard.top.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border },
+                        isMe && { backgroundColor: colors.primary + '0d' },
+                      ]}
+                    >
+                      <View style={tw`w-7 items-center`}>
+                        <Ionicons name="medal" size={18} color={medal} />
+                      </View>
+                      <View style={[tw`w-8 h-8 rounded-full items-center justify-center mx-2`, { backgroundColor: colors.primary + '18' }]}>
+                        <Text style={[tw`text-xs font-bold`, { color: colors.primary }]}>{getInitials(u.name)}</Text>
+                      </View>
+                      <Text style={[tw`flex-1 text-sm font-semibold`, { color: colors.text }]} numberOfLines={1}>
+                        {u.name}{isMe ? ' (You)' : ''}
+                      </Text>
+                      <Text style={[tw`text-sm font-extrabold`, { color: colors.primary }]}>{u.xp} XP</Text>
+                    </View>
+                  );
+                })}
+
+                {/* Your rank if outside top 3 */}
+                {leaderboard.me && leaderboard.me.position > 3 && (
+                  <View style={[tw`flex-row items-center px-3 py-2.5`, { borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: colors.primary + '0d' }]}>
+                    <Text style={[tw`w-7 text-center text-xs font-bold`, { color: colors.textSecondary }]}>
+                      #{leaderboard.me.position}
+                    </Text>
+                    <View style={[tw`w-8 h-8 rounded-full items-center justify-center mx-2`, { backgroundColor: colors.primary }]}>
+                      <Text style={tw`text-xs font-bold text-white`}>{getInitials(leaderboard.me.name)}</Text>
+                    </View>
+                    <Text style={[tw`flex-1 text-sm font-semibold`, { color: colors.text }]} numberOfLines={1}>
+                      You
+                    </Text>
+                    <Text style={[tw`text-sm font-extrabold`, { color: colors.primary }]}>{leaderboard.me.xp} XP</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          )}
+
           {/* ─── Recent Results ────────────────────────── */}
           {recentResults.length > 0 && (
             <View style={tw`mb-6`}>
@@ -492,81 +1101,101 @@ export default function DashboardScreen({ navigation }) {
             <View style={tw`mb-6`}>
               <SectionHeader
                 title="New Exams"
-                onSeeAll={() => navigation.navigate('Exams')}
+                onSeeAll={() => navigation.navigate('ExamsTab')}
                 colors={colors}
               />
-              <View style={tw`px-5 gap-2`}>
+              <View style={tw`px-5 gap-2.5`}>
                 {recentPublishedExams.slice(0, 4).map((exam) => {
                   const status = getExamStatus(exam);
                   const statusColor = getStatusColor(status);
+                  // "NEW" if published within the last 48h.
+                  const isNew =
+                    exam.publishedAt &&
+                    Date.now() - new Date(exam.publishedAt).getTime() < 48 * 3600 * 1000;
+                  const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
 
                   return (
                     <TouchableOpacity
                       key={exam._id}
                       style={[
-                        tw`flex-row items-center p-3.5 rounded-2xl border`,
-                        { backgroundColor: colors.surface, borderColor: colors.border },
+                        tw`flex-row items-stretch rounded-2xl border overflow-hidden`,
+                        { backgroundColor: colors.card, borderColor: colors.border },
                       ]}
                       onPress={() => navigation.navigate('ExamDetail', { examId: exam._id })}
-                      activeOpacity={0.7}
+                      activeOpacity={0.8}
                     >
-                      {/* Icon */}
-                      <View
-                        style={[
-                          tw`w-11 h-11 rounded-full items-center justify-center mr-3`,
-                          { backgroundColor: statusColor + '15' },
-                        ]}
-                      >
-                        <Ionicons
-                          name={
-                            status === 'available'
-                              ? 'play'
-                              : status === 'upcoming'
-                              ? 'time'
-                              : status === 'paused'
-                              ? 'pause'
-                              : 'document-text'
-                          }
-                          size={18}
-                          color={statusColor}
-                        />
-                      </View>
+                      {/* Color accent bar */}
+                      <View style={{ width: 4, backgroundColor: statusColor }} />
 
-                      {/* Info */}
-                      <View style={tw`flex-1`}>
-                        <Text
-                          style={[tw`text-sm font-semibold`, { color: colors.text }]}
-                          numberOfLines={1}
+                      <View style={tw`flex-1 flex-row items-center p-3.5`}>
+                        {/* Icon */}
+                        <View
+                          style={[
+                            tw`w-11 h-11 rounded-xl items-center justify-center mr-3`,
+                            { backgroundColor: statusColor + '15' },
+                          ]}
                         >
-                          {exam.title}
-                        </Text>
-                        <View style={tw`flex-row items-center mt-0.5 gap-3`}>
-                          {exam.duration && (
-                            <Text style={[tw`text-[11px]`, { color: colors.textSecondary }]}>
-                              {exam.duration} min
-                            </Text>
-                          )}
-                          {exam.totalMarks && (
-                            <Text style={[tw`text-[11px]`, { color: colors.textSecondary }]}>
-                              {exam.totalMarks} marks
-                            </Text>
-                          )}
-                          <Text style={[tw`text-[11px]`, { color: colors.textSecondary }]}>
-                            {getCategoryName(exam.category)}
-                          </Text>
+                          <Ionicons
+                            name={
+                              status === 'available'
+                                ? 'play'
+                                : status === 'upcoming'
+                                ? 'time'
+                                : status === 'paused'
+                                ? 'pause'
+                                : 'document-text'
+                            }
+                            size={20}
+                            color={statusColor}
+                          />
                         </View>
-                      </View>
 
-                      {/* Status pill */}
-                      <View
-                        style={[
-                          tw`px-2 py-1 rounded-lg`,
-                          { backgroundColor: statusColor + '15' },
-                        ]}
-                      >
-                        <Text style={[tw`text-[10px] font-semibold`, { color: statusColor }]}>
-                          {status.charAt(0).toUpperCase() + status.slice(1)}
-                        </Text>
+                        {/* Info */}
+                        <View style={tw`flex-1`}>
+                          <View style={tw`flex-row items-center gap-2`}>
+                            <Text
+                              style={[tw`flex-1 text-[15px] font-bold`, { color: colors.text }]}
+                              numberOfLines={1}
+                            >
+                              {exam.title}
+                            </Text>
+                            {isNew && (
+                              <View style={[tw`px-1.5 py-0.5 rounded`, { backgroundColor: colors.primary }]}>
+                                <Text style={tw`text-[9px] font-extrabold text-white`}>NEW</Text>
+                              </View>
+                            )}
+                          </View>
+                          <View style={tw`flex-row items-center mt-1 gap-1.5`}>
+                            <Text style={[tw`text-[11px] font-semibold`, { color: colors.primary }]}>
+                              {getCategoryName(exam.category)}
+                            </Text>
+                            {exam.duration ? (
+                              <Text style={[tw`text-[11px]`, { color: colors.textSecondary }]}>
+                                · {exam.duration}m
+                              </Text>
+                            ) : null}
+                            {exam.totalMarks ? (
+                              <Text style={[tw`text-[11px]`, { color: colors.textSecondary }]}>
+                                · {exam.totalMarks} marks
+                              </Text>
+                            ) : null}
+                          </View>
+                        </View>
+
+                        {/* Status + chevron */}
+                        <View style={tw`items-end ml-2`}>
+                          <View
+                            style={[
+                              tw`px-2 py-0.5 rounded-md mb-1`,
+                              { backgroundColor: statusColor + '15' },
+                            ]}
+                          >
+                            <Text style={[tw`text-[10px] font-bold`, { color: statusColor }]}>
+                              {statusLabel}
+                            </Text>
+                          </View>
+                          <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
+                        </View>
                       </View>
                     </TouchableOpacity>
                   );
@@ -594,7 +1223,7 @@ export default function DashboardScreen({ navigation }) {
               </Text>
               <TouchableOpacity
                 style={[tw`px-6 py-3 rounded-2xl`, { backgroundColor: colors.primary }]}
-                onPress={() => navigation.navigate('Exams')}
+                onPress={() => navigation.navigate('ExamsTab')}
                 activeOpacity={0.7}
               >
                 <Text style={tw`text-sm font-semibold text-white`}>Browse Exams</Text>
@@ -608,6 +1237,54 @@ export default function DashboardScreen({ navigation }) {
 }
 
 // ─── Section Header Component ────────────────────────────
+function QuickActionTile({ icon, label, subtitle, colors, primary, accent, onPress }) {
+  const iconColor = primary ? '#fff' : accent || colors.text;
+  const bg = primary ? colors.primary : colors.surface;
+  const border = primary ? colors.primary : colors.border;
+
+  return (
+    <TouchableOpacity
+      style={[
+        tw`flex-1 items-center py-3.5 px-2 rounded-2xl`,
+        {
+          backgroundColor: bg,
+          borderWidth: primary ? 0 : 1,
+          borderColor: border,
+        },
+      ]}
+      onPress={onPress}
+      activeOpacity={0.75}
+    >
+      <View
+        style={[
+          tw`w-10 h-10 rounded-xl items-center justify-center mb-2`,
+          { backgroundColor: primary ? 'rgba(255,255,255,0.2)' : (accent || colors.primary) + '14' },
+        ]}
+      >
+        <Ionicons name={icon} size={22} color={iconColor} />
+      </View>
+      <Text
+        style={[
+          tw`text-xs font-bold text-center`,
+          { color: primary ? '#fff' : colors.text },
+        ]}
+        numberOfLines={1}
+      >
+        {label}
+      </Text>
+      <Text
+        style={[
+          tw`text-[10px] text-center mt-0.5`,
+          { color: primary ? 'rgba(255,255,255,0.85)' : colors.textSecondary },
+        ]}
+        numberOfLines={1}
+      >
+        {subtitle}
+      </Text>
+    </TouchableOpacity>
+  );
+}
+
 function SectionHeader({ title, onSeeAll, colors }) {
   return (
     <View style={tw`flex-row justify-between items-center px-5 mb-3`}>

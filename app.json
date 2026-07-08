@@ -26,6 +26,7 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.goprep.mobile",
+      "googleServicesFile": "./google-services.json",
       "versionCode": 1,
       "permissions": [
         "CAMERA",
@@ -38,11 +39,17 @@
     },
     "scheme": "goprep",
     "plugins": [
-      "expo-font"
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "color": "#16a34a"
+        }
+      ]
     ],
     "extra": {
       "eas": {
-        "projectId": "7dc48110-5d2b-463e-9fcf-758a3b08fbf5"
+        "projectId": "cd9feed7-6bc4-414f-80a7-a080b848f3de"
       }
     }
   }

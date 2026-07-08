@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "102523997366",
+    "project_id": "examzone-9bae7",
+    "storage_bucket": "examzone-9bae7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:102523997366:android:8d0104f275b9839d4f6a17",
+        "android_client_info": {
+          "package_name": "com.goprep.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDydm_MrJc89sa3WIrSkrdcWEAu5RFfDDo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

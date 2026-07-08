@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authService } from '../services/authService';
+import { registerForPush, unregisterPush } from '../services/notificationService';
 
 const AuthContext = createContext();
 
@@ -23,6 +24,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
+      await unregisterPush(); // best-effort: stop pushes to this device
       await AsyncStorage.removeItem('token');
       await AsyncStorage.removeItem('user');
       setToken(null);
@@ -44,6 +46,7 @@ export const AuthProvider = ({ children }) => {
         try {
           const response = await authService.getMe();
           setUser(response.user);
+          registerForPush(); // refresh push token for this session
         } catch (error) {
           // Token invalid, clear storage
           await logout();
@@ -62,6 +65,7 @@ export const AuthProvider = ({ children }) => {
       await AsyncStorage.setItem('user', JSON.stringify(userData));
       setToken(authToken);
       setUser(userData);
+      registerForPush(); // register this device for push after login
     } catch (error) {
       console.error('Error saving auth data:', error);
       throw error;
@@ -78,8 +82,30 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Re-fetch the user from backend and persist. Call after a purchase,
+  // profile edit, or anything that changes server-side user state.
+  const refreshUser = async () => {
+    try {
+      const response = await authService.getMe();
+      await updateUser(response.user);
+      return response.user;
+    } catch (error) {
+      console.error('Error refreshing user:', error);
+      throw error;
+    }
+  };
+
   const isAuthenticated = !!token && !!user;
   const isAdmin = user?.role === 'admin';
+
+  // Premium = active 'premium' (or 'trial') status that hasn't expired.
+  const isPremium = (() => {
+    if (!user) return false;
+    const status = user.subscriptionStatus;
+    if (status !== 'premium' && status !== 'trial') return false;
+    if (!user.subscriptionExpiry) return true;
+    return new Date(user.subscriptionExpiry) > new Date();
+  })();
 
   return (
     <AuthContext.Provider
@@ -89,9 +115,11 @@ export const AuthProvider = ({ children }) => {
         loading,
         isAuthenticated,
         isAdmin,
+        isPremium,
         login,
         logout,
         updateUser,
+        refreshUser,
       }}
     >
       {children}

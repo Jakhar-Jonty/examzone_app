@@ -18,6 +18,10 @@ import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
 import { examStorage } from '../utils/storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  getLocalizedQuestionText,
+  getLocalizedQuestionOptions,
+} from '../utils/questionLanguage';
 
 export default function ExamInterfaceScreen({ route, navigation }) {
   const { examId, attemptId, exam: initialExam, attempt: initialAttempt } = route.params;
@@ -1049,7 +1053,10 @@ export default function ExamInterfaceScreen({ route, navigation }) {
         const response = await api.post(`/exams/attempt/${attemptId}/submit`, { answers: formatted });
         const resultId = response.data.attempt?._id || attemptId;
         await examStorage.clearAttemptData(attemptId);
-        navigation.replace('Result', { attemptId: resultId });
+        navigation.replace('Result', {
+          attemptId: resultId,
+          rewards: response.data.rewards || null,
+        });
       } catch (submitError) {
         const sa = await examStorage.getAnswers(attemptId);
         if (sa) {
@@ -1365,17 +1372,12 @@ export default function ExamInterfaceScreen({ route, navigation }) {
 
             {/* Question Text */}
             <Text style={[tw`text-base leading-6 mb-4`, { color: colors.text }]}>
-              {displayLanguage === 'Hindi' && currentQuestion.questionTextHindi
-                ? currentQuestion.questionTextHindi
-                : currentQuestion.questionText}
+              {getLocalizedQuestionText(currentQuestion, displayLanguage)}
             </Text>
 
             {/* Options */}
             <View style={tw`gap-3`}>
-              {(displayLanguage === 'Hindi' && currentQuestion.optionsHindi?.length > 0
-                ? currentQuestion.optionsHindi
-                : currentQuestion.options
-              )?.map((option, index) => {
+              {getLocalizedQuestionOptions(currentQuestion, displayLanguage)?.map((option, index) => {
                 const isSelected = currentAnswer?.selectedAnswer === option.optionLabel;
                 return (
                   <TouchableOpacity
@@ -1673,14 +1675,8 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                   const isSelected = answer?.selectedAnswer != null;
                   const questionId = question?._id || question;
                   const isMarked = markedForReview.has(questionId);
-                  const qText =
-                    displayLanguage === 'Hindi' && question?.questionTextHindi
-                      ? question.questionTextHindi
-                      : question?.questionText || '';
-                  const opts =
-                    displayLanguage === 'Hindi' && question?.optionsHindi?.length > 0
-                      ? question.optionsHindi
-                      : question?.options || [];
+                  const qText = getLocalizedQuestionText(question, displayLanguage);
+                  const opts = getLocalizedQuestionOptions(question, displayLanguage);
 
                   return (
                     <TouchableOpacity

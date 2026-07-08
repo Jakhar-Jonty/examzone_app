@@ -1,22 +1,13 @@
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  ActivityIndicator,
-  Alert,
-  SafeAreaView,
+  View, Text, TextInput, TouchableOpacity, ScrollView,
+  KeyboardAvoidingView, Platform, ActivityIndicator, Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import tw from 'twrnc';
 import { useTheme } from '../context/ThemeContext';
-import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/authService';
 import { useCategories } from '../hooks/useCategories';
-
 
 const GENDERS = [
   { label: 'Male', value: 'male' },
@@ -24,6 +15,7 @@ const GENDERS = [
   { label: 'Other', value: 'other' },
   { label: 'Prefer not to say', value: 'prefer-not-to-say' },
 ];
+
 const INDIAN_STATES = [
   'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
   'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka',
@@ -33,11 +25,36 @@ const INDIAN_STATES = [
   'Delhi', 'Jammu & Kashmir', 'Ladakh', 'Chandigarh',
 ];
 
+function StepDots({ current, total }) {
+  return (
+    <View style={tw`flex-row items-center justify-center gap-2 mb-6`}>
+      {Array.from({ length: total }).map((_, i) => (
+        <View
+          key={i}
+          style={[
+            tw`rounded-full`,
+            i + 1 === current
+              ? tw`h-2.5 w-8 bg-green-600`
+              : i + 1 < current
+              ? tw`h-2 w-2 bg-green-400`
+              : tw`h-2 w-2 bg-gray-200`,
+          ]}
+        />
+      ))}
+    </View>
+  );
+}
+
 export default function SignUpScreen({ navigation }) {
   const { colors } = useTheme();
-  const { login } = useAuth();
-  const { categories, loading: categoriesLoading } = useCategories();
-  const [formData, setFormData] = useState({
+  const { categories, loading: catLoading } = useCategories();
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [showPass, setShowPass] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [showStateList, setShowStateList] = useState(false);
+
+  const [form, setForm] = useState({
     phoneNumber: '',
     name: '',
     password: '',
@@ -48,225 +65,187 @@ export default function SignUpScreen({ navigation }) {
     state: '',
     dateOfBirth: '',
   });
-  const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [showStateDropdown, setShowStateDropdown] = useState(false);
 
-  const toggleExamPreparation = (code) => {
-    setFormData((prev) => ({
-      ...prev,
-      examPreparations: prev.examPreparations.includes(code)
-        ? prev.examPreparations.filter((e) => e !== code)
-        : [...prev.examPreparations, code],
-    }));
+  const set = (key, val) => setForm((f) => ({ ...f, [key]: val }));
+
+  const toggleExam = (code) => {
+    set('examPreparations', form.examPreparations.includes(code)
+      ? form.examPreparations.filter((e) => e !== code)
+      : [...form.examPreparations, code]);
   };
 
-  const handleSignUp = async () => {
-    if (!formData.phoneNumber.trim() || !formData.name.trim() || !formData.password.trim()) {
-      Alert.alert('Error', 'Please fill in all required fields');
-      return;
+  const validateStep1 = () => {
+    if (!form.phoneNumber.trim() || form.phoneNumber.length < 10) {
+      Alert.alert('Error', 'Enter a valid 10-digit phone number'); return false;
     }
-    if (formData.phoneNumber.length < 10) {
-      Alert.alert('Error', 'Please enter a valid phone number');
-      return;
+    if (!form.name.trim() || form.name.length < 2) {
+      Alert.alert('Error', 'Enter your full name'); return false;
     }
-    if (formData.password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
-      return;
+    if (form.password.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters'); return false;
     }
-    if (formData.password !== formData.confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
-      return;
+    if (form.password !== form.confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match'); return false;
     }
-    if (formData.examPreparations.length === 0) {
-      Alert.alert('Error', 'Please select at least one exam preparation');
-      return;
-    }
+    return true;
+  };
 
+  const validateStep2 = () => {
+    if (form.examPreparations.length === 0) {
+      Alert.alert('Error', 'Select at least one exam'); return false;
+    }
+    return true;
+  };
+
+  const handleNext = () => {
+    if (step === 1 && !validateStep1()) return;
+    if (step === 2 && !validateStep2()) return;
+    setStep((s) => s + 1);
+  };
+
+  const handleSubmit = async () => {
     setLoading(true);
     try {
+      const extras = {};
+      if (form.gender) extras.gender = form.gender;
+      if (form.state) extras.state = form.state;
+      if (form.dateOfBirth) extras.dateOfBirth = form.dateOfBirth;
+
       const response = await authService.register(
-        formData.phoneNumber.trim(),
-        formData.password,
-        formData.name.trim(),
-        formData.examPreparations,
-        formData.preferredLanguage,
-        {
-          gender: formData.gender || undefined,
-          state: formData.state || undefined,
-          dateOfBirth: formData.dateOfBirth || undefined,
-        }
+        form.phoneNumber.trim(),
+        form.password,
+        form.name.trim(),
+        form.examPreparations.filter(Boolean),
+        form.preferredLanguage,
+        extras,
       );
-      await login(response.token, response.user);
+      // Navigate to Onboarding BEFORE calling login — keeps user in auth stack
+      navigation.replace('Onboarding', { token: response.token, user: response.user });
     } catch (error) {
-      Alert.alert(
-        'Registration Failed',
-        error.response?.data?.message || 'Registration failed. Please try again.'
-      );
+      Alert.alert('Registration Failed', error.response?.data?.message || 'Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const styles = createStyles(colors);
+  const inputStyle = [tw`rounded-2xl px-4 py-3.5 text-base border`, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }];
+  const labelStyle = [tw`text-sm font-semibold mb-1.5`, { color: colors.text }];
+  const chipBase = [tw`px-4 py-2.5 rounded-2xl border mr-2 mb-2`, { borderColor: colors.border, backgroundColor: colors.surface }];
+  const chipSel = [tw`px-4 py-2.5 rounded-2xl border mr-2 mb-2`, { borderColor: colors.primary, backgroundColor: colors.primary }];
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.content}>
-            {/* Header */}
-            <View style={styles.header}>
-              <Text style={styles.title}>Create Account</Text>
-              <Text style={styles.subtitle}>Sign up to get started</Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView contentContainerStyle={tw`flex-grow px-6 pt-8 pb-10`} keyboardShouldPersistTaps="handled">
+          {/* Header */}
+          <Text style={[tw`text-3xl font-extrabold mb-1`, { color: colors.text }]}>
+            {step === 1 ? 'Create Account' : step === 2 ? 'Your Goals' : 'About You'}
+          </Text>
+          <Text style={[tw`text-sm mb-6`, { color: colors.textSecondary }]}>
+            {step === 1 ? 'Fill in your credentials to get started' : step === 2 ? 'What exams are you preparing for?' : 'Optional — you can skip and fill later'}
+          </Text>
+
+          <StepDots current={step} total={3} />
+
+          {/* ── Step 1: Credentials ── */}
+          {step === 1 && (
+            <View style={tw`gap-4`}>
+              <View>
+                <Text style={labelStyle}>Phone Number *</Text>
+                <TextInput style={inputStyle} placeholder="10-digit mobile number" placeholderTextColor={colors.textSecondary} value={form.phoneNumber} onChangeText={(v) => set('phoneNumber', v)} keyboardType="phone-pad" />
+              </View>
+              <View>
+                <Text style={labelStyle}>Full Name *</Text>
+                <TextInput style={inputStyle} placeholder="Your full name" placeholderTextColor={colors.textSecondary} value={form.name} onChangeText={(v) => set('name', v)} autoCapitalize="words" />
+              </View>
+              <View>
+                <Text style={labelStyle}>Password *</Text>
+                <View style={[tw`flex-row items-center rounded-2xl border px-4`, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                  <TextInput style={[tw`flex-1 py-3.5 text-base`, { color: colors.text }]} placeholder="Min 6 characters" placeholderTextColor={colors.textSecondary} value={form.password} onChangeText={(v) => set('password', v)} secureTextEntry={!showPass} autoCapitalize="none" />
+                  <TouchableOpacity onPress={() => setShowPass(!showPass)}>
+                    <Text style={{ fontSize: 18 }}>{showPass ? '🙈' : '👁️'}</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+              <View>
+                <Text style={labelStyle}>Confirm Password *</Text>
+                <View style={[tw`flex-row items-center rounded-2xl border px-4`, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                  <TextInput style={[tw`flex-1 py-3.5 text-base`, { color: colors.text }]} placeholder="Repeat password" placeholderTextColor={colors.textSecondary} value={form.confirmPassword} onChangeText={(v) => set('confirmPassword', v)} secureTextEntry={!showConfirm} autoCapitalize="none" />
+                  <TouchableOpacity onPress={() => setShowConfirm(!showConfirm)}>
+                    <Text style={{ fontSize: 18 }}>{showConfirm ? '🙈' : '👁️'}</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
             </View>
+          )}
 
-            {/* Form */}
-            <View style={styles.form}>
-
-              {/* Phone Number */}
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Phone Number <Text style={styles.required}>*</Text></Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter your phone number"
-                  placeholderTextColor={colors.textSecondary}
-                  value={formData.phoneNumber}
-                  onChangeText={(text) => setFormData({ ...formData, phoneNumber: text })}
-                  keyboardType="phone-pad"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </View>
-
-              {/* Full Name */}
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Full Name <Text style={styles.required}>*</Text></Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter your full name"
-                  placeholderTextColor={colors.textSecondary}
-                  value={formData.name}
-                  onChangeText={(text) => setFormData({ ...formData, name: text })}
-                  autoCapitalize="words"
-                  autoCorrect={false}
-                />
-              </View>
-
-              {/* Password */}
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Password <Text style={styles.required}>*</Text></Text>
-                <View style={styles.passwordContainer}>
-                  <TextInput
-                    style={styles.passwordInput}
-                    placeholder="Min 6 characters"
-                    placeholderTextColor={colors.textSecondary}
-                    value={formData.password}
-                    onChangeText={(text) => setFormData({ ...formData, password: text })}
-                    secureTextEntry={!showPassword}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                  />
-                  <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeButton}>
-                    <Text style={styles.eyeText}>{showPassword ? '👁️' : '👁️‍🗨️'}</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Confirm Password */}
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Confirm Password <Text style={styles.required}>*</Text></Text>
-                <View style={styles.passwordContainer}>
-                  <TextInput
-                    style={styles.passwordInput}
-                    placeholder="Confirm your password"
-                    placeholderTextColor={colors.textSecondary}
-                    value={formData.confirmPassword}
-                    onChangeText={(text) => setFormData({ ...formData, confirmPassword: text })}
-                    secureTextEntry={!showConfirmPassword}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                  />
-                  <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} style={styles.eyeButton}>
-                    <Text style={styles.eyeText}>{showConfirmPassword ? '👁️' : '👁️‍🗨️'}</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Exam Preparations */}
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Exam Preparations <Text style={styles.required}>*</Text></Text>
-                {categoriesLoading ? (
-                  <ActivityIndicator size="small" color={colors.primary} />
-                ) : (
-                  <View style={styles.chipContainer}>
-                    {categories.map((cat) => (
-                      <TouchableOpacity
-                        key={cat._id}
-                        style={[styles.chip, formData.examPreparations.includes(cat.code) && styles.chipSelected]}
-                        onPress={() => toggleExamPreparation(cat.code)}
-                      >
-                        <Text style={[styles.chipText, formData.examPreparations.includes(cat.code) && styles.chipTextSelected]}>
+          {/* ── Step 2: Exam Goals ── */}
+          {step === 2 && (
+            <View>
+              {catLoading ? (
+                <ActivityIndicator size="small" color={colors.primary} style={tw`py-8`} />
+              ) : (
+                <View style={tw`flex-row flex-wrap`}>
+                  {categories.map((cat) => {
+                    const sel = form.examPreparations.includes(cat.code);
+                    return (
+                      <TouchableOpacity key={cat._id} style={sel ? chipSel : chipBase} onPress={() => toggleExam(cat.code)}>
+                        <Text style={[tw`text-sm font-semibold`, { color: sel ? '#fff' : colors.text }]}>
                           {cat.name}
                         </Text>
                       </TouchableOpacity>
-                    ))}
-                  </View>
-                )}
+                    );
+                  })}
+                </View>
+              )}
+            </View>
+          )}
+
+          {/* ── Step 3: Profile ── */}
+          {step === 3 && (
+            <View style={tw`gap-4`}>
+              {/* Language */}
+              <View>
+                <Text style={labelStyle}>Preferred Language</Text>
+                <View style={tw`flex-row gap-2`}>
+                  {['English', 'Hindi', 'Both'].map((lang) => {
+                    const sel = form.preferredLanguage === lang;
+                    return (
+                      <TouchableOpacity key={lang} style={[tw`flex-1 py-3 rounded-2xl border items-center`, { backgroundColor: sel ? colors.primary : colors.surface, borderColor: sel ? colors.primary : colors.border }]} onPress={() => set('preferredLanguage', lang)}>
+                        <Text style={[tw`text-sm font-semibold`, { color: sel ? '#fff' : colors.text }]}>{lang}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
               </View>
 
               {/* Gender */}
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Gender</Text>
-                <View style={styles.chipContainer}>
-                  {GENDERS.map((g) => (
-                    <TouchableOpacity
-                      key={g.value}
-                      style={[styles.chip, formData.gender === g.value && styles.chipSelected]}
-                      onPress={() => setFormData({ ...formData, gender: g.value })}
-                    >
-                      <Text style={[styles.chipText, formData.gender === g.value && styles.chipTextSelected]}>
-                        {g.label}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+              <View>
+                <Text style={labelStyle}>Gender (Optional)</Text>
+                <View style={tw`flex-row flex-wrap`}>
+                  {GENDERS.map((g) => {
+                    const sel = form.gender === g.value;
+                    return (
+                      <TouchableOpacity key={g.value} style={[sel ? chipSel : chipBase]} onPress={() => set('gender', sel ? '' : g.value)}>
+                        <Text style={[tw`text-sm font-semibold`, { color: sel ? '#fff' : colors.text }]}>{g.label}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
               </View>
 
               {/* State */}
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>State</Text>
-                <TouchableOpacity
-                  style={styles.input}
-                  onPress={() => setShowStateDropdown(!showStateDropdown)}
-                >
-                  <Text style={formData.state ? { color: colors.text } : { color: colors.textSecondary }}>
-                    {formData.state || 'Select your state'}
-                  </Text>
+              <View>
+                <Text style={labelStyle}>State (Optional)</Text>
+                <TouchableOpacity style={inputStyle} onPress={() => setShowStateList(!showStateList)}>
+                  <Text style={{ color: form.state ? colors.text : colors.textSecondary }}>{form.state || 'Select your state'}</Text>
                 </TouchableOpacity>
-                {showStateDropdown && (
-                  <View style={styles.dropdown}>
-                    <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled>
+                {showStateList && (
+                  <View style={[tw`rounded-2xl border mt-1 overflow-hidden`, { backgroundColor: colors.surface, borderColor: colors.border, maxHeight: 160 }]}>
+                    <ScrollView nestedScrollEnabled>
                       {INDIAN_STATES.map((s) => (
-                        <TouchableOpacity
-                          key={s}
-                          style={styles.dropdownItem}
-                          onPress={() => {
-                            setFormData({ ...formData, state: s });
-                            setShowStateDropdown(false);
-                          }}
-                        >
-                          <Text style={[styles.dropdownText, formData.state === s && { color: colors.primary, fontWeight: '700' }]}>
-                            {s}
-                          </Text>
+                        <TouchableOpacity key={s} style={[tw`px-4 py-3 border-b`, { borderBottomColor: colors.border }]} onPress={() => { set('state', s); setShowStateList(false); }}>
+                          <Text style={[{ color: form.state === s ? colors.primary : colors.text, fontWeight: form.state === s ? '700' : '400' }]}>{s}</Text>
                         </TouchableOpacity>
                       ))}
                     </ScrollView>
@@ -274,149 +253,41 @@ export default function SignUpScreen({ navigation }) {
                 )}
               </View>
 
-              {/* Date of Birth */}
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Date of Birth</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="YYYY-MM-DD (e.g. 2000-01-15)"
-                  placeholderTextColor={colors.textSecondary}
-                  value={formData.dateOfBirth}
-                  onChangeText={(text) => setFormData({ ...formData, dateOfBirth: text })}
-                  keyboardType="numeric"
-                />
+              {/* DOB */}
+              <View>
+                <Text style={labelStyle}>Date of Birth (Optional)</Text>
+                <TextInput style={inputStyle} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textSecondary} value={form.dateOfBirth} onChangeText={(v) => set('dateOfBirth', v)} keyboardType="numeric" />
               </View>
-
-              {/* Preferred Language */}
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Preferred Language</Text>
-                <View style={styles.languageContainer}>
-                  {['English', 'Hindi'].map((lang) => (
-                    <TouchableOpacity
-                      key={lang}
-                      style={[styles.languageOption, formData.preferredLanguage === lang && styles.languageOptionSelected]}
-                      onPress={() => setFormData({ ...formData, preferredLanguage: lang })}
-                    >
-                      <Text style={[styles.languageText, formData.preferredLanguage === lang && styles.languageTextSelected]}>
-                        {lang}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-
-              {/* Submit */}
-              <TouchableOpacity
-                style={[styles.button, loading && styles.buttonDisabled]}
-                onPress={handleSignUp}
-                disabled={loading}
-              >
-                {loading ? (
-                  <ActivityIndicator color={colors.background} />
-                ) : (
-                  <Text style={styles.buttonText}>Create Account</Text>
-                )}
-              </TouchableOpacity>
             </View>
+          )}
 
-            {/* Footer */}
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>Already have an account? </Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                <Text style={styles.footerLink}>Sign In</Text>
+          {/* Nav buttons */}
+          <View style={tw`flex-row gap-3 mt-8`}>
+            {step > 1 && (
+              <TouchableOpacity style={[tw`flex-1 py-4 rounded-2xl border items-center`, { borderColor: colors.border }]} onPress={() => setStep((s) => s - 1)}>
+                <Text style={[tw`text-base font-bold`, { color: colors.text }]}>← Back</Text>
               </TouchableOpacity>
-            </View>
+            )}
+            {step < 3 ? (
+              <TouchableOpacity style={[tw`flex-1 py-4 rounded-2xl items-center`, { backgroundColor: colors.primary }]} onPress={handleNext}>
+                <Text style={[tw`text-base font-bold`, { color: '#fff' }]}>Continue →</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity style={[tw`flex-1 py-4 rounded-2xl items-center`, { backgroundColor: loading ? '#86efac' : colors.primary }]} onPress={handleSubmit} disabled={loading}>
+                {loading ? <ActivityIndicator color="#fff" /> : <Text style={[tw`text-base font-bold`, { color: '#fff' }]}>Create Account 🎉</Text>}
+              </TouchableOpacity>
+            )}
           </View>
+
+          {step === 1 && (
+            <TouchableOpacity style={tw`mt-6 items-center`} onPress={() => navigation.navigate('Login')}>
+              <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
+                Already have an account? <Text style={{ color: colors.primary, fontWeight: '700' }}>Sign In</Text>
+              </Text>
+            </TouchableOpacity>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
-
-const createStyles = (colors) =>
-  StyleSheet.create({
-    safeArea: { flex: 1, backgroundColor: colors.background },
-    container: { flex: 1, backgroundColor: colors.background },
-    scrollContent: { flexGrow: 1 },
-    content: { flex: 1, padding: 24, justifyContent: 'center' },
-    header: { marginBottom: 28, alignItems: 'center' },
-    title: { fontSize: 32, fontWeight: 'bold', color: colors.text, marginBottom: 8 },
-    subtitle: { fontSize: 16, color: colors.textSecondary },
-    form: { width: '100%' },
-    inputContainer: { marginBottom: 18 },
-    label: { fontSize: 14, fontWeight: '600', color: colors.text, marginBottom: 8 },
-    required: { color: '#EF4444' },
-    input: {
-      backgroundColor: colors.surface,
-      borderRadius: 16,
-      padding: 16,
-      fontSize: 16,
-      color: colors.text,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    passwordContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: colors.surface,
-      borderRadius: 16,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    passwordInput: { flex: 1, padding: 16, fontSize: 16, color: colors.text },
-    eyeButton: { padding: 16 },
-    eyeText: { fontSize: 20 },
-    chipContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-    chip: {
-      paddingHorizontal: 16,
-      paddingVertical: 10,
-      borderRadius: 20,
-      backgroundColor: colors.surface,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    chipSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
-    chipText: { fontSize: 14, fontWeight: '600', color: colors.text },
-    chipTextSelected: { color: colors.background },
-    dropdown: {
-      marginTop: 4,
-      backgroundColor: colors.surface,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: colors.border,
-      overflow: 'hidden',
-    },
-    dropdownItem: { padding: 14, borderBottomWidth: 1, borderBottomColor: colors.border },
-    dropdownText: { fontSize: 15, color: colors.text },
-    languageContainer: { flexDirection: 'row', gap: 12 },
-    languageOption: {
-      flex: 1,
-      padding: 14,
-      borderRadius: 16,
-      backgroundColor: colors.surface,
-      borderWidth: 1,
-      borderColor: colors.border,
-      alignItems: 'center',
-    },
-    languageOptionSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
-    languageText: { fontSize: 16, fontWeight: '600', color: colors.text },
-    languageTextSelected: { color: colors.background },
-    button: {
-      backgroundColor: colors.primary,
-      borderRadius: 16,
-      padding: 18,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginTop: 10,
-      shadowColor: colors.primary,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
-      shadowRadius: 8,
-      elevation: 8,
-    },
-    buttonDisabled: { opacity: 0.6 },
-    buttonText: { color: colors.background, fontSize: 18, fontWeight: 'bold' },
-    footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 24 },
-    footerText: { color: colors.textSecondary, fontSize: 14 },
-    footerLink: { color: colors.primary, fontSize: 14, fontWeight: '600' },
-  });

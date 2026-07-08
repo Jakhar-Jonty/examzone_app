@@ -3,6 +3,7 @@ import {
   View,
   Text,
   ScrollView,
+  FlatList,
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
@@ -18,10 +19,11 @@ import { formatDate, getExamStatus } from '../utils/helpers';
 
 export default function ExamsScreen({ navigation }) {
   const { colors, isDark } = useTheme();
-  const { user } = useAuth();
+  const { user, isPremium } = useAuth();
 
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -47,71 +49,71 @@ export default function ExamsScreen({ navigation }) {
   filtersRef.current = filters;
   paginationRef.current = pagination;
 
-  // Fetch immediately on page/filter change
+  // Filter change → reload from page 1.
   useEffect(() => {
-    fetchExams();
-  }, [pagination.currentPage, filters]);
+    fetchExams(1, false);
+  }, [filters]);
 
-  // Debounce search query separately
+  // Debounced search → reload from page 1.
   useEffect(() => {
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
     searchDebounceRef.current = setTimeout(() => {
-      // Reset to page 1 on new search
-      if (paginationRef.current.currentPage !== 1) {
-        setPagination((prev) => ({ ...prev, currentPage: 1 }));
-      } else {
-        fetchExams();
-      }
+      fetchExams(1, false);
     }, 500);
     return () => clearTimeout(searchDebounceRef.current);
   }, [searchQuery]);
 
-  const fetchExams = async () => {
+  // page=1 replaces the list; page>1 appends (infinite scroll).
+  const fetchExams = async (page = 1, append = false) => {
     try {
-      setLoading(true);
+      if (append) setLoadingMore(true);
+      else setLoading(true);
       setError(null);
 
       const currentFilters = filtersRef.current;
-      const currentPagination = paginationRef.current;
-
       const params = new URLSearchParams({
-        page: currentPagination.currentPage.toString(),
-        limit: currentPagination.limit.toString(),
+        page: page.toString(),
+        limit: paginationRef.current.limit.toString(),
       });
-
-      // Add non-empty filters
       Object.entries(currentFilters).forEach(([key, value]) => {
         if (value) params.append(key, value);
       });
-
       if (searchQuery.trim()) {
         params.append('search', searchQuery.trim());
       }
 
       const response = await api.get(`/user/exams?${params.toString()}`);
-      setExams(response.data.exams || []);
+      const newExams = response.data.exams || [];
+      setExams((prev) => (append ? [...prev, ...newExams] : newExams));
       setPagination((prev) => ({
         ...prev,
         ...(response.data.pagination || {}),
+        currentPage: page,
       }));
     } catch (err) {
       console.error('Failed to fetch exams:', err);
       setError('Failed to load exams. Pull down to retry.');
     } finally {
       setLoading(false);
+      setLoadingMore(false);
       setRefreshing(false);
     }
   };
 
   const onRefresh = () => {
     setRefreshing(true);
-    fetchExams();
+    fetchExams(1, false);
+  };
+
+  // Load next page when the user scrolls near the bottom.
+  const loadMore = () => {
+    if (loading || loadingMore || refreshing) return;
+    if (pagination.currentPage >= pagination.totalPages) return;
+    fetchExams(pagination.currentPage + 1, true);
   };
 
   const handleFilterChange = (key, value) => {
-    // Batch: update filters and reset page in one render cycle
     setFilters((prev) => ({ ...prev, [key]: value }));
-    setPagination((prev) => ({ ...prev, currentPage: 1 }));
   };
 
   const clearFilters = () => {
@@ -122,13 +124,6 @@ export default function ExamsScreen({ navigation }) {
       sortOrder: 'desc',
     });
     setSearchQuery('');
-    setPagination((prev) => ({ ...prev, currentPage: 1 }));
-  };
-
-  const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= pagination.totalPages) {
-      setPagination((prev) => ({ ...prev, currentPage: newPage }));
-    }
   };
 
   const activeFiltersCount =
@@ -170,10 +165,153 @@ export default function ExamsScreen({ navigation }) {
     }
   };
 
+  // Start an exam, gating premium ones behind the paywall.
+  const startExam = (exam) => {
+    if (exam.isPremium && !isPremium) {
+      navigation.navigate('Paywall', { reason: 'This exam is Premium. Upgrade to unlock it.' });
+      return;
+    }
+    navigation.navigate('ExamDetail', { examId: exam._id });
+  };
+
+  // ─── Exam card (FlatList renderItem) ───────────────────
+  const renderExam = ({ item: exam }) => {
+    const status = getExamStatus(exam);
+    const statusColor = getStatusColor(status);
+    const locked = exam.isPremium && !isPremium;
+    const isNew =
+      exam.publishedAt &&
+      Date.now() - new Date(exam.publishedAt).getTime() < 48 * 3600 * 1000;
+
+    return (
+      <View
+        style={[
+          tw`flex-row items-stretch rounded-2xl border overflow-hidden`,
+          { backgroundColor: colors.card, borderColor: colors.border },
+        ]}
+      >
+        {/* accent bar */}
+        <View style={{ width: 4, backgroundColor: statusColor }} />
+
+        <View style={tw`flex-1 p-4`}>
+          {/* Header */}
+          <View style={tw`flex-row justify-between items-start mb-2 gap-2`}>
+            <Text
+              style={[tw`flex-1 text-base font-bold leading-[22px]`, { color: colors.text }]}
+              numberOfLines={2}
+            >
+              {exam.title}
+            </Text>
+            <View
+              style={[
+                tw`flex-row items-center px-2.5 py-1 rounded-full gap-1`,
+                { backgroundColor: statusColor + '20' },
+              ]}
+            >
+              <Ionicons name={getStatusIcon(status)} size={12} color={statusColor} />
+              <Text style={[tw`text-[11px] font-bold`, { color: statusColor }]}>
+                {status.charAt(0).toUpperCase() + status.slice(1)}
+              </Text>
+            </View>
+          </View>
+
+          {/* Tags row */}
+          <View style={tw`flex-row items-center gap-1.5 mb-2`}>
+            {exam.isPremium && (
+              <View style={[tw`flex-row items-center px-1.5 py-0.5 rounded gap-0.5`, { backgroundColor: '#f59e0b' }]}>
+                <Ionicons name="diamond" size={9} color="#fff" />
+                <Text style={tw`text-[9px] font-extrabold text-white`}>PREMIUM</Text>
+              </View>
+            )}
+            {isNew && (
+              <View style={[tw`px-1.5 py-0.5 rounded`, { backgroundColor: colors.primary }]}>
+                <Text style={tw`text-[9px] font-extrabold text-white`}>NEW</Text>
+              </View>
+            )}
+          </View>
+
+          {/* Breadcrumb */}
+          <Text style={[tw`text-xs mb-2.5`, { color: colors.textSecondary }]} numberOfLines={1}>
+            {exam.category?.name || exam.category}
+            {exam.subCategory && ` → ${exam.subCategory?.name || exam.subCategory}`}
+            {exam.tier && ` → ${exam.tier?.name || exam.tier}`}
+          </Text>
+
+          {/* Meta */}
+          <View style={tw`flex-row flex-wrap gap-x-4 gap-y-1.5 mb-3`}>
+            {[
+              { icon: 'calendar-outline', text: formatDate(exam.scheduledTime) },
+              { icon: 'time-outline', text: `${exam.duration} min` },
+              { icon: 'trophy-outline', text: `${exam.totalMarks} marks` },
+              exam.language && { icon: 'language-outline', text: exam.language },
+            ]
+              .filter(Boolean)
+              .map(({ icon, text }, i) => (
+                <View key={i} style={tw`flex-row items-center gap-1.5`}>
+                  <Ionicons name={icon} size={13} color={colors.textSecondary} />
+                  <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>{text}</Text>
+                </View>
+              ))}
+          </View>
+
+          {/* Actions */}
+          <View style={[tw`flex-row gap-2 pt-3 border-t`, { borderColor: colors.border }]}>
+            {exam.isAttempted && exam.attemptId ? (
+              <>
+                <TouchableOpacity
+                  style={[tw`flex-1 flex-row items-center justify-center py-2.5 px-4 rounded-xl gap-1.5`, { backgroundColor: colors.primary }]}
+                  onPress={() => navigation.navigate('Result', { attemptId: exam.attemptId })}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="eye-outline" size={16} color="#fff" />
+                  <Text style={tw`text-sm font-bold text-white`}>View Result</Text>
+                </TouchableOpacity>
+                {status === 'available' && (
+                  <TouchableOpacity
+                    style={[tw`flex-1 flex-row items-center justify-center py-2.5 px-4 rounded-xl gap-1.5 border`, { borderColor: colors.primary, backgroundColor: colors.card }]}
+                    onPress={() => startExam(exam)}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="refresh-outline" size={16} color={colors.primary} />
+                    <Text style={[tw`text-sm font-bold`, { color: colors.primary }]}>Retry</Text>
+                  </TouchableOpacity>
+                )}
+              </>
+            ) : exam.isPaused ? (
+              <TouchableOpacity
+                style={[tw`flex-1 flex-row items-center justify-center py-2.5 px-4 rounded-xl gap-1.5`, { backgroundColor: '#f59e0b' }]}
+                onPress={() => navigation.navigate('ExamDetail', { examId: exam._id })}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="play-outline" size={16} color="#fff" />
+                <Text style={tw`text-sm font-bold text-white`}>Continue</Text>
+              </TouchableOpacity>
+            ) : status === 'available' ? (
+              <TouchableOpacity
+                style={[tw`flex-1 flex-row items-center justify-center py-2.5 px-4 rounded-xl gap-1.5`, { backgroundColor: colors.primary }]}
+                onPress={() => startExam(exam)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name={locked ? 'lock-closed' : 'play-circle-outline'} size={16} color="#fff" />
+                <Text style={tw`text-sm font-bold text-white`}>{locked ? 'Unlock with Premium' : 'Start Exam'}</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={[tw`flex-1 flex-row items-center justify-center py-2.5 px-4 rounded-xl gap-1.5 border opacity-60`, { borderColor: colors.border, backgroundColor: colors.card }]}>
+                <Ionicons name="time-outline" size={16} color={colors.textSecondary} />
+                <Text style={[tw`text-sm font-semibold`, { color: colors.textSecondary }]}>
+                  {status === 'upcoming' ? 'Upcoming' : status === 'expired' ? 'Expired' : 'Not Available'}
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+      </View>
+    );
+  };
+
   // ═══════════════════════════════════════════════════════
   // ─── RENDER ────────────────────────────────────────────
   // ═══════════════════════════════════════════════════════
-console.log(user?.examPreparations)
   return (
     <ScreenWrapper>
       <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
@@ -367,336 +505,91 @@ console.log(user?.examPreparations)
         )}
 
         {/* ─── Exams List ────────────────────────────────── */}
-        <ScrollView
-          style={tw`flex-1`}
-          contentContainerStyle={tw`p-5 pb-10`}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={colors.primary}
-            />
-          }
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Error State */}
-          {error && !loading && (
-            <View
-              style={[
-                tw`flex-row items-center p-3 rounded-xl mb-4 border`,
-                { backgroundColor: '#fef2f2', borderColor: '#fecaca' },
-              ]}
-            >
-              <Ionicons name="alert-circle" size={20} color="#ef4444" style={tw`mr-2`} />
-              <Text style={tw`flex-1 text-sm text-red-600`}>{error}</Text>
-              <TouchableOpacity onPress={fetchExams} activeOpacity={0.7}>
-                <Text style={[tw`text-sm font-semibold`, { color: colors.primary }]}>Retry</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {/* Loading State */}
-          {loading && exams.length === 0 ? (
-            <View style={tw`items-center justify-center py-16`}>
-              <ActivityIndicator size="large" color={colors.primary} />
-              <Text style={[tw`mt-3 text-sm`, { color: colors.textSecondary }]}>
-                Loading exams...
-              </Text>
-            </View>
-          ) : exams.length > 0 ? (
-            <>
-              {/* Results Info */}
-              <View style={tw`mb-4`}>
-                <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>
-                  Showing{' '}
-                  {(pagination.currentPage - 1) * pagination.limit + 1} to{' '}
-                  {Math.min(pagination.currentPage * pagination.limit, pagination.totalExams)} of{' '}
-                  {pagination.totalExams} exams
-                </Text>
-              </View>
-
-              {/* Exam Cards */}
-              <View style={tw`gap-4`}>
-                {exams.map((exam) => {
-                  const status = getExamStatus(exam);
-                  const statusColor = getStatusColor(status);
-
-                  return (
-                    <View
-                      key={exam._id}
-                      style={[
-                        tw`rounded-2xl p-4 border`,
-                        { backgroundColor: colors.surface, borderColor: colors.border },
-                      ]}
-                    >
-                      {/* Card Header */}
-                      <View style={tw`flex-row justify-between items-start mb-3 gap-2`}>
-                        <Text
-                          style={[tw`flex-1 text-base font-bold leading-[22px]`, { color: colors.text }]}
-                          numberOfLines={2}
-                        >
-                          {exam.title}
-                        </Text>
-                        <View
-                          style={[
-                            tw`flex-row items-center px-2.5 py-1 rounded-full gap-1`,
-                            { backgroundColor: statusColor + '20' },
-                          ]}
-                        >
-                          <Ionicons name={getStatusIcon(status)} size={12} color={statusColor} />
-                          <Text style={[tw`text-[11px] font-bold`, { color: statusColor }]}>
-                            {status.charAt(0).toUpperCase() + status.slice(1)}
-                          </Text>
-                        </View>
-                      </View>
-
-                      {/* Card Body */}
-                      <View style={tw`mb-3`}>
-                        <Text
-                          style={[tw`text-xs mb-3`, { color: colors.textSecondary }]}
-                          numberOfLines={1}
-                        >
-                          {exam.category?.name || exam.category}
-                          {exam.subCategory && ` → ${exam.subCategory?.name || exam.subCategory}`}
-                          {exam.tier && ` → ${exam.tier?.name || exam.tier}`}
-                        </Text>
-
-                        <View style={tw`gap-2`}>
-                          {[
-                            {
-                              icon: 'calendar-outline',
-                              text: formatDate(exam.scheduledTime),
-                            },
-                            {
-                              icon: 'time-outline',
-                              text: `${exam.duration} minutes`,
-                            },
-                            {
-                              icon: 'trophy-outline',
-                              text: `${exam.totalMarks} marks`,
-                            },
-                            exam.language && {
-                              icon: 'language-outline',
-                              text: exam.language,
-                            },
-                          ]
-                            .filter(Boolean)
-                            .map(({ icon, text }, i) => (
-                              <View key={i} style={tw`flex-row items-center gap-2`}>
-                                <Ionicons name={icon} size={14} color={colors.textSecondary} />
-                                <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>
-                                  {text}
-                                </Text>
-                              </View>
-                            ))}
-                        </View>
-                      </View>
-
-                      {/* Action Buttons */}
-                      <View style={[tw`flex-row gap-2 pt-3 border-t`, { borderColor: colors.border }]}>
-                        {exam.isAttempted && exam.attemptId ? (
-                          <>
-                            <TouchableOpacity
-                              style={[
-                                tw`flex-1 flex-row items-center justify-center py-2.5 px-4 rounded-xl gap-1.5`,
-                                { backgroundColor: colors.primary },
-                              ]}
-                              onPress={() =>
-                                navigation.navigate('Result', { attemptId: exam.attemptId })
-                              }
-                              activeOpacity={0.7}
-                            >
-                              <Ionicons name="eye-outline" size={16} color="#fff" />
-                              <Text style={tw`text-sm font-bold text-white`}>View Result</Text>
-                            </TouchableOpacity>
-                            {status === 'available' && (
-                              <TouchableOpacity
-                                style={[
-                                  tw`flex-1 flex-row items-center justify-center py-2.5 px-4 rounded-xl gap-1.5 border`,
-                                  { borderColor: colors.primary, backgroundColor: colors.surface },
-                                ]}
-                                onPress={() =>
-                                  navigation.navigate('ExamDetail', { examId: exam._id })
-                                }
-                                activeOpacity={0.7}
-                              >
-                                <Ionicons name="refresh-outline" size={16} color={colors.primary} />
-                                <Text
-                                  style={[tw`text-sm font-bold`, { color: colors.primary }]}
-                                >
-                                  Retry
-                                </Text>
-                              </TouchableOpacity>
-                            )}
-                          </>
-                        ) : exam.isPaused ? (
-                          <TouchableOpacity
-                            style={[
-                              tw`flex-1 flex-row items-center justify-center py-2.5 px-4 rounded-xl gap-1.5`,
-                              { backgroundColor: '#f59e0b' },
-                            ]}
-                            onPress={() =>
-                              navigation.navigate('ExamDetail', { examId: exam._id })
-                            }
-                            activeOpacity={0.7}
-                          >
-                            <Ionicons name="play-outline" size={16} color="#fff" />
-                            <Text style={tw`text-sm font-bold text-white`}>Continue</Text>
-                          </TouchableOpacity>
-                        ) : status === 'available' ? (
-                          <TouchableOpacity
-                            style={[
-                              tw`flex-1 flex-row items-center justify-center py-2.5 px-4 rounded-xl gap-1.5`,
-                              { backgroundColor: colors.primary },
-                            ]}
-                            onPress={() =>
-                              navigation.navigate('ExamDetail', { examId: exam._id })
-                            }
-                            activeOpacity={0.7}
-                          >
-                            <Ionicons name="play-circle-outline" size={16} color="#fff" />
-                            <Text style={tw`text-sm font-bold text-white`}>Start Exam</Text>
-                          </TouchableOpacity>
-                        ) : (
-                          <View
-                            style={[
-                              tw`flex-1 flex-row items-center justify-center py-2.5 px-4 rounded-xl gap-1.5 border opacity-60`,
-                              { borderColor: colors.border, backgroundColor: colors.surface },
-                            ]}
-                          >
-                            <Ionicons name="time-outline" size={16} color={colors.textSecondary} />
-                            <Text
-                              style={[tw`text-sm font-semibold`, { color: colors.textSecondary }]}
-                            >
-                              {status === 'upcoming'
-                                ? 'Upcoming'
-                                : status === 'expired'
-                                ? 'Expired'
-                                : 'Not Available'}
-                            </Text>
-                          </View>
-                        )}
-                      </View>
-                    </View>
-                  );
-                })}
-              </View>
-
-              {/* ─── Pagination ───────────────────────────── */}
-              {pagination.totalPages > 1 && (
-                <View
-                  style={[
-                    tw`flex-row justify-between items-center mt-6 pt-6 border-t`,
-                    { borderColor: colors.border },
-                  ]}
-                >
-                  <TouchableOpacity
+        {loading && exams.length === 0 ? (
+          <View style={tw`flex-1 items-center justify-center py-16`}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={[tw`mt-3 text-sm`, { color: colors.textSecondary }]}>
+              Loading exams...
+            </Text>
+          </View>
+        ) : (
+          <FlatList
+            data={exams}
+            keyExtractor={(item) => item._id}
+            renderItem={renderExam}
+            style={tw`flex-1`}
+            contentContainerStyle={tw`p-5 pb-10`}
+            showsVerticalScrollIndicator={false}
+            ItemSeparatorComponent={() => <View style={tw`h-4`} />}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor={colors.primary}
+              />
+            }
+            onEndReached={loadMore}
+            onEndReachedThreshold={0.4}
+            ListHeaderComponent={
+              <>
+                {error && (
+                  <View
                     style={[
-                      tw`flex-row items-center py-2.5 px-4 rounded-xl border gap-1.5`,
-                      {
-                        backgroundColor: colors.surface,
-                        borderColor: colors.border,
-                        opacity: pagination.currentPage === 1 ? 0.5 : 1,
-                      },
+                      tw`flex-row items-center p-3 rounded-xl mb-4 border`,
+                      { backgroundColor: '#fef2f2', borderColor: '#fecaca' },
                     ]}
-                    onPress={() => handlePageChange(pagination.currentPage - 1)}
-                    disabled={pagination.currentPage === 1}
-                    activeOpacity={0.7}
                   >
-                    <Ionicons
-                      name="chevron-back"
-                      size={20}
-                      color={
-                        pagination.currentPage === 1 ? colors.textSecondary : colors.primary
-                      }
-                    />
-                    <Text
-                      style={[
-                        tw`text-sm font-semibold`,
-                        {
-                          color:
-                            pagination.currentPage === 1
-                              ? colors.textSecondary
-                              : colors.primary,
-                        },
-                      ]}
-                    >
-                      Previous
-                    </Text>
-                  </TouchableOpacity>
-
-                  <View style={tw`px-4`}>
-                    <Text style={[tw`text-sm font-medium`, { color: colors.textSecondary }]}>
-                      Page {pagination.currentPage} of {pagination.totalPages}
-                    </Text>
+                    <Ionicons name="alert-circle" size={20} color="#ef4444" style={tw`mr-2`} />
+                    <Text style={tw`flex-1 text-sm text-red-600`}>{error}</Text>
+                    <TouchableOpacity onPress={() => fetchExams(1, false)} activeOpacity={0.7}>
+                      <Text style={[tw`text-sm font-semibold`, { color: colors.primary }]}>Retry</Text>
+                    </TouchableOpacity>
                   </View>
-
-                  <TouchableOpacity
-                    style={[
-                      tw`flex-row items-center py-2.5 px-4 rounded-xl border gap-1.5`,
-                      {
-                        backgroundColor: colors.surface,
-                        borderColor: colors.border,
-                        opacity:
-                          pagination.currentPage === pagination.totalPages ? 0.5 : 1,
-                      },
-                    ]}
-                    onPress={() => handlePageChange(pagination.currentPage + 1)}
-                    disabled={pagination.currentPage === pagination.totalPages}
-                    activeOpacity={0.7}
-                  >
-                    <Text
-                      style={[
-                        tw`text-sm font-semibold`,
-                        {
-                          color:
-                            pagination.currentPage === pagination.totalPages
-                              ? colors.textSecondary
-                              : colors.primary,
-                        },
-                      ]}
-                    >
-                      Next
-                    </Text>
-                    <Ionicons
-                      name="chevron-forward"
-                      size={20}
-                      color={
-                        pagination.currentPage === pagination.totalPages
-                          ? colors.textSecondary
-                          : colors.primary
-                      }
-                    />
-                  </TouchableOpacity>
+                )}
+                {exams.length > 0 && (
+                  <Text style={[tw`text-xs mb-4`, { color: colors.textSecondary }]}>
+                    {pagination.totalExams} exam{pagination.totalExams === 1 ? '' : 's'}
+                  </Text>
+                )}
+              </>
+            }
+            ListFooterComponent={
+              loadingMore ? (
+                <View style={tw`py-5`}>
+                  <ActivityIndicator color={colors.primary} />
                 </View>
-              )}
-            </>
-          ) : (
-            /* ─── Empty State ──────────────────────────── */
-            <View style={tw`items-center justify-center py-16`}>
-              <Ionicons name="document-outline" size={64} color={colors.textSecondary} />
-              <Text style={[tw`text-lg font-semibold mt-4 mb-2`, { color: colors.text }]}>
-                No exams found
-              </Text>
-              <Text
-                style={[tw`text-sm text-center mb-6`, { color: colors.textSecondary }]}
-              >
-                {searchQuery || activeFiltersCount > 0
-                  ? 'Try adjusting your filters or search query.'
-                  : 'Check back later for new exams.'}
-              </Text>
-              {(searchQuery || activeFiltersCount > 0) && (
-                <TouchableOpacity
-                  style={[tw`py-3 px-6 rounded-xl`, { backgroundColor: colors.primary }]}
-                  onPress={clearFilters}
-                  activeOpacity={0.7}
-                >
-                  <Text style={tw`text-sm font-bold text-white`}>Clear Filters</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          )}
-        </ScrollView>
+              ) : exams.length > 0 && pagination.currentPage >= pagination.totalPages ? (
+                <Text style={[tw`text-center text-xs py-5`, { color: colors.textSecondary }]}>
+                  You're all caught up
+                </Text>
+              ) : null
+            }
+            ListEmptyComponent={
+              !loading ? (
+                <View style={tw`items-center justify-center py-16`}>
+                  <Ionicons name="document-outline" size={64} color={colors.textSecondary} />
+                  <Text style={[tw`text-lg font-semibold mt-4 mb-2`, { color: colors.text }]}>
+                    No exams found
+                  </Text>
+                  <Text style={[tw`text-sm text-center mb-6`, { color: colors.textSecondary }]}>
+                    {searchQuery || activeFiltersCount > 0
+                      ? 'Try adjusting your filters or search query.'
+                      : 'Check back later for new exams.'}
+                  </Text>
+                  {(searchQuery || activeFiltersCount > 0) && (
+                    <TouchableOpacity
+                      style={[tw`py-3 px-6 rounded-xl`, { backgroundColor: colors.primary }]}
+                      onPress={clearFilters}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={tw`text-sm font-bold text-white`}>Clear Filters</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ) : null
+            }
+          />
+        )}
       </View>
     </ScreenWrapper>
   );

@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import HomeStack from './HomeStack';
 import ExamsStack from './ExamsStack';
+import SeriesStack from './SeriesStack';
 import StudyStack from './StudyStack';
 import ProfileStack from './ProfileStack';
 
@@ -14,6 +15,7 @@ const Tab = createBottomTabNavigator();
 const TAB_ICONS = {
   HomeTab: { active: 'home', inactive: 'home-outline' },
   ExamsTab: { active: 'document-text', inactive: 'document-text-outline' },
+  SeriesTab: { active: 'albums', inactive: 'albums-outline' },
   StudyTab: { active: 'book', inactive: 'book-outline' },
   ProfileTab: { active: 'person', inactive: 'person-outline' },
 };
@@ -61,6 +63,11 @@ export default function TabNavigator() {
         name="ExamsTab"
         component={ExamsStack}
         options={{ tabBarLabel: 'Exams' }}
+      />
+      <Tab.Screen
+        name="SeriesTab"
+        component={SeriesStack}
+        options={{ tabBarLabel: 'Series' }}
       />
       <Tab.Screen
         name="StudyTab"

@@ -11,10 +11,19 @@ import {
 } from 'react-native';
 import tw from 'twrnc';
 import ScreenWrapper from '../components/ScreenWrapper';
+import RewardCelebration from '../components/RewardCelebration';
 import { useTheme } from '../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
 import { formatDate } from '../utils/helpers';
+import ReviewSection from '../components/ReviewSection';
+import {
+  getLocalizedQuestionText,
+  getLocalizedQuestionOptions,
+  getLocalizedExplanation,
+  resolveDisplayLanguage,
+  supportsLanguageSwitch,
+} from '../utils/questionLanguage';
 
 // ─── Helpers (outside component) ─────────────────────────
 const formatTime = (seconds) => {
@@ -52,22 +61,6 @@ const pct = (part, total) => (total > 0 ? ((part / total) * 100).toFixed(1) : '0
 
 // ─── Sub-components ──────────────────────────────────────
 
-function StatPill({ icon, value, label, color, colors }) {
-  return (
-    <View style={tw`flex-1 items-center`}>
-      <View
-        style={[
-          tw`w-10 h-10 rounded-full items-center justify-center mb-1.5`,
-          { backgroundColor: color + '15' },
-        ]}
-      >
-        <Ionicons name={icon} size={20} color={color} />
-      </View>
-      <Text style={[tw`text-lg font-bold`, { color: colors.text }]}>{value}</Text>
-      <Text style={[tw`text-[11px]`, { color: colors.textSecondary }]}>{label}</Text>
-    </View>
-  );
-}
 
 function BreakdownRow({ icon, label, count, total, color, colors }) {
   const percentage = total > 0 ? (count / total) * 100 : 0;
@@ -91,10 +84,14 @@ function BreakdownRow({ icon, label, count, total, color, colors }) {
   );
 }
 
-function QuestionCard({ answer, index, colors }) {
+function QuestionCard({ answer, index, colors, displayLanguage }) {
   const [expanded, setExpanded] = useState(false);
   const question = answer.question;
   if (!question) return null;
+
+  const questionText = getLocalizedQuestionText(question, displayLanguage);
+  const questionOptions = getLocalizedQuestionOptions(question, displayLanguage);
+  const explanation = getLocalizedExplanation(question, displayLanguage);
 
   const isCorrect = answer.isCorrect;
   const isUnattempted = !answer.selectedAnswer;
@@ -142,7 +139,7 @@ function QuestionCard({ answer, index, colors }) {
 
         <View style={tw`flex-1 mr-2`}>
           <Text style={[tw`text-sm leading-5`, { color: colors.text }]} numberOfLines={expanded ? 0 : 1}>
-            {question.questionText}
+            {questionText}
           </Text>
         </View>
 
@@ -166,12 +163,12 @@ function QuestionCard({ answer, index, colors }) {
         <View style={[tw`px-3.5 pb-3.5 pt-0`, { borderTopWidth: 1, borderTopColor: colors.border }]}>
           {/* Full Question */}
           <Text style={[tw`text-sm leading-5 mt-3 mb-3`, { color: colors.text }]}>
-            {question.questionText}
+            {questionText}
           </Text>
 
           {/* Options */}
           <View style={tw`gap-2 mb-3`}>
-            {question.options?.map((option, i) => {
+            {questionOptions?.map((option, i) => {
               const isCorrectOpt = option.optionLabel === correctAnswer;
               const isUserOpt = option.optionLabel === userAnswer;
 
@@ -240,7 +237,7 @@ function QuestionCard({ answer, index, colors }) {
           </View>
 
           {/* Explanation */}
-          {question.explanation && (
+          {explanation && (
             <View
               style={[
                 tw`p-3 rounded-xl border-l-4`,
@@ -251,7 +248,7 @@ function QuestionCard({ answer, index, colors }) {
                 Explanation
               </Text>
               <Text style={[tw`text-xs leading-4`, { color: colors.text }]}>
-                {question.explanation}
+                {explanation}
               </Text>
             </View>
           )}
@@ -263,8 +260,11 @@ function QuestionCard({ answer, index, colors }) {
 
 // ─── Main Component ──────────────────────────────────────
 export default function ResultScreen({ route, navigation }) {
-  const { attemptId } = route.params;
+  const { attemptId, rewards } = route.params;
   const { colors } = useTheme();
+
+  // Show the celebration once when arriving fresh from a submit (rewards passed).
+  const [showCelebration, setShowCelebration] = useState(!!rewards);
 
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -274,6 +274,13 @@ export default function ResultScreen({ route, navigation }) {
   const [attemptStatus, setAttemptStatus] = useState(null);
   const [starting, setStarting] = useState(false);
   const [questionFilter, setQuestionFilter] = useState('all');
+  const [displayLanguage, setDisplayLanguage] = useState('English');
+
+  useEffect(() => {
+    if (result?.exam?.language) {
+      setDisplayLanguage(resolveDisplayLanguage(result.exam.language, null));
+    }
+  }, [result?.exam?.language]);
 
   useEffect(() => {
     fetchResult();
@@ -284,14 +291,25 @@ export default function ResultScreen({ route, navigation }) {
       setLoading(true);
       setError(null);
       const response = await api.get(`/exams/result/${attemptId}`);
-      setResult(response.data.result);
+      let resultData = response.data.result;
 
-      if (response.data.result?.exam?._id) {
+      if (resultData?.exam?._id) {
         try {
-          const examRes = await api.get(`/exams/${response.data.result.exam._id}`);
+          const examRes = await api.get(`/exams/${resultData.exam._id}`);
           if (examRes.data.attemptStatus) setAttemptStatus(examRes.data.attemptStatus);
+          if (examRes.data.exam) {
+            resultData = {
+              ...resultData,
+              exam: {
+                ...resultData.exam,
+                ...examRes.data.exam,
+              },
+            };
+          }
         } catch {}
       }
+
+      setResult(resultData);
     } catch (err) {
       setError('Failed to load result. Pull down to retry.');
     } finally {
@@ -393,15 +411,28 @@ export default function ResultScreen({ route, navigation }) {
     );
   }
 
+  const showLanguageToggle = supportsLanguageSwitch(result?.exam, result?.answers);
+
   // ═══════════════════════════════════════════════════════
   return (
     <ScreenWrapper>
+      <RewardCelebration
+        rewards={rewards}
+        visible={showCelebration}
+        onClose={() => setShowCelebration(false)}
+      />
       <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
         <Header
           title={result.exam?.title || 'Result'}
           navigation={navigation}
           colors={colors}
           onShare={handleShare}
+          displayLanguage={displayLanguage}
+          onToggleLanguage={
+            showLanguageToggle
+              ? () => setDisplayLanguage((lang) => (lang === 'English' ? 'Hindi' : 'English'))
+              : null
+          }
         />
 
         <ScrollView
@@ -459,110 +490,78 @@ export default function ResultScreen({ route, navigation }) {
             </Text>
           </View>
 
-          {/* ─── Stats Row ────────────────────────────── */}
-          <View
-            style={[
-              tw`flex-row mx-5 p-4 rounded-2xl mb-5 border`,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
-          >
-            <StatPill
-              icon="checkmark-circle"
-              value={correctCount}
-              label="Correct"
-              color="#10b981"
-              colors={colors}
-            />
-            <StatPill
-              icon="close-circle"
-              value={wrongCount}
-              label="Wrong"
-              color="#ef4444"
-              colors={colors}
-            />
-            <StatPill
-              icon="remove-circle"
-              value={skippedCount}
-              label="Skipped"
-              color={colors.textSecondary}
-              colors={colors}
-            />
-          </View>
-
           {/* ─── Action Buttons ───────────────────────── */}
-          <View style={tw`flex-row px-5 gap-2.5 mb-5`}>
+          <View style={tw`px-5 gap-2.5 mb-5`}>
             {attemptStatus?.canReattempt && (
               <TouchableOpacity
                 style={[
-                  tw`flex-1 flex-row items-center justify-center py-3 rounded-2xl gap-2`,
+                  tw`flex-row items-center justify-center py-3.5 rounded-2xl gap-2`,
                   { backgroundColor: colors.primary },
                 ]}
                 onPress={handleRetryExam}
                 disabled={starting}
-                activeOpacity={0.7}
+                activeOpacity={0.8}
               >
                 <Ionicons name="refresh" size={16} color="#fff" />
-                <Text style={tw`text-sm font-semibold text-white`}>
-                  {starting ? 'Starting...' : 'Retry'}
+                <Text style={tw`text-sm font-bold text-white`}>
+                  {starting ? 'Starting...' : 'Retry Exam'}
                 </Text>
               </TouchableOpacity>
             )}
             <TouchableOpacity
               style={[
-                tw`flex-1 flex-row items-center justify-center py-3 rounded-2xl gap-2 border`,
+                tw`flex-row items-center justify-center py-3.5 rounded-2xl gap-2 border`,
                 { borderColor: colors.border, backgroundColor: colors.surface },
               ]}
               onPress={handleGoHome}
-              activeOpacity={0.7}
+              activeOpacity={0.8}
             >
               <Ionicons name="home-outline" size={16} color={colors.text} />
-              <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>Home</Text>
+              <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>Back to Home</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                tw`w-12 items-center justify-center rounded-2xl border`,
-                { borderColor: colors.border, backgroundColor: colors.surface },
-              ]}
-              onPress={handleShare}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="share-outline" size={18} color={colors.text} />
-            </TouchableOpacity>
-          </View>
-
-          {/* Attempt Info */}
-          {attemptStatus && !attemptStatus.canReattempt && attemptStatus.maxAttempts && (
-            <View style={tw`mx-5 mb-4`}>
-              <Text style={[tw`text-xs text-center italic`, { color: colors.textSecondary }]}>
-                {attemptStatus.attemptCount}/{attemptStatus.maxAttempts} attempts used — no retries remaining
+            {attemptStatus && !attemptStatus.canReattempt && attemptStatus.maxAttempts && (
+              <Text style={[tw`text-xs text-center`, { color: colors.textSecondary }]}>
+                {attemptStatus.attemptCount}/{attemptStatus.maxAttempts} attempts used
               </Text>
-            </View>
-          )}
+            )}
+          </View>
 
           {/* ─── Tab Selector ─────────────────────────── */}
           <View
             style={[
-              tw`flex-row mx-5 rounded-2xl p-1 mb-4 border`,
-              { backgroundColor: colors.surface, borderColor: colors.border },
+              tw`flex-row mx-5 mb-4`,
+              { borderBottomWidth: 1, borderBottomColor: colors.border },
             ]}
           >
-            {['overview', 'questions'].map((tab) => (
+            {[
+              { key: 'overview', label: 'Overview', icon: 'bar-chart-outline' },
+              { key: 'questions', label: `Questions (${totalAnswers})`, icon: 'list-outline' },
+            ].map((tab) => (
               <TouchableOpacity
-                key={tab}
+                key={tab.key}
                 style={[
-                  tw`flex-1 py-2.5 rounded-xl items-center`,
-                  activeTab === tab && { backgroundColor: colors.primary },
+                  tw`flex-1 flex-row items-center justify-center gap-1.5 py-3`,
+                  activeTab === tab.key && {
+                    borderBottomWidth: 2,
+                    borderBottomColor: colors.primary,
+                    marginBottom: -1,
+                  },
                 ]}
-                onPress={() => setActiveTab(tab)}
+                onPress={() => setActiveTab(tab.key)}
                 activeOpacity={0.7}
               >
+                <Ionicons
+                  name={tab.icon}
+                  size={15}
+                  color={activeTab === tab.key ? colors.primary : colors.textSecondary}
+                />
                 <Text
                   style={[
                     tw`text-sm font-semibold`,
-                    { color: activeTab === tab ? '#fff' : colors.textSecondary },
+                    { color: activeTab === tab.key ? colors.primary : colors.textSecondary },
                   ]}
                 >
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  {tab.label}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -662,11 +661,17 @@ export default function ResultScreen({ route, navigation }) {
                     icon: 'trophy-outline',
                     text: `${result.exam?.totalMarks || 0} Total Marks`,
                   },
-                  result.exam?.category && {
+                  result.exam?.duration && {
+                    icon: 'time-outline',
+                    text: `${result.exam.duration} min duration`,
+                  },
+                  result.exam?.category?.name && {
                     icon: 'folder-outline',
-                    text: typeof result.exam.category === 'string'
-                      ? result.exam.category
-                      : result.exam.category?.name || 'General',
+                    text: result.exam.category.name,
+                  },
+                  result.exam?.subCategory?.name && {
+                    icon: 'pricetag-outline',
+                    text: result.exam.subCategory.name,
                   },
                   result.endTime && {
                     icon: 'calendar-outline',
@@ -681,12 +686,51 @@ export default function ResultScreen({ route, navigation }) {
                     </View>
                   ))}
               </View>
+
+              {/* Reviews */}
+              {result?.exam?._id && (
+                <View style={tw`mt-2`}>
+                  <ReviewSection
+                    targetType="exam"
+                    targetId={result.exam._id}
+                    canReview={true}
+                  />
+                </View>
+              )}
             </View>
           )}
 
           {/* ─── Questions Tab ─────────────────────────── */}
           {activeTab === 'questions' && (
             <View style={tw`px-5`}>
+              {showLanguageToggle && (
+                <View style={[tw`flex-row rounded-xl p-1 mb-3`, { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }]}>
+                  {['English', 'Hindi'].map((lang) => {
+                    const isActive = displayLanguage === lang;
+                    return (
+                      <TouchableOpacity
+                        key={lang}
+                        style={[
+                          tw`flex-1 py-2 rounded-lg items-center`,
+                          isActive && { backgroundColor: colors.primary },
+                        ]}
+                        onPress={() => setDisplayLanguage(lang)}
+                        activeOpacity={0.7}
+                      >
+                        <Text
+                          style={[
+                            tw`text-sm font-semibold`,
+                            { color: isActive ? '#fff' : colors.textSecondary },
+                          ]}
+                        >
+                          {lang === 'Hindi' ? 'हिंदी' : 'English'}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              )}
+
               {/* Question Filters */}
               <ScrollView
                 horizontal
@@ -737,6 +781,7 @@ export default function ResultScreen({ route, navigation }) {
                       answer={answer}
                       index={originalIndex}
                       colors={colors}
+                      displayLanguage={displayLanguage}
                     />
                   );
                 })
@@ -756,7 +801,7 @@ export default function ResultScreen({ route, navigation }) {
 }
 
 // ─── Header Component ────────────────────────────────────
-function Header({ title, navigation, colors, onShare }) {
+function Header({ title, navigation, colors, onShare, displayLanguage, onToggleLanguage }) {
   return (
     <View
       style={[
@@ -773,13 +818,26 @@ function Header({ title, navigation, colors, onShare }) {
       >
         {title}
       </Text>
-      {onShare ? (
-        <TouchableOpacity onPress={onShare} style={tw`p-2`}>
-          <Ionicons name="share-outline" size={20} color={colors.text} />
-        </TouchableOpacity>
-      ) : (
-        <View style={tw`w-10`} />
-      )}
+      <View style={tw`flex-row items-center`}>
+        {onToggleLanguage && (
+          <TouchableOpacity
+            style={[tw`px-2 py-1 rounded-md mr-1`, { backgroundColor: colors.primary + '20' }]}
+            onPress={onToggleLanguage}
+            activeOpacity={0.7}
+          >
+            <Text style={[tw`text-sm font-bold`, { color: colors.primary }]}>
+              {displayLanguage === 'English' ? 'E' : 'अ'}
+            </Text>
+          </TouchableOpacity>
+        )}
+        {onShare ? (
+          <TouchableOpacity onPress={onShare} style={tw`p-2`}>
+            <Ionicons name="share-outline" size={20} color={colors.text} />
+          </TouchableOpacity>
+        ) : (
+          <View style={tw`w-10`} />
+        )}
+      </View>
     </View>
   );
 }

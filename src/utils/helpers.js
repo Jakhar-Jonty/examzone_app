@@ -1,3 +1,31 @@
+// Streak badge tiers — mirrors the server BADGES in utils/streakManager.js.
+// Keep thresholds/icons in sync with the backend so the home streak badge
+// matches the Badges screen and the web Achievements page.
+export const STREAK_TIERS = [
+  { threshold: 1, icon: '🎯', name: 'Getting Started' },
+  { threshold: 3, icon: '🔥', name: 'On Fire' },
+  { threshold: 7, icon: '⚔️', name: 'Week Warrior' },
+  { threshold: 14, icon: '💪', name: 'Dedicated' },
+  { threshold: 30, icon: '⭐', name: 'Consistent' },
+  { threshold: 60, icon: '🚀', name: 'Unstoppable' },
+  { threshold: 100, icon: '👑', name: 'Centurion' },
+  { threshold: 200, icon: '🏆', name: 'Legend' },
+  { threshold: 300, icon: '🎖️', name: 'Master' },
+  { threshold: 365, icon: '🌟', name: 'Year Champion' },
+];
+
+// Returns { current, next } streak badge tiers for a given streak length.
+// current = highest tier earned (null if streak is 0); next = upcoming tier.
+export const getStreakBadge = (streak = 0) => {
+  let current = null;
+  let next = null;
+  for (const tier of STREAK_TIERS) {
+    if (streak >= tier.threshold) current = tier;
+    else { next = tier; break; }
+  }
+  return { current, next };
+};
+
 // Date formatting helper
 export const formatDate = (dateString) => {
   if (!dateString) return '';

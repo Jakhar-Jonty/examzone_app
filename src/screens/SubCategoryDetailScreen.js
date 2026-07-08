@@ -53,6 +53,7 @@ function getStatusColor(status, colors) {
 
 // Reuse ExamCard from CategoryDetailScreen
 function ExamCard({ exam, navigation, colors }) {
+  if (!exam) return null;
   const status = getExamStatus(exam);
   const statusColor = getStatusColor(status, colors);
 

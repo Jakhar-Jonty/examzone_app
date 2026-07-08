@@ -2,18 +2,15 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
-// Update this to your backend URL
-// For Android emulator, use: http://10.0.2.2:5000/api
-// For iOS simulator, use: http://localhost:5000/api
-// For physical device, use your computer's IP address: http://YOUR_IP:5000/api
+// Backend runs on port 8000 (see examzone_server/server.js)
+// Android emulator: 10.0.2.2 | iOS simulator: localhost | Physical device: your LAN IP
 const API_URL = __DEV__
   ? Platform.select({
-    android: 'http://10.0.2.2:8000/api', // Android emulator
-    ios: 'http://localhost:8000/api', // iOS simulator
+    android: 'http://10.0.2.2:8000/api',
+    ios: 'http://localhost:8000/api',
     default: 'http://localhost:8000/api',
   })
-  : 'http://localhost:8000/api'
-// : 'https://examprepzone.vercel.app/api'; // Production URL
+  : 'https://examprepzone.vercel.app/api';
 
 const api = axios.create({
   baseURL: API_URL,

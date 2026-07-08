@@ -7,6 +7,7 @@ import { useTheme } from '../context/ThemeContext';
 // Auth
 import LoginScreen from '../screens/LoginScreen';
 import SignUpScreen from '../screens/SignUpScreen';
+import OnboardingScreen from '../screens/OnboardingScreen';
 
 // Tabs
 import TabNavigator from './TabNavigator';
@@ -16,6 +17,12 @@ import ExamDetailScreen from '../screens/ExamDetailScreen';
 import ExamInterfaceScreen from '../screens/ExamInterfaceScreen';
 import ResultScreen from '../screens/ResultScreen';
 import ExamHistoryScreen from '../screens/ExamHistoryScreen';
+import PaywallScreen from '../screens/PaywallScreen';
+import EditProfileScreen from '../screens/EditProfileScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
+import LeaderboardScreen from '../screens/LeaderboardScreen';
+import BadgesScreen from '../screens/BadgesScreen';
+import AnalyticsScreen from '../screens/AnalyticsScreen';
 
 // Loading
 import LoadingScreen from '../components/LoadingScreen';
@@ -43,6 +50,7 @@ export default function AppNavigator() {
           <Stack.Group>
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="SignUp" component={SignUpScreen} />
+            <Stack.Screen name="Onboarding" component={OnboardingScreen} />
           </Stack.Group>
         ) : (
           // ─── Authenticated Flow ────────────────────
@@ -64,6 +72,18 @@ export default function AppNavigator() {
 
             <Stack.Screen name="Result" component={ResultScreen} />
             <Stack.Screen name="ExamHistory" component={ExamHistoryScreen} />
+            <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+            <Stack.Screen name="Notifications" component={NotificationsScreen} />
+            <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
+            <Stack.Screen name="Badges" component={BadgesScreen} />
+            <Stack.Screen name="Analytics" component={AnalyticsScreen} />
+
+            {/* Paywall — presented as a modal from any gated content */}
+            <Stack.Screen
+              name="Paywall"
+              component={PaywallScreen}
+              options={{ presentation: 'modal' }}
+            />
           </Stack.Group>
         )}
       </Stack.Navigator>
