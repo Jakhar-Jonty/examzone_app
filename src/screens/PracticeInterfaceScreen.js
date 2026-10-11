@@ -249,8 +249,8 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
   const finish = async () => {
     setCompleting(true);
     try {
-      const { session } = await practiceSessionService.complete(sessionId);
-      navigation.replace('PracticeResult', { session });
+      const { session, rewards } = await practiceSessionService.complete(sessionId);
+      navigation.replace('PracticeResult', { session, rewards });
     } catch {
       Alert.alert('Error', 'Failed to complete session');
     } finally {

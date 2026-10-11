@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import ScreenWrapper from '../components/ScreenWrapper';
+import RewardCelebration from '../components/RewardCelebration';
 import { useTheme } from '../context/ThemeContext';
 
 const SESSION_TYPE_LABELS = {
@@ -16,8 +17,9 @@ const SESSION_TYPE_LABELS = {
 };
 
 export default function PracticeResultScreen({ route, navigation }) {
-  const { session } = route.params;
+  const { session, rewards } = route.params;
   const { colors } = useTheme();
+  const [showCelebration, setShowCelebration] = useState(!!rewards);
   const styles = makeStyles(colors);
   const typeLabel = SESSION_TYPE_LABELS[session.sessionType] || 'Practice';
 
@@ -30,6 +32,11 @@ export default function PracticeResultScreen({ route, navigation }) {
 
   return (
     <ScreenWrapper>
+      <RewardCelebration
+        rewards={rewards}
+        visible={showCelebration}
+        onClose={() => setShowCelebration(false)}
+      />
       <View style={styles.container}>
         <View style={styles.hero}>
           <View style={styles.iconCircle}>
