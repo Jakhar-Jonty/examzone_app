@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -13,7 +13,20 @@ import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
 import { Ionicons } from '@expo/vector-icons';
-import { formatDate, getExamStatus } from '../utils/helpers';
+import ExamCard, {
+  ExamFilterChips,
+  ExamSearchBar,
+  ExamSortChips,
+  filterExamsByChip,
+  examFilterCounts,
+} from '../components/ExamCard';
+import { ExamCardSkeletonList } from '../components/ExamCardSkeleton';
+import { sortExams } from '../utils/examSort';
+import {
+  getRecentSubcategoryIds,
+  sortByRecentIds,
+  trackRecentSubcategory,
+} from '../utils/recentSubcategories';
 
 // ─── Shared Header ───────────────────────────────────────
 function Header({ title, navigation, colors }) {
@@ -38,137 +51,6 @@ function Header({ title, navigation, colors }) {
   );
 }
 
-// ─── Exam Card (reusable) ────────────────────────────────
-function ExamCard({ exam, navigation, colors }) {
-  const status = getExamStatus(exam);
-  const statusColor = getStatusColor(status, colors);
-
-  return (
-    <View
-      style={[
-        tw`rounded-2xl p-4 border`,
-        { backgroundColor: colors.surface, borderColor: colors.border },
-      ]}
-    >
-      {/* Title & Status */}
-      <View style={tw`flex-row justify-between items-start mb-3 gap-2`}>
-        <Text
-          style={[tw`flex-1 text-sm font-semibold leading-5`, { color: colors.text }]}
-          numberOfLines={2}
-        >
-          {exam.title}
-        </Text>
-        <View
-          style={[
-            tw`px-2 py-1 rounded-lg`,
-            { backgroundColor: statusColor + '15' },
-          ]}
-        >
-          <Text style={[tw`text-[10px] font-semibold`, { color: statusColor }]}>
-            {status.charAt(0).toUpperCase() + status.slice(1)}
-          </Text>
-        </View>
-      </View>
-
-      {/* Details */}
-      <View style={tw`gap-1.5 mb-3`}>
-        <View style={tw`flex-row items-center gap-1.5`}>
-          <Ionicons name="calendar-outline" size={12} color={colors.textSecondary} />
-          <Text style={[tw`text-[11px]`, { color: colors.textSecondary }]}>
-            {formatDate(exam.scheduledTime)}
-          </Text>
-        </View>
-        <View style={tw`flex-row items-center gap-1.5`}>
-          <Ionicons name="time-outline" size={12} color={colors.textSecondary} />
-          <Text style={[tw`text-[11px]`, { color: colors.textSecondary }]}>
-            {exam.duration} min • {exam.totalMarks} marks
-          </Text>
-        </View>
-      </View>
-
-      {/* Actions */}
-      <View style={[tw`flex-row gap-2 pt-3 border-t`, { borderColor: colors.border }]}>
-        {exam.isAttempted && exam.attemptId ? (
-          <>
-            <TouchableOpacity
-              style={[
-                tw`flex-1 flex-row items-center justify-center py-2.5 rounded-xl gap-1.5`,
-                { backgroundColor: colors.primary },
-              ]}
-              onPress={() => navigation.navigate('Result', { attemptId: exam.attemptId })}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="eye-outline" size={14} color="#fff" />
-              <Text style={tw`text-xs font-bold text-white`}>Result</Text>
-            </TouchableOpacity>
-            {status === 'available' && (
-              <TouchableOpacity
-                style={[
-                  tw`flex-1 flex-row items-center justify-center py-2.5 rounded-xl gap-1.5 border`,
-                  { borderColor: colors.primary },
-                ]}
-                onPress={() => navigation.navigate('ExamDetail', { examId: exam._id })}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="refresh-outline" size={14} color={colors.primary} />
-                <Text style={[tw`text-xs font-bold`, { color: colors.primary }]}>Retry</Text>
-              </TouchableOpacity>
-            )}
-          </>
-        ) : exam.isPaused ? (
-          <TouchableOpacity
-            style={[
-              tw`flex-1 flex-row items-center justify-center py-2.5 rounded-xl gap-1.5`,
-              { backgroundColor: '#f59e0b' },
-            ]}
-            onPress={() => navigation.navigate('ExamDetail', { examId: exam._id })}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="play" size={14} color="#fff" />
-            <Text style={tw`text-xs font-bold text-white`}>Continue</Text>
-          </TouchableOpacity>
-        ) : status === 'available' ? (
-          <TouchableOpacity
-            style={[
-              tw`flex-1 flex-row items-center justify-center py-2.5 rounded-xl gap-1.5`,
-              { backgroundColor: colors.primary },
-            ]}
-            onPress={() => navigation.navigate('ExamDetail', { examId: exam._id })}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="play-circle" size={14} color="#fff" />
-            <Text style={tw`text-xs font-bold text-white`}>Start Exam</Text>
-          </TouchableOpacity>
-        ) : status === 'upcoming' ? (
-          <View
-            style={[
-              tw`flex-1 flex-row items-center justify-center py-2.5 rounded-xl gap-1.5 border opacity-50`,
-              { borderColor: colors.border },
-            ]}
-          >
-            <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
-            <Text style={[tw`text-xs font-semibold`, { color: colors.textSecondary }]}>
-              Coming Soon
-            </Text>
-          </View>
-        ) : null}
-      </View>
-    </View>
-  );
-}
-
-// ─── Helpers ─────────────────────────────────────────────
-function getStatusColor(status, colors) {
-  switch (status) {
-    case 'available': return colors.primary;
-    case 'completed': return '#10b981';
-    case 'paused': return '#f59e0b';
-    case 'upcoming': return '#3b82f6';
-    case 'expired': return '#9ca3af';
-    default: return colors.textSecondary;
-  }
-}
-
 function getNodeKey(node) {
   return `${node.type}_${node.category || ''}_${node.subCategory || ''}_${node.tier || ''}`;
 }
@@ -186,10 +68,42 @@ export default function CategoryDetailScreen({ route, navigation }) {
   const [loadingNodes, setLoadingNodes] = useState(new Set()); // Per-node loading
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [examFilter, setExamFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('newest');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [recentSubIds, setRecentSubIds] = useState([]);
+  const searchDebounceRef = useRef(null);
 
   useEffect(() => {
     fetchCategory();
+    getRecentSubcategoryIds().then(setRecentSubIds);
   }, [categoryId]);
+
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setSearchLoading(false);
+      return;
+    }
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(async () => {
+      try {
+        setSearchLoading(true);
+        const q = encodeURIComponent(searchQuery.trim());
+        const res = await api.get(
+          `/user/exams?category=${categoryId}&search=${q}&status=active&minimal=true&limit=50`
+        );
+        setSearchResults(res.data.exams || []);
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 400);
+    return () => clearTimeout(searchDebounceRef.current);
+  }, [searchQuery, categoryId]);
 
   const fetchCategory = async () => {
     try {
@@ -261,6 +175,8 @@ export default function CategoryDetailScreen({ route, navigation }) {
     setRefreshing(true);
     setExams({});
     setExpandedNodes(new Set());
+    setSearchQuery('');
+    setSearchResults([]);
     fetchCategory();
   };
 
@@ -270,8 +186,8 @@ export default function CategoryDetailScreen({ route, navigation }) {
       <ScreenWrapper>
         <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
           <Header title="Category" navigation={navigation} colors={colors} />
-          <View style={tw`flex-1 items-center justify-center`}>
-            <ActivityIndicator size="large" color={colors.primary} />
+          <View style={tw`flex-1 px-5 pt-4`}>
+            <ExamCardSkeletonList count={4} colors={colors} />
           </View>
         </View>
       </ScreenWrapper>
@@ -306,6 +222,27 @@ export default function CategoryDetailScreen({ route, navigation }) {
   const categoryNodeKey = getNodeKey({ type: 'category', category: categoryId });
   const categoryExams = exams[categoryNodeKey] || [];
   const categoryTiers = tiers.filter((t) => !t.subCategory);
+  const sortedSubCategories = sortByRecentIds(category.subCategories || [], recentSubIds);
+  const filteredCategoryExams = sortExams(
+    filterExamsByChip(categoryExams, examFilter),
+    sortBy
+  );
+  const categoryExamCounts = examFilterCounts(categoryExams);
+  const filteredSearchExams = sortExams(
+    filterExamsByChip(searchResults, examFilter),
+    sortBy
+  );
+  const searchExamCounts = examFilterCounts(searchResults);
+  const showExamTools =
+    searchQuery.trim() ||
+    categoryExams.length > 0 ||
+    categoryTiers.length > 0;
+
+  const openSubCategory = async (subId) => {
+    await trackRecentSubcategory(subId);
+    setRecentSubIds((prev) => [String(subId), ...prev.filter((id) => id !== String(subId))]);
+    navigation.navigate('SubCategoryDetail', { subCategoryId: subId });
+  };
 
   const isEmpty =
     (!category.subCategories || category.subCategories.length === 0) &&
@@ -334,57 +271,55 @@ export default function CategoryDetailScreen({ route, navigation }) {
           }
           showsVerticalScrollIndicator={false}
         >
-          {/* ─── Category Info ─────────────────────────── */}
-          <View
-            style={[
-              tw`flex-row rounded-2xl p-4 mt-4 mb-6 border`,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
-          >
+          {/* ─── Compact category banner ───────────────── */}
+          <View style={tw`flex-row items-center mt-4 mb-5`}>
             {category.logo ? (
               <Image
                 source={{ uri: category.logo }}
-                style={[tw`w-16 h-16 rounded-2xl mr-4`, { backgroundColor: colors.background }]}
+                style={[
+                  tw`w-14 h-14 rounded-2xl mr-3.5`,
+                  { backgroundColor: colors.surface },
+                ]}
                 resizeMode="cover"
               />
             ) : (
               <View
                 style={[
-                  tw`w-16 h-16 rounded-2xl items-center justify-center mr-4`,
+                  tw`w-14 h-14 rounded-2xl items-center justify-center mr-3.5`,
                   { backgroundColor: colors.primary + '10' },
                 ]}
               >
-                <Ionicons name="folder" size={32} color={colors.primary} />
+                <Ionicons name="book-outline" size={24} color={colors.primary} />
               </View>
             )}
             <View style={tw`flex-1`}>
-              <Text style={[tw`text-lg font-bold mb-1`, { color: colors.text }]}>
+              <Text style={[tw`text-base font-bold`, { color: colors.text }]} numberOfLines={1}>
                 {category.displayName || category.name}
               </Text>
-              {category.description && (
+              {category.description ? (
                 <Text
-                  style={[tw`text-xs leading-4 mb-2`, { color: colors.textSecondary }]}
-                  numberOfLines={3}
+                  style={[tw`text-[11px] leading-4 mt-0.5`, { color: colors.textSecondary }]}
+                  numberOfLines={2}
                 >
                   {category.description}
                 </Text>
-              )}
-              <View style={tw`flex-row gap-2`}>
+              ) : null}
+              <View style={tw`flex-row flex-wrap gap-1.5 mt-2`}>
                 {category.examCount > 0 && (
                   <View
-                    style={[tw`px-2.5 py-1 rounded-lg`, { backgroundColor: colors.primary + '12' }]}
+                    style={[tw`px-2 py-0.5 rounded-md`, { backgroundColor: colors.primary + '12' }]}
                   >
                     <Text style={[tw`text-[10px] font-semibold`, { color: colors.primary }]}>
-                      {category.examCount} {category.examCount === 1 ? 'Exam' : 'Exams'}
+                      {category.examCount} {category.examCount === 1 ? 'exam' : 'exams'}
                     </Text>
                   </View>
                 )}
                 {category.questionCount > 0 && (
                   <View
-                    style={[tw`px-2.5 py-1 rounded-lg`, { backgroundColor: '#3b82f6' + '12' }]}
+                    style={[tw`px-2 py-0.5 rounded-md`, { backgroundColor: colors.border }]}
                   >
-                    <Text style={[tw`text-[10px] font-semibold`, { color: '#3b82f6' }]}>
-                      {category.questionCount} Questions
+                    <Text style={[tw`text-[10px] font-medium`, { color: colors.textSecondary }]}>
+                      {category.questionCount} questions
                     </Text>
                   </View>
                 )}
@@ -392,87 +327,158 @@ export default function CategoryDetailScreen({ route, navigation }) {
             </View>
           </View>
 
-          {/* ─── Subcategories ─────────────────────────── */}
-          {category.subCategories?.length > 0 && (
-            <SectionBlock title="Subcategories" colors={colors}>
-              <View style={tw`gap-2`}>
-                {category.subCategories.map((sub) => (
+          {/* ─── Browse: Home-style subcategory tiles ──── */}
+          {category.subCategories?.length > 0 ? (
+            <View style={tw`mb-6`}>
+              <Text style={[tw`text-base font-bold mb-3`, { color: colors.text }]}>Browse</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={tw`pr-1`}
+              >
+                {sortedSubCategories.map((sub) => {
+                  const isRecent = recentSubIds.includes(String(sub._id));
+                  return (
                   <TouchableOpacity
                     key={sub._id}
-                    style={[
-                      tw`flex-row items-center p-3.5 rounded-2xl border`,
-                      { backgroundColor: colors.surface, borderColor: colors.border },
-                    ]}
-                    onPress={() =>
-                      navigation.navigate('SubCategoryDetail', { subCategoryId: sub._id })
-                    }
+                    style={[tw`items-center mr-3.5`, { width: 72 }]}
+                    onPress={() => openSubCategory(sub._id)}
                     activeOpacity={0.7}
                   >
-                    {sub.logo ? (
-                      <Image
-                        source={{ uri: sub.logo }}
-                        style={[
-                          tw`w-11 h-11 rounded-xl mr-3`,
-                          { backgroundColor: colors.background },
-                        ]}
-                        resizeMode="cover"
-                      />
-                    ) : (
-                      <View
-                        style={[
-                          tw`w-11 h-11 rounded-xl items-center justify-center mr-3`,
-                          { backgroundColor: colors.primary + '10' },
-                        ]}
-                      >
-                        <Ionicons name="layers-outline" size={20} color={colors.primary} />
-                      </View>
-                    )}
-
-                    <View style={tw`flex-1`}>
-                      <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>
-                        {sub.displayName || sub.name}
-                      </Text>
-                      {sub.description && (
-                        <Text
-                          style={[tw`text-[11px] mt-0.5`, { color: colors.textSecondary }]}
-                          numberOfLines={1}
+                    <View style={tw`relative`}>
+                      {sub.logo ? (
+                        <Image
+                          source={{ uri: sub.logo }}
+                          style={[
+                            tw`w-12 h-12 rounded-2xl mb-1.5`,
+                            { backgroundColor: colors.surface },
+                          ]}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View
+                          style={[
+                            tw`w-12 h-12 rounded-2xl items-center justify-center mb-1.5`,
+                            { backgroundColor: colors.primary + '10' },
+                          ]}
                         >
-                          {sub.description}
-                        </Text>
+                          <Ionicons name="book-outline" size={20} color={colors.primary} />
+                        </View>
                       )}
-                      {sub.examCount > 0 && (
-                        <Text style={[tw`text-[10px] mt-1`, { color: colors.textSecondary }]}>
-                          {sub.examCount} {sub.examCount === 1 ? 'exam' : 'exams'}
-                        </Text>
+                      {isRecent && (
+                        <View
+                          style={[
+                            tw`absolute -top-1 -right-1 w-4 h-4 rounded-full items-center justify-center`,
+                            { backgroundColor: colors.primary },
+                          ]}
+                        >
+                          <Ionicons name="time" size={9} color="#fff" />
+                        </View>
                       )}
                     </View>
-
-                    <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
+                    <Text
+                      style={[tw`text-[10px] font-medium text-center`, { color: colors.text }]}
+                      numberOfLines={2}
+                    >
+                      {sub.displayName || sub.name}
+                    </Text>
+                    {sub.examCount > 0 ? (
+                      <Text style={[tw`text-[9px] mt-0.5`, { color: colors.textSecondary }]}>
+                        {sub.examCount} exams
+                      </Text>
+                    ) : null}
                   </TouchableOpacity>
-                ))}
+                );
+                })}
+              </ScrollView>
+            </View>
+          ) : (
+            !isEmpty && (
+              <View style={tw`mb-4`}>
+                <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>
+                  No subcategories — browse exams below.
+                </Text>
               </View>
-            </SectionBlock>
+            )
           )}
 
+          {showExamTools && (
+            <View style={tw`mb-4`}>
+              <ExamSearchBar
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                colors={colors}
+                placeholder="Search exams in this category..."
+              />
+              <ExamSortChips value={sortBy} onChange={setSortBy} colors={colors} />
+            </View>
+          )}
+
+          {searchQuery.trim() ? (
+            <SectionBlock title="Search results" colors={colors}>
+              <ExamFilterChips
+                value={examFilter}
+                onChange={setExamFilter}
+                colors={colors}
+                counts={searchExamCounts}
+              />
+              {searchLoading ? (
+                <ExamCardSkeletonList count={3} colors={colors} />
+              ) : filteredSearchExams.length > 0 ? (
+                <View style={tw`gap-3`}>
+                  {filteredSearchExams.map((exam) => (
+                    <ExamCard
+                      key={exam._id}
+                      exam={exam}
+                      navigation={navigation}
+                      colors={colors}
+                      showBreadcrumb={false}
+                    />
+                  ))}
+                </View>
+              ) : (
+                <Text style={[tw`text-xs text-center py-6`, { color: colors.textSecondary }]}>
+                  No exams match your search
+                </Text>
+              )}
+            </SectionBlock>
+          ) : (
+            <>
           {/* ─── Category-Level Exams ─────────────────── */}
           {categoryExams.length > 0 && (
             <SectionBlock title="Exams" colors={colors}>
-              <View style={tw`gap-3`}>
-                {categoryExams.map((exam) => (
-                  <ExamCard
-                    key={exam._id}
-                    exam={exam}
-                    navigation={navigation}
-                    colors={colors}
-                  />
-                ))}
-              </View>
+              <ExamFilterChips
+                value={examFilter}
+                onChange={setExamFilter}
+                colors={colors}
+                counts={categoryExamCounts}
+              />
+              {filteredCategoryExams.length > 0 ? (
+                <View style={tw`gap-3`}>
+                  {filteredCategoryExams.map((exam) => (
+                    <ExamCard
+                      key={exam._id}
+                      exam={exam}
+                      navigation={navigation}
+                      colors={colors}
+                      showBreadcrumb={false}
+                    />
+                  ))}
+                </View>
+              ) : (
+                <Text style={[tw`text-xs text-center py-6`, { color: colors.textSecondary }]}>
+                  No exams match this filter
+                </Text>
+              )}
             </SectionBlock>
           )}
 
           {/* ─── Tiers (Expandable) ───────────────────── */}
           {categoryTiers.length > 0 && (
-            <SectionBlock title="Tiers" colors={colors}>
+            <SectionBlock
+              title={categoryExams.length > 0 ? 'Tiers' : 'Exams'}
+              colors={colors}
+            >
               <View style={tw`gap-2`}>
                 {categoryTiers.map((tier) => {
                   const nodeKey = getNodeKey({
@@ -481,6 +487,10 @@ export default function CategoryDetailScreen({ route, navigation }) {
                     tier: tier._id,
                   });
                   const tierExams = exams[nodeKey] || [];
+                  const filteredTierExams = sortExams(
+                    filterExamsByChip(tierExams, examFilter),
+                    sortBy
+                  );
                   const isExpanded = expandedNodes.has(nodeKey);
                   const isLoadingNode = loadingNodes.has(nodeKey);
 
@@ -543,19 +553,26 @@ export default function CategoryDetailScreen({ route, navigation }) {
                           ]}
                         >
                           {isLoadingNode ? (
-                            <View style={tw`items-center py-6`}>
-                              <ActivityIndicator size="small" color={colors.primary} />
-                            </View>
-                          ) : tierExams.length > 0 ? (
+                            <ExamCardSkeletonList count={2} colors={colors} />
+                          ) : filteredTierExams.length > 0 ? (
                             <View style={tw`gap-3 mt-3`}>
-                              {tierExams.map((exam) => (
+                              {filteredTierExams.map((exam) => (
                                 <ExamCard
                                   key={exam._id}
                                   exam={exam}
                                   navigation={navigation}
                                   colors={colors}
+                                  showBreadcrumb={false}
                                 />
                               ))}
+                            </View>
+                          ) : tierExams.length > 0 ? (
+                            <View style={tw`items-center py-6`}>
+                              <Text
+                                style={[tw`text-xs`, { color: colors.textSecondary }]}
+                              >
+                                No exams match this filter
+                              </Text>
                             </View>
                           ) : (
                             <View style={tw`items-center py-6`}>
@@ -573,6 +590,9 @@ export default function CategoryDetailScreen({ route, navigation }) {
                 })}
               </View>
             </SectionBlock>
+          )}
+
+            </>
           )}
 
           {/* ─── Empty State ──────────────────────────── */}

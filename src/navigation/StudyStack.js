@@ -8,6 +8,8 @@ import PracticeInterfaceScreen from '../screens/PracticeInterfaceScreen';
 import PracticeResultScreen from '../screens/PracticeResultScreen';
 import StudyPlansScreen from '../screens/StudyPlansScreen';
 import StudyPlanCreateScreen from '../screens/StudyPlanCreateScreen';
+import WrongBookScreen from '../screens/WrongBookScreen';
+import PyqScreen from '../screens/PyqScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -15,6 +17,8 @@ export default function StudyStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="StudyMain" component={StudyScreen} />
+      <Stack.Screen name="WrongBook" component={WrongBookScreen} />
+      <Stack.Screen name="Pyq" component={PyqScreen} />
       <Stack.Screen name="ArticleDetail" component={ArticleDetailScreen} />
       <Stack.Screen name="QuestionDetail" component={QuestionDetailScreen} />
       <Stack.Screen name="PracticeSessions" component={PracticeSessionsScreen} />

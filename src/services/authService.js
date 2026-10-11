@@ -13,25 +13,64 @@ export const authService = {
     return response.data;
   },
 
-  sendOTP: async (phoneNumber) => {
-    const response = await api.post('/auth/send-otp', { phoneNumber });
-    return response.data;
-  },
-
-  verifyOTP: async (phoneNumber, otp, name, examPreparations, preferredLanguage) => {
-    const response = await api.post('/auth/verify-otp', {
-      phoneNumber,
-      otp,
-      name,
-      examPreparations,
-      preferredLanguage,
+  sendOTP: async ({ channel = 'email', phoneNumber, email } = {}) => {
+    const response = await api.post('/auth/send-otp', {
+      channel,
+      ...(channel === 'email' ? { email } : { phoneNumber }),
     });
     return response.data;
   },
 
-  login: async (phoneNumber, password) => {
-    const response = await api.post('/auth/login', { phoneNumber, password });
+  verifyOTP: async (payload) => {
+    const response = await api.post('/auth/verify-otp', payload);
+    return response.data;
+  },
 
+  sendSignupOtp: async (email) => {
+    const response = await api.post('/auth/signup/send-otp', { email });
+    return response.data;
+  },
+
+  verifySignupOtp: async ({ email, otp }) => {
+    const response = await api.post('/auth/signup/verify-otp', { email, otp });
+    return response.data;
+  },
+
+  completeSignup: async ({ signupToken, name, password, phoneNumber }) => {
+    const response = await api.post('/auth/signup/complete', {
+      signupToken,
+      name,
+      password,
+      ...(phoneNumber ? { phoneNumber } : {}),
+    });
+    return response.data;
+  },
+
+  login: async ({ phoneNumber, email, password }) => {
+    const response = await api.post('/auth/login', {
+      password,
+      ...(email ? { email } : { phoneNumber }),
+    });
+    return response.data;
+  },
+
+  sendLoginOtp: async (email) => {
+    const response = await api.post('/auth/login-otp/send', { email });
+    return response.data;
+  },
+
+  verifyLoginOtp: async ({ email, otp }) => {
+    const response = await api.post('/auth/login-otp/verify', { email, otp });
+    return response.data;
+  },
+
+  forgotPassword: async (email) => {
+    const response = await api.post('/auth/forgot-password', { email });
+    return response.data;
+  },
+
+  resetPassword: async ({ email, otp, password }) => {
+    const response = await api.post('/auth/reset-password', { email, otp, password });
     return response.data;
   },
 
@@ -45,4 +84,3 @@ export const authService = {
     return response.data;
   },
 };
-

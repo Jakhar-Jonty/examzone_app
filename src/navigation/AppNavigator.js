@@ -8,6 +8,7 @@ import { useTheme } from '../context/ThemeContext';
 import LoginScreen from '../screens/LoginScreen';
 import SignUpScreen from '../screens/SignUpScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 
 // Tabs
 import TabNavigator from './TabNavigator';
@@ -23,6 +24,7 @@ import NotificationsScreen from '../screens/NotificationsScreen';
 import LeaderboardScreen from '../screens/LeaderboardScreen';
 import BadgesScreen from '../screens/BadgesScreen';
 import AnalyticsScreen from '../screens/AnalyticsScreen';
+import OmrEntryScreen from '../screens/OmrEntryScreen';
 
 // Loading
 import LoadingScreen from '../components/LoadingScreen';
@@ -50,6 +52,7 @@ export default function AppNavigator() {
           <Stack.Group>
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="SignUp" component={SignUpScreen} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
             <Stack.Screen name="Onboarding" component={OnboardingScreen} />
           </Stack.Group>
         ) : (
@@ -76,6 +79,15 @@ export default function AppNavigator() {
             <Stack.Screen name="Notifications" component={NotificationsScreen} />
             <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
             <Stack.Screen name="Badges" component={BadgesScreen} />
+            <Stack.Screen
+              name="OmrEntry"
+              component={OmrEntryScreen}
+              options={{
+                gestureEnabled: false,
+                animation: 'slide_from_right',
+              }}
+            />
+
             <Stack.Screen name="Analytics" component={AnalyticsScreen} />
 
             {/* Paywall — presented as a modal from any gated content */}

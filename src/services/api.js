@@ -2,24 +2,28 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
-// Backend runs on port 8000 (see examzone_server/server.js)
-// Android emulator: 10.0.2.2 | iOS simulator: localhost | Physical device: your LAN IP
-const API_URL = __DEV__
-  ? Platform.select({
-    android: 'http://10.0.2.2:8000/api',
-    ios: 'http://localhost:8000/api',
-    default: 'http://localhost:8000/api',
-  })
-  : 'https://examprepzone.vercel.app/api';
+// HTTPS via Vercel proxy → EC2 (works on Android + iOS, no cleartext needed).
+const PROD_API_URL = 'https://examprepzone.vercel.app/api';
+// Direct EC2 HTTP — only if EXPO_PUBLIC_API_URL is set AND native cleartext is enabled.
+const EC2_API_URL = 'http://13.233.215.71/api';
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL
+  || (__DEV__
+    ? Platform.select({
+      android: 'http://10.0.2.2:8000/api',
+      ios: 'http://localhost:8000/api',
+      default: 'http://localhost:8000/api',
+    })
+    : PROD_API_URL);
 
 const api = axios.create({
   baseURL: API_URL,
+  timeout: 20000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Add token to requests
 api.interceptors.request.use(
   async (config) => {
     const token = await AsyncStorage.getItem('token');
@@ -28,12 +32,9 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Handle token expiration
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -46,4 +47,4 @@ api.interceptors.response.use(
 );
 
 export default api;
-
+export { API_URL, EC2_API_URL, PROD_API_URL };

@@ -10,6 +10,8 @@ const SESSION_TYPE_LABELS = {
   'topic-wise': 'Topic Wise',
   'difficulty-based': 'By Difficulty',
   'weak-areas': 'Weak Areas',
+  mistakes: 'Wrong Book',
+  pyq: 'PYQ',
 };
 
 export default function PracticeResultScreen({ route, navigation }) {

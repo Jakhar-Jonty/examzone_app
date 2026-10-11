@@ -12,6 +12,7 @@ import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
+import { startTopicPractice } from '../utils/startTopicPractice';
 
 export default function AnalyticsScreen({ navigation }) {
   const { colors, isDark } = useTheme();
@@ -19,6 +20,7 @@ export default function AnalyticsScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [timeRange, setTimeRange] = useState('all'); // 'all', 'week', 'month', 'quarter'
+  const [startingPractice, setStartingPractice] = useState(null);
 
   const styles = createStyles(colors);
 
@@ -45,6 +47,25 @@ export default function AnalyticsScreen({ navigation }) {
     setRefreshing(true);
     fetchAnalytics();
   };
+
+  const handleStartPractice = async (rec) => {
+    if (startingPractice) return;
+    try {
+      setStartingPractice(rec.topic);
+      await startTopicPractice({
+        subject: rec.subject,
+        topic: rec.topic,
+        questionCount: rec.questionCount || 15,
+        navigation,
+      });
+    } catch (error) {
+      console.error('Failed to start practice:', error);
+    } finally {
+      setStartingPractice(null);
+    }
+  };
+
+  const overallStats = analytics?.overallStats || analytics?.stats;
 
   const getScoreColor = (percentage) => {
     if (percentage >= 80) return '#10b981';
@@ -118,7 +139,7 @@ export default function AnalyticsScreen({ navigation }) {
           contentContainerStyle={styles.scrollContent}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
-          {!analytics || !analytics.overallStats ? (
+          {!analytics || !overallStats ? (
             <View style={styles.emptyContainer}>
               <Ionicons name="analytics-outline" size={64} color={colors.textSecondary} />
               <Text style={styles.emptyText}>No analytics data available</Text>
@@ -133,7 +154,7 @@ export default function AnalyticsScreen({ navigation }) {
                     <Ionicons name="document-text" size={20} color={colors.primary} />
                     <Text style={styles.statCardLabel}>Total Attempts</Text>
                   </View>
-                  <Text style={styles.statCardValue}>{analytics.overallStats.totalAttempts || 0}</Text>
+                  <Text style={styles.statCardValue}>{overallStats.totalAttempts || 0}</Text>
                   {analytics.trends && (
                     <View style={styles.statTrend}>
                       <Ionicons
@@ -158,8 +179,8 @@ export default function AnalyticsScreen({ navigation }) {
                     <Ionicons name="trophy" size={20} color="#f59e0b" />
                     <Text style={styles.statCardLabel}>Average Score</Text>
                   </View>
-                  <Text style={[styles.statCardValue, { color: getScoreColor(analytics.overallStats.averageScore || 0) }]}>
-                    {analytics.overallStats.averageScore?.toFixed(1) || 0}%
+                  <Text style={[styles.statCardValue, { color: getScoreColor(overallStats.averageScore || 0) }]}>
+                    {overallStats.averageScore?.toFixed(1) || 0}%
                   </Text>
                   {analytics.trends && (
                     <View style={styles.statTrend}>
@@ -186,7 +207,7 @@ export default function AnalyticsScreen({ navigation }) {
                     <Text style={styles.statCardLabel}>Best Score</Text>
                   </View>
                   <Text style={[styles.statCardValue, { color: '#10b981' }]}>
-                    {analytics.overallStats.bestScore?.toFixed(1) || 0}%
+                    {overallStats.bestScore?.toFixed(1) || 0}%
                   </Text>
                 </View>
 
@@ -196,10 +217,50 @@ export default function AnalyticsScreen({ navigation }) {
                     <Text style={styles.statCardLabel}>Improvement</Text>
                   </View>
                   <Text style={[styles.statCardValue, { color: colors.primary }]}>
-                    {analytics.overallStats.improvementRate?.toFixed(1) || 0}%
+                    {(analytics.trends?.improvementRate ?? 0).toFixed(1)}%
                   </Text>
                 </View>
               </View>
+
+              {/* Prescriptive practice */}
+              {analytics.practiceRecommendations?.length > 0 && (
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Focus Areas</Text>
+                  <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
+                    Weakest topics — one tap to drill
+                  </Text>
+                  {analytics.practiceRecommendations.map((rec, index) => (
+                    <View key={`${rec.topic}-${index}`} style={styles.subjectCard}>
+                      <View style={styles.subjectHeader}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.subjectName} numberOfLines={1}>
+                            {rec.topic}
+                          </Text>
+                          {rec.subject ? (
+                            <Text style={[styles.subjectStatText, { marginTop: 2 }]}>
+                              {rec.subject}
+                            </Text>
+                          ) : null}
+                        </View>
+                        <Text style={[styles.subjectScore, { color: getScoreColor(rec.accuracy) }]}>
+                          {rec.accuracy}%
+                        </Text>
+                      </View>
+                      <TouchableOpacity
+                        style={[styles.practiceButton, { backgroundColor: colors.primary }]}
+                        onPress={() => handleStartPractice(rec)}
+                        disabled={startingPractice === rec.topic}
+                        activeOpacity={0.8}
+                      >
+                        <Ionicons name="flash" size={16} color="#fff" />
+                        <Text style={styles.practiceButtonText}>
+                          {startingPractice === rec.topic ? 'Starting…' : rec.label || 'Start 15 Qs'}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              )}
 
               {/* Subject Performance */}
               {analytics.subjectPerformance && analytics.subjectPerformance.length > 0 && (
@@ -415,7 +476,25 @@ const createStyles = (colors) =>
       fontSize: 18,
       fontWeight: 'bold',
       color: colors.text,
-      marginBottom: 16,
+      marginBottom: 8,
+    },
+    sectionSubtitle: {
+      fontSize: 12,
+      marginBottom: 12,
+    },
+    practiceButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      marginTop: 12,
+      paddingVertical: 10,
+      borderRadius: 12,
+    },
+    practiceButtonText: {
+      color: '#FFFFFF',
+      fontSize: 13,
+      fontWeight: '700',
     },
     subjectCard: {
       backgroundColor: colors.surface,

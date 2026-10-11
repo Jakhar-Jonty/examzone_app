@@ -86,6 +86,12 @@ export default function ProfileScreen({ navigation }) {
           onPress: () => navigation.navigate('Analytics'),
         },
         {
+          icon: 'book-outline',
+          label: 'Wrong Book',
+          onPress: () =>
+            navigation.navigate('StudyTab', { screen: 'WrongBook' }),
+        },
+        {
           icon: 'bookmark-outline',
           label: 'Saved Questions',
           onPress: () =>

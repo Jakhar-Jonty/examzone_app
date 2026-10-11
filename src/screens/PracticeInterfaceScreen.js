@@ -21,6 +21,8 @@ const SESSION_TYPE_LABELS = {
   'topic-wise': 'Topic Wise',
   'difficulty-based': 'By Difficulty',
   'weak-areas': 'Weak Areas',
+  mistakes: 'Wrong Book',
+  pyq: 'PYQ',
 };
 
 function getOptionLabel(option, index) {
@@ -100,12 +102,16 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
   const [questionStates, setQuestionStates] = useState({});
   const [visitedIds, setVisitedIds] = useState(new Set());
   const [markedForReview, setMarkedForReview] = useState(new Set());
+  const [sessionMeta, setSessionMeta] = useState({ sessionType: sessionType || null });
   const [loading, setLoading] = useState(true);
   const [completing, setCompleting] = useState(false);
   const [showPalette, setShowPalette] = useState(false);
   const [showFinishDialog, setShowFinishDialog] = useState(false);
 
-  const sessionTitle = SESSION_TYPE_LABELS[sessionType] || 'Practice';
+  const sessionTitle =
+    SESSION_TYPE_LABELS[sessionMeta.sessionType] ||
+    SESSION_TYPE_LABELS[sessionType] ||
+    'Practice';
 
   useEffect(() => {
     questionStartRef.current = Date.now();
@@ -117,6 +123,9 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
         const { session } = await practiceSessionService.get(sessionId);
         const qs = session.questions || [];
         setQuestions(qs);
+        if (session.sessionType) {
+          setSessionMeta({ sessionType: session.sessionType });
+        }
 
         const states = {};
         const visited = new Set();
@@ -272,13 +281,13 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
   const isMarked = markedForReview.has(currentId);
 
   return (
-    <ScreenWrapper>
-      <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>
+    <ScreenWrapper edges={['left', 'right']}>
+      <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 8) }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <View style={styles.topBarCenter}>
-          <Text style={styles.topTitle} numberOfLines={1}>{sessionTitle} Practice</Text>
+          <Text style={styles.topTitle} numberOfLines={1}>{sessionTitle}</Text>
           <Text style={styles.topSub}>
             Q {currentIndex + 1}/{questions.length} · {answeredCount} done
           </Text>
@@ -288,7 +297,11 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollFlex}
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.tagRow}>
           {currentQuestion.subject ? (
             <View style={styles.tag}><Text style={styles.tagText}>{currentQuestion.subject}</Text></View>
@@ -357,7 +370,7 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
         </View>
       </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 8) }]}>
         <View style={styles.navRow}>
           <TouchableOpacity
             style={[styles.navBtn, currentIndex === 0 && styles.navBtnDisabled]}
@@ -461,7 +474,7 @@ const makeStyles = (colors) => ({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingBottom: 12,
+    paddingBottom: 10,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
     backgroundColor: colors.background,
@@ -469,7 +482,8 @@ const makeStyles = (colors) => ({
   topBarCenter: { flex: 1, marginHorizontal: 12 },
   topTitle: { fontSize: 17, fontWeight: '800', color: colors.text },
   topSub: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
-  scroll: { padding: 16, paddingBottom: 24 },
+  scrollFlex: { flex: 1 },
+  scroll: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16 },
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
   tag: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
   tagBlue: { backgroundColor: colors.primary + '12', borderColor: colors.primary + '30' },
@@ -522,7 +536,7 @@ const makeStyles = (colors) => ({
   explanationText: { flex: 1, fontSize: 13, color: colors.text, lineHeight: 20 },
   footer: {
     paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingTop: 10,
     borderTopWidth: 1,
     borderTopColor: colors.border,
     backgroundColor: colors.background,

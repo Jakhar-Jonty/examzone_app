@@ -15,6 +15,7 @@ import { useAuth } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
 import { formatDate } from '../utils/helpers';
+import { shortLanguageLabel, difficultyColor } from '../utils/examDisplay';
 import ReviewSection from '../components/ReviewSection';
 
 export default function ExamDetailScreen({ route, navigation }) {
@@ -29,7 +30,8 @@ export default function ExamDetailScreen({ route, navigation }) {
   const [completedAttemptId, setCompletedAttemptId] = useState(null);
   const [attemptHistory, setAttemptHistory] = useState([]);
 
-  const styles = createStyles(colors);
+  const supportsOmr = ['omr', 'both'].includes(exam?.deliveryMode);
+  const supportsOnline = !exam?.deliveryMode || ['online', 'both'].includes(exam.deliveryMode);
 
   useEffect(() => {
     fetchExamDetails();
@@ -73,7 +75,11 @@ export default function ExamDetailScreen({ route, navigation }) {
     }
   };
 
-  const handleStartExam = async () => {
+  const handleStartExam = async (mode = 'online') => {
+    // TouchableOpacity can pass a synthetic event if onPress={handleStartExam} —
+    // only accept real mode strings.
+    const attemptMode = typeof mode === 'string' ? mode : 'online';
+
     // Gate premium exams behind the paywall for non-premium users.
     if (exam?.isPremium && !isPremium) {
       navigation.navigate('Paywall', {
@@ -83,7 +89,7 @@ export default function ExamDetailScreen({ route, navigation }) {
     }
     try {
       setStarting(true);
-      const response = await api.post(`/exams/${examId}/start`);
+      const response = await api.post(`/exams/${examId}/start`, { mode: attemptMode });
       const attemptData = response.data.attempt;
 
       const params = {
@@ -94,6 +100,11 @@ export default function ExamDetailScreen({ route, navigation }) {
         isResumed: response.data.isResumed || false,
       };
 
+      if (attemptMode === 'omr' || response.data.attemptMode === 'omr') {
+        navigation.navigate('OmrEntry', params);
+        return;
+      }
+
       // ExamInterface is a root-stack screen (above the tabs).
       navigation.navigate('ExamInterface', params);
     } catch (error) {
@@ -103,6 +114,8 @@ export default function ExamDetailScreen({ route, navigation }) {
       setStarting(false);
     }
   };
+
+  const styles = createStyles(colors);
 
   if (loading) {
     return (
@@ -143,6 +156,8 @@ export default function ExamDetailScreen({ route, navigation }) {
   }
 
   const questionCount = typeof exam.questions === 'number' ? exam.questions : exam.questions?.length || 0;
+  const stats = exam.attemptStats;
+  const diffColor = difficultyColor(exam.difficultyLevel) || colors.primary;
 
   return (
     <ScreenWrapper>
@@ -191,6 +206,68 @@ export default function ExamDetailScreen({ route, navigation }) {
               </View>
             )}
           </View>
+
+          {/* Community stats */}
+          {(stats?.totalAttempts > 0 ||
+            exam.averageRating > 0 ||
+            exam.difficultyLevel ||
+            exam.language) && (
+            <View style={styles.statsCard}>
+              <Text style={styles.statsTitle}>Exam insights</Text>
+              <View style={styles.statsGrid}>
+                {exam.averageRating > 0 && (
+                  <View style={styles.statBox}>
+                    <Ionicons name="star" size={18} color="#f59e0b" />
+                    <Text style={styles.statBoxValue}>
+                      {Number(exam.averageRating).toFixed(1)}
+                    </Text>
+                    <Text style={styles.statBoxLabel}>
+                      Rating{exam.reviewCount ? ` · ${exam.reviewCount}` : ''}
+                    </Text>
+                  </View>
+                )}
+                {stats?.totalAttempts > 0 && (
+                  <View style={styles.statBox}>
+                    <Ionicons name="people-outline" size={18} color={colors.primary} />
+                    <Text style={styles.statBoxValue}>{stats.totalAttempts}</Text>
+                    <Text style={styles.statBoxLabel}>Attempts</Text>
+                  </View>
+                )}
+                {stats?.topScore != null && (
+                  <View style={styles.statBox}>
+                    <Ionicons name="trophy-outline" size={18} color="#10b981" />
+                    <Text style={styles.statBoxValue}>
+                      {stats.topScore}/{exam.totalMarks}
+                    </Text>
+                    <Text style={styles.statBoxLabel}>Top score</Text>
+                  </View>
+                )}
+                {stats?.averageScore != null && (
+                  <View style={styles.statBox}>
+                    <Ionicons name="analytics-outline" size={18} color="#3b82f6" />
+                    <Text style={styles.statBoxValue}>{stats.averageScore}</Text>
+                    <Text style={styles.statBoxLabel}>Avg score</Text>
+                  </View>
+                )}
+                {exam.difficultyLevel && (
+                  <View style={styles.statBox}>
+                    <Ionicons name="speedometer-outline" size={18} color={diffColor} />
+                    <Text style={[styles.statBoxValue, { color: diffColor }]}>
+                      {exam.difficultyLevel}
+                    </Text>
+                    <Text style={styles.statBoxLabel}>Difficulty</Text>
+                  </View>
+                )}
+                {exam.language && (
+                  <View style={styles.statBox}>
+                    <Ionicons name="language-outline" size={18} color={colors.primary} />
+                    <Text style={styles.statBoxValue}>{shortLanguageLabel(exam.language)}</Text>
+                    <Text style={styles.statBoxLabel}>Language</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          )}
 
           {/* Instructions */}
           <View style={styles.instructionsCard}>
@@ -306,7 +383,7 @@ export default function ExamDetailScreen({ route, navigation }) {
                 {attemptStatus?.canReattempt && (
                   <TouchableOpacity
                     style={[styles.actionButton, styles.retryButton]}
-                    onPress={handleStartExam}
+                    onPress={() => handleStartExam('online')}
                     disabled={starting}
                     activeOpacity={0.7}
                   >
@@ -366,7 +443,7 @@ export default function ExamDetailScreen({ route, navigation }) {
               </Text>
               <TouchableOpacity
                 style={[styles.actionButton, styles.startButton]}
-                onPress={handleStartExam}
+                onPress={() => handleStartExam('online')}
                 disabled={starting}
                 activeOpacity={0.7}
               >
@@ -377,26 +454,48 @@ export default function ExamDetailScreen({ route, navigation }) {
               </TouchableOpacity>
             </View>
           ) : (
-            <TouchableOpacity
-              style={[styles.actionButton, styles.startButton]}
-              onPress={handleStartExam}
-              disabled={starting}
-              activeOpacity={0.7}
-            >
-              {exam?.isPremium && !isPremium ? (
-                <>
-                  <Ionicons name="lock-closed" size={20} color="#FFFFFF" />
-                  <Text style={styles.startButtonText}>Unlock with Premium</Text>
-                </>
-              ) : (
-                <>
-                  <Ionicons name="play-circle" size={20} color="#FFFFFF" />
-                  <Text style={styles.startButtonText}>
-                    {starting ? 'Starting...' : 'Start Exam'}
-                  </Text>
-                </>
+            <View style={styles.startActions}>
+              {supportsOnline && (
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.startButton]}
+                  onPress={() => handleStartExam('online')}
+                  disabled={starting}
+                  activeOpacity={0.7}
+                >
+                  {exam?.isPremium && !isPremium ? (
+                    <>
+                      <Ionicons name="lock-closed" size={20} color="#FFFFFF" />
+                      <Text style={styles.startButtonText}>Unlock with Premium</Text>
+                    </>
+                  ) : (
+                    <>
+                      <Ionicons name="play-circle" size={20} color="#FFFFFF" />
+                      <Text style={styles.startButtonText}>
+                        {starting ? 'Starting...' : supportsOmr ? 'Start Online Test' : 'Start Exam'}
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
               )}
-            </TouchableOpacity>
+              {supportsOmr && (
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.omrButton]}
+                  onPress={() => handleStartExam('omr')}
+                  disabled={starting || (exam?.isPremium && !isPremium)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="grid-outline" size={20} color={colors.primary} />
+                  <Text style={styles.omrButtonText}>
+                    {starting ? 'Starting...' : 'OMR Mode — Enter Answers'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+              {supportsOmr && (
+                <Text style={styles.omrHint}>
+                  CET-style: attempt on paper, then fill the OMR grid in-app for instant rank & solutions.
+                </Text>
+              )}
+            </View>
           )}
 
           {/* Reviews */}
@@ -484,6 +583,44 @@ const createStyles = (colors) =>
     infoValue: {
       fontWeight: 'bold',
       color: colors.text,
+    },
+    statsCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 20,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    statsTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.text,
+      marginBottom: 12,
+    },
+    statsGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 10,
+    },
+    statBox: {
+      width: '47%',
+      backgroundColor: colors.background,
+      borderRadius: 12,
+      padding: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'flex-start',
+      gap: 4,
+    },
+    statBoxValue: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.text,
+    },
+    statBoxLabel: {
+      fontSize: 11,
+      color: colors.textSecondary,
     },
     instructionsCard: {
       backgroundColor: colors.surface,
@@ -636,6 +773,26 @@ const createStyles = (colors) =>
       fontSize: 16,
       fontWeight: '700',
       color: '#FFFFFF',
+    },
+    startActions: {
+      gap: 12,
+    },
+    omrButton: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.primary,
+    },
+    omrButtonText: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: colors.primary,
+    },
+    omrHint: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      lineHeight: 18,
+      paddingHorizontal: 8,
     },
     viewResultButton: {
       backgroundColor: colors.primary,

@@ -1,5 +1,6 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,9 +21,20 @@ const TAB_ICONS = {
   ProfileTab: { active: 'person', inactive: 'person-outline' },
 };
 
+const HIDE_TAB_ROUTES = new Set(['PracticeInterface', 'PracticeResult']);
+
 export default function TabNavigator() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+
+  const defaultTabBarStyle = {
+    backgroundColor: colors.surface,
+    borderTopColor: colors.border,
+    borderTopWidth: 1,
+    paddingBottom: Math.max(insets.bottom, 5),
+    paddingTop: 5,
+    height: 60 + Math.max(insets.bottom - 5, 0),
+  };
 
   return (
     <Tab.Navigator
@@ -30,14 +42,7 @@ export default function TabNavigator() {
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
-        tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
-          borderTopWidth: 1,
-          paddingBottom: Math.max(insets.bottom, 5),
-          paddingTop: 5,
-          height: 60 + Math.max(insets.bottom - 5, 0),
-        },
+        tabBarStyle: defaultTabBarStyle,
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',
@@ -72,96 +77,33 @@ export default function TabNavigator() {
       <Tab.Screen
         name="StudyTab"
         component={StudyStack}
-        options={{ tabBarLabel: 'Study' }}
+        options={({ route }) => {
+          const focused = getFocusedRouteNameFromRoute(route) ?? 'StudyMain';
+          return {
+            tabBarLabel: 'Study',
+            tabBarStyle: HIDE_TAB_ROUTES.has(focused)
+              ? { display: 'none' }
+              : defaultTabBarStyle,
+          };
+        }}
       />
       <Tab.Screen
         name="ProfileTab"
         component={ProfileStack}
         options={{ tabBarLabel: 'Profile' }}
+        listeners={({ navigation, route }) => ({
+          tabPress: (e) => {
+            const nestedState = route.state;
+            if (nestedState && nestedState.index > 0) {
+              e.preventDefault();
+              navigation.navigate('ProfileTab', { screen: 'ProfileMain' });
+            }
+          },
+        })}
       />
     </Tab.Navigator>
   );
 }
 
 
-
-// import React from 'react';
-// import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-// import { useSafeAreaInsets } from 'react-native-safe-area-context';
-// import { useTheme } from '../context/ThemeContext';
-// import HomeStack from './HomeStack';
-// import ExamsStack from './ExamsStack';
-// import StudyStack from './StudyStack';
-// import ProfileStack from './ProfileStack';
-// import { Ionicons } from '@expo/vector-icons';
-
-// const Tab = createBottomTabNavigator();
-
-// export default function TabNavigator() {
-//   const { colors, isDark } = useTheme();
-//   const insets = useSafeAreaInsets();
-
-//   return (
-//     <Tab.Navigator
-//       screenOptions={{
-//         headerShown: false,
-//         tabBarActiveTintColor: colors.primary,
-//         tabBarInactiveTintColor: colors.textSecondary,
-//         tabBarStyle: {
-//           backgroundColor: colors.surface,
-//           borderTopColor: colors.border,
-//           borderTopWidth: 1,
-//           paddingBottom: Math.max(insets.bottom, 5),
-//           paddingTop: 5,
-//           height: 60 + Math.max(insets.bottom - 5, 0),
-//         },
-//         tabBarLabelStyle: {
-//           fontSize: 12,
-//           fontWeight: '600',
-//         },
-//       }}
-//     >
-//       <Tab.Screen
-//         name="HomeStack"
-//         component={HomeStack}
-//         options={{
-//           tabBarLabel: 'Home',
-//           tabBarIcon: ({ color, size }) => (
-//             <Ionicons name="home" size={size} color={color} />
-//           ),
-//         }}
-//       />
-//       <Tab.Screen
-//         name="ExamsStack"
-//         component={ExamsStack}
-//         options={{
-//           tabBarLabel: 'Exams',
-//           tabBarIcon: ({ color, size }) => (
-//             <Ionicons name="document-text" size={size} color={color} />
-//           ),
-//         }}
-//       />
-//       <Tab.Screen
-//         name="StudyStack"
-//         component={StudyStack}
-//         options={{
-//           tabBarLabel: 'Study',
-//           tabBarIcon: ({ color, size }) => (
-//             <Ionicons name="book" size={size} color={color} />
-//           ),
-//         }}
-//       />
-//       <Tab.Screen
-//         name="ProfileStack"
-//         component={ProfileStack}
-//         options={{
-//           tabBarLabel: 'Profile',
-//           tabBarIcon: ({ color, size }) => (
-//             <Ionicons name="person" size={size} color={color} />
-//           ),
-//         }}
-//       />
-//     </Tab.Navigator>
-//   );
-// }
 

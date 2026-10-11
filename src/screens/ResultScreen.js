@@ -8,6 +8,7 @@ import {
   RefreshControl,
   Alert,
   Share,
+  Image,
 } from 'react-native';
 import tw from 'twrnc';
 import ScreenWrapper from '../components/ScreenWrapper';
@@ -24,6 +25,15 @@ import {
   resolveDisplayLanguage,
   supportsLanguageSwitch,
 } from '../utils/questionLanguage';
+import {
+  calculateSectionAnalysis,
+  calculateSubjectTopicAnalysis,
+  calculateDifficultyAnalysis,
+  calculateTimeAnalysis,
+  answerInSection,
+} from '../utils/resultAnalysis';
+import { buildAirCopyFromPeerStats } from '../utils/airCopy';
+import { startTopicPractice } from '../utils/startTopicPractice';
 
 // ─── Helpers (outside component) ─────────────────────────
 const formatTime = (seconds) => {
@@ -84,7 +94,7 @@ function BreakdownRow({ icon, label, count, total, color, colors }) {
   );
 }
 
-function QuestionCard({ answer, index, colors, displayLanguage }) {
+function QuestionCard({ answer, index, colors, displayLanguage, isSaved, onToggleSave }) {
   const [expanded, setExpanded] = useState(false);
   const question = answer.question;
   if (!question) return null;
@@ -92,6 +102,7 @@ function QuestionCard({ answer, index, colors, displayLanguage }) {
   const questionText = getLocalizedQuestionText(question, displayLanguage);
   const questionOptions = getLocalizedQuestionOptions(question, displayLanguage);
   const explanation = getLocalizedExplanation(question, displayLanguage);
+  const questionId = question._id?.toString?.() || question._id;
 
   const isCorrect = answer.isCorrect;
   const isUnattempted = !answer.selectedAnswer;
@@ -141,15 +152,34 @@ function QuestionCard({ answer, index, colors, displayLanguage }) {
           <Text style={[tw`text-sm leading-5`, { color: colors.text }]} numberOfLines={expanded ? 0 : 1}>
             {questionText}
           </Text>
+          {answer.timeSpent > 0 && (
+            <View style={tw`flex-row items-center gap-1 mt-1`}>
+              <Ionicons name="time-outline" size={12} color={colors.textSecondary} />
+              <Text style={[tw`text-[10px]`, { color: colors.textSecondary }]}>
+                {formatTime(answer.timeSpent)}
+              </Text>
+            </View>
+          )}
         </View>
 
         <View style={tw`flex-row items-center gap-1.5`}>
-          <Ionicons name={statusIcon} size={18} color={statusColor} />
-          {answer.timeSpent > 0 && (
-            <Text style={[tw`text-[10px]`, { color: colors.textSecondary }]}>
-              {formatTime(answer.timeSpent)}
-            </Text>
+          {questionId && onToggleSave && (
+            <TouchableOpacity
+              onPress={(e) => {
+                e?.stopPropagation?.();
+                onToggleSave(questionId);
+              }}
+              hitSlop={8}
+              style={tw`p-1`}
+            >
+              <Ionicons
+                name={isSaved ? 'bookmark' : 'bookmark-outline'}
+                size={18}
+                color={isSaved ? colors.primary : colors.textSecondary}
+              />
+            </TouchableOpacity>
           )}
+          <Ionicons name={statusIcon} size={18} color={statusColor} />
           <Ionicons
             name={expanded ? 'chevron-up' : 'chevron-down'}
             size={16}
@@ -161,6 +191,13 @@ function QuestionCard({ answer, index, colors, displayLanguage }) {
       {/* Expanded Content */}
       {expanded && (
         <View style={[tw`px-3.5 pb-3.5 pt-0`, { borderTopWidth: 1, borderTopColor: colors.border }]}>
+          {question.questionImage ? (
+            <Image
+              source={{ uri: question.questionImage }}
+              style={[tw`w-full h-40 rounded-xl mt-3 mb-2`, { backgroundColor: colors.border }]}
+              resizeMode="contain"
+            />
+          ) : null}
           {/* Full Question */}
           <Text style={[tw`text-sm leading-5 mt-3 mb-3`, { color: colors.text }]}>
             {questionText}
@@ -274,7 +311,13 @@ export default function ResultScreen({ route, navigation }) {
   const [attemptStatus, setAttemptStatus] = useState(null);
   const [starting, setStarting] = useState(false);
   const [questionFilter, setQuestionFilter] = useState('all');
+  const [sectionFilter, setSectionFilter] = useState('all');
   const [displayLanguage, setDisplayLanguage] = useState('English');
+  const [previousAttempts, setPreviousAttempts] = useState([]);
+  const [peerStats, setPeerStats] = useState(null);
+  const [startingPracticeTopic, setStartingPracticeTopic] = useState(null);
+  const [savedQuestions, setSavedQuestions] = useState(new Set());
+  const [savingQuestionId, setSavingQuestionId] = useState(null);
 
   useEffect(() => {
     if (result?.exam?.language) {
@@ -292,6 +335,8 @@ export default function ResultScreen({ route, navigation }) {
       setError(null);
       const response = await api.get(`/exams/result/${attemptId}`);
       let resultData = response.data.result;
+      setPreviousAttempts(response.data.previousAttempts || []);
+      setPeerStats(response.data.peerStats || null);
 
       if (resultData?.exam?._id) {
         try {
@@ -310,11 +355,45 @@ export default function ResultScreen({ route, navigation }) {
       }
 
       setResult(resultData);
+
+      const questionIds = (resultData?.answers || [])
+        .map((a) => a.question?._id?.toString?.() || a.question?._id)
+        .filter(Boolean);
+      if (questionIds.length > 0) {
+        try {
+          const savedRes = await api.post('/user/questions/check-saved', { questionIds });
+          const map = savedRes.data?.savedMap || {};
+          setSavedQuestions(new Set(Object.keys(map).filter((id) => map[id])));
+        } catch {}
+      }
     } catch (err) {
       setError('Failed to load result. Pull down to retry.');
     } finally {
       setLoading(false);
       setRefreshing(false);
+    }
+  };
+
+  const handleToggleSave = async (questionId) => {
+    if (!questionId || savingQuestionId) return;
+    const id = questionId.toString();
+    setSavingQuestionId(id);
+    try {
+      if (savedQuestions.has(id)) {
+        await api.delete(`/user/questions/unsave/${id}`);
+        setSavedQuestions((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+      } else {
+        await api.post('/user/questions/save', { questionId: id });
+        setSavedQuestions((prev) => new Set(prev).add(id));
+      }
+    } catch (err) {
+      Alert.alert('Error', err.response?.data?.message || 'Could not update saved question');
+    } finally {
+      setSavingQuestionId(null);
     }
   };
 
@@ -345,8 +424,11 @@ export default function ResultScreen({ route, navigation }) {
   const handleShare = async () => {
     if (!result) return;
     try {
+      const air = buildAirCopyFromPeerStats(peerStats);
       await Share.share({
-        message: `I scored ${result.percentage?.toFixed(1)}% (${result.totalScore}/${result.exam?.totalMarks}) on "${result.exam?.title}"! ${getScoreEmoji(result.percentage || 0)}`,
+        message: air
+          ? `${air.full}\n\nI scored ${result.percentage?.toFixed(1)}% (${result.totalScore}/${result.exam?.totalMarks}) on "${result.exam?.title}"! ${getScoreEmoji(result.percentage || 0)}`
+          : `I scored ${result.percentage?.toFixed(1)}% (${result.totalScore}/${result.exam?.totalMarks}) on "${result.exam?.title}"! ${getScoreEmoji(result.percentage || 0)}`,
       });
     } catch {}
   };
@@ -366,12 +448,22 @@ export default function ResultScreen({ route, navigation }) {
   const wrongCount = result?.answers?.filter((a) => !a.isCorrect && a.selectedAnswer).length || 0;
   const skippedCount = result?.answers?.filter((a) => !a.selectedAnswer).length || 0;
 
-  const filteredAnswers = result?.answers?.filter((a) => {
-    if (questionFilter === 'correct') return a.isCorrect;
-    if (questionFilter === 'wrong') return !a.isCorrect && a.selectedAnswer;
-    if (questionFilter === 'skipped') return !a.selectedAnswer;
-    return true;
-  }) || [];
+  const sectionAnalysis = result ? calculateSectionAnalysis(result) : null;
+  const subjectTopicAnalysis = result ? calculateSubjectTopicAnalysis(result) : { subjects: {}, topics: {} };
+  const difficultyAnalysis = result ? calculateDifficultyAnalysis(result) : {};
+  const timeAnalysis = result ? calculateTimeAnalysis(result) : null;
+
+  const filteredAnswers =
+    result?.answers?.filter((a) => {
+      if (sectionFilter !== 'all' && sectionAnalysis) {
+        const section = sectionAnalysis[Number(sectionFilter)];
+        if (!answerInSection(a, section)) return false;
+      }
+      if (questionFilter === 'correct') return a.isCorrect;
+      if (questionFilter === 'wrong') return !a.isCorrect && a.selectedAnswer;
+      if (questionFilter === 'skipped') return !a.selectedAnswer;
+      return true;
+    }) || [];
 
   // ─── Loading State ─────────────────────────────────────
   if (loading && !result) {
@@ -412,6 +504,19 @@ export default function ResultScreen({ route, navigation }) {
   }
 
   const showLanguageToggle = supportsLanguageSwitch(result?.exam, result?.answers);
+  const airCopy = buildAirCopyFromPeerStats(peerStats);
+
+  const handleStartPracticeTopic = async (topic, subject) => {
+    if (startingPracticeTopic) return;
+    try {
+      setStartingPracticeTopic(topic);
+      await startTopicPractice({ subject, topic, questionCount: 15, navigation });
+    } catch (err) {
+      Alert.alert('Error', err.response?.data?.message || 'Failed to start practice');
+    } finally {
+      setStartingPracticeTopic(null);
+    }
+  };
 
   // ═══════════════════════════════════════════════════════
   return (
@@ -445,6 +550,24 @@ export default function ResultScreen({ route, navigation }) {
         >
           {/* ─── Score Hero ───────────────────────────── */}
           <View style={tw`items-center py-6 px-5`}>
+            {airCopy && (
+              <View
+                style={[
+                  tw`w-full rounded-2xl px-4 py-3 mb-4 border items-center`,
+                  { backgroundColor: colors.primary + '10', borderColor: colors.primary + '40' },
+                ]}
+              >
+                <Text style={[tw`text-[10px] font-bold uppercase tracking-wider mb-1`, { color: colors.primary }]}>
+                  All India Rank
+                </Text>
+                <Text style={[tw`text-lg font-bold text-center`, { color: colors.text }]}>
+                  {airCopy.headline}
+                </Text>
+                <Text style={[tw`text-sm font-semibold mt-0.5`, { color: colors.primary }]}>
+                  {airCopy.subline}
+                </Text>
+              </View>
+            )}
             <Text style={tw`text-4xl mb-1`}>{getScoreEmoji(percentage)}</Text>
             <Text style={[tw`text-base font-semibold mb-4`, { color: scoreColor }]}>
               {getScoreMessage(percentage)}
@@ -519,6 +642,26 @@ export default function ResultScreen({ route, navigation }) {
               <Ionicons name="home-outline" size={16} color={colors.text} />
               <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>Back to Home</Text>
             </TouchableOpacity>
+            {wrongCount > 0 && (
+              <TouchableOpacity
+                style={[
+                  tw`flex-row items-center justify-center py-3.5 rounded-2xl gap-2 border`,
+                  { borderColor: '#ef444440', backgroundColor: '#ef444410' },
+                ]}
+                onPress={() =>
+                  navigation.navigate('MainTabs', {
+                    screen: 'StudyTab',
+                    params: { screen: 'WrongBook' },
+                  })
+                }
+                activeOpacity={0.8}
+              >
+                <Ionicons name="book-outline" size={16} color="#ef4444" />
+                <Text style={[tw`text-sm font-semibold`, { color: '#ef4444' }]}>
+                  Open Wrong Book ({wrongCount})
+                </Text>
+              </TouchableOpacity>
+            )}
             {attemptStatus && !attemptStatus.canReattempt && attemptStatus.maxAttempts && (
               <Text style={[tw`text-xs text-center`, { color: colors.textSecondary }]}>
                 {attemptStatus.attemptCount}/{attemptStatus.maxAttempts} attempts used
@@ -536,6 +679,7 @@ export default function ResultScreen({ route, navigation }) {
             {[
               { key: 'overview', label: 'Overview', icon: 'bar-chart-outline' },
               { key: 'questions', label: `Questions (${totalAnswers})`, icon: 'list-outline' },
+              { key: 'analytics', label: 'Analytics', icon: 'analytics-outline' },
             ].map((tab) => (
               <TouchableOpacity
                 key={tab.key}
@@ -732,6 +876,62 @@ export default function ResultScreen({ route, navigation }) {
               )}
 
               {/* Question Filters */}
+              {sectionAnalysis?.length > 0 && (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={tw`mb-2`}
+                  contentContainerStyle={tw`gap-2`}
+                >
+                  <TouchableOpacity
+                    style={[
+                      tw`px-3.5 py-2 rounded-full border`,
+                      sectionFilter === 'all'
+                        ? { backgroundColor: colors.primary + '15', borderColor: colors.primary }
+                        : { backgroundColor: colors.surface, borderColor: colors.border },
+                    ]}
+                    onPress={() => setSectionFilter('all')}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={[
+                        tw`text-xs font-semibold`,
+                        { color: sectionFilter === 'all' ? colors.primary : colors.textSecondary },
+                      ]}
+                    >
+                      All sections
+                    </Text>
+                  </TouchableOpacity>
+                  {sectionAnalysis.map((section) => (
+                    <TouchableOpacity
+                      key={section.index}
+                      style={[
+                        tw`px-3.5 py-2 rounded-full border`,
+                        sectionFilter === String(section.index)
+                          ? { backgroundColor: colors.primary + '15', borderColor: colors.primary }
+                          : { backgroundColor: colors.surface, borderColor: colors.border },
+                      ]}
+                      onPress={() => setSectionFilter(String(section.index))}
+                      activeOpacity={0.7}
+                    >
+                      <Text
+                        style={[
+                          tw`text-xs font-semibold`,
+                          {
+                            color:
+                              sectionFilter === String(section.index)
+                                ? colors.primary
+                                : colors.textSecondary,
+                          },
+                        ]}
+                      >
+                        {section.name || `Section ${section.index + 1}`}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              )}
+
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -772,9 +972,9 @@ export default function ResultScreen({ route, navigation }) {
 
               {/* Question Cards — collapsed by default */}
               {filteredAnswers.length > 0 ? (
-                filteredAnswers.map((answer, i) => {
-                  // Find original index
+                filteredAnswers.map((answer) => {
                   const originalIndex = result.answers.indexOf(answer);
+                  const qid = answer.question?._id?.toString?.() || answer.question?._id;
                   return (
                     <QuestionCard
                       key={originalIndex}
@@ -782,6 +982,8 @@ export default function ResultScreen({ route, navigation }) {
                       index={originalIndex}
                       colors={colors}
                       displayLanguage={displayLanguage}
+                      isSaved={qid ? savedQuestions.has(String(qid)) : false}
+                      onToggleSave={handleToggleSave}
                     />
                   );
                 })
@@ -792,6 +994,530 @@ export default function ResultScreen({ route, navigation }) {
                   </Text>
                 </View>
               )}
+            </View>
+          )}
+
+          {/* ─── Analytics Tab ─────────────────────────── */}
+          {activeTab === 'analytics' && (
+            <View style={tw`px-5 gap-3 pb-6`}>
+              {/* Peer comparison */}
+              {peerStats?.sampleSize > 0 && (
+                <View
+                  style={[
+                    tw`rounded-2xl p-4 border`,
+                    { backgroundColor: colors.surface, borderColor: colors.border },
+                  ]}
+                >
+                  <Text style={[tw`text-sm font-bold mb-1`, { color: colors.text }]}>
+                    Compared to other students
+                  </Text>
+                  <Text style={[tw`text-[10px] mb-3`, { color: colors.textSecondary }]}>
+                    Based on {peerStats.sampleSize} completed attempt
+                    {peerStats.sampleSize === 1 ? '' : 's'}
+                  </Text>
+
+                  <Text style={[tw`text-xs font-semibold mb-2`, { color: colors.text }]}>Marks</Text>
+                  <View style={tw`flex-row flex-wrap mb-2`}>
+                    {[
+                      { label: 'Yours', value: peerStats.marks.your, highlight: true },
+                      { label: 'Avg', value: peerStats.marks.avg },
+                      { label: 'Max', value: peerStats.marks.max },
+                      { label: 'Min', value: peerStats.marks.min },
+                    ].map((cell) => (
+                      <View
+                        key={cell.label}
+                        style={[
+                          tw`w-1/2 p-1`,
+                        ]}
+                      >
+                        <View
+                          style={[
+                            tw`p-2.5 rounded-xl items-center border`,
+                            {
+                              backgroundColor: cell.highlight
+                                ? colors.primary + '12'
+                                : colors.background,
+                              borderColor: cell.highlight ? colors.primary : colors.border,
+                            },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              tw`text-sm font-bold`,
+                              { color: cell.highlight ? colors.primary : colors.text },
+                            ]}
+                          >
+                            {cell.value}
+                          </Text>
+                          <Text style={[tw`text-[10px] mt-0.5`, { color: colors.textSecondary }]}>
+                            {cell.label}
+                          </Text>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                  <Text style={[tw`text-xs mb-1`, { color: colors.text }]}>
+                    Rank by marks: #{peerStats.marks.yourRank} of {peerStats.marks.totalRanked}
+                  </Text>
+                  <Text style={[tw`text-xs mb-4`, { color: '#10b981' }]}>
+                    Better than {peerStats.marks.betterThanPercent}% of attempts
+                  </Text>
+
+                  <Text style={[tw`text-xs font-semibold mb-2`, { color: colors.text }]}>
+                    Percentage
+                  </Text>
+                  <View style={tw`flex-row flex-wrap mb-4`}>
+                    {[
+                      { label: 'Yours', value: `${peerStats.percentage.your}%`, highlight: true },
+                      { label: 'Avg', value: `${peerStats.percentage.avg}%` },
+                      { label: 'Max', value: `${peerStats.percentage.max}%` },
+                      { label: 'Min', value: `${peerStats.percentage.min}%` },
+                    ].map((cell) => (
+                      <View key={cell.label} style={tw`w-1/2 p-1`}>
+                        <View
+                          style={[
+                            tw`p-2.5 rounded-xl items-center border`,
+                            {
+                              backgroundColor: cell.highlight
+                                ? colors.primary + '12'
+                                : colors.background,
+                              borderColor: cell.highlight ? colors.primary : colors.border,
+                            },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              tw`text-sm font-bold`,
+                              { color: cell.highlight ? colors.primary : colors.text },
+                            ]}
+                          >
+                            {cell.value}
+                          </Text>
+                          <Text style={[tw`text-[10px] mt-0.5`, { color: colors.textSecondary }]}>
+                            {cell.label}
+                          </Text>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+
+                  <Text style={[tw`text-xs font-semibold mb-2`, { color: colors.text }]}>
+                    Time taken
+                  </Text>
+                  <View style={tw`flex-row flex-wrap mb-2`}>
+                    {[
+                      {
+                        label: 'Yours',
+                        value: peerStats.time.your > 0 ? formatTime(peerStats.time.your) : '—',
+                        highlight: true,
+                      },
+                      {
+                        label: 'Avg',
+                        value: peerStats.time.avg != null ? formatTime(peerStats.time.avg) : '—',
+                      },
+                      {
+                        label: 'Fastest',
+                        value: peerStats.time.min != null ? formatTime(peerStats.time.min) : '—',
+                      },
+                      {
+                        label: 'Slowest',
+                        value: peerStats.time.max != null ? formatTime(peerStats.time.max) : '—',
+                      },
+                    ].map((cell) => (
+                      <View key={cell.label} style={tw`w-1/2 p-1`}>
+                        <View
+                          style={[
+                            tw`p-2.5 rounded-xl items-center border`,
+                            {
+                              backgroundColor: cell.highlight
+                                ? colors.primary + '12'
+                                : colors.background,
+                              borderColor: cell.highlight ? colors.primary : colors.border,
+                            },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              tw`text-sm font-bold`,
+                              { color: cell.highlight ? colors.primary : colors.text },
+                            ]}
+                          >
+                            {cell.value}
+                          </Text>
+                          <Text style={[tw`text-[10px] mt-0.5`, { color: colors.textSecondary }]}>
+                            {cell.label}
+                          </Text>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                  {peerStats.time.yourRank != null && (
+                    <>
+                      <Text style={[tw`text-xs`, { color: colors.text }]}>
+                        Rank by speed: #{peerStats.time.yourRank} of {peerStats.time.totalRanked}{' '}
+                        (1 = fastest)
+                      </Text>
+                      {peerStats.time.fasterThanPercent != null && (
+                        <Text style={[tw`text-xs mt-1`, { color: '#3b82f6' }]}>
+                          Faster than {peerStats.time.fasterThanPercent}% of attempts
+                        </Text>
+                      )}
+                    </>
+                  )}
+                </View>
+              )}
+
+              {/* Attempt comparison */}
+              {previousAttempts.length > 0 && (
+                <View
+                  style={[
+                    tw`rounded-2xl p-4 border`,
+                    { backgroundColor: colors.surface, borderColor: colors.border },
+                  ]}
+                >
+                  <Text style={[tw`text-sm font-bold mb-3`, { color: colors.text }]}>
+                    Attempt Comparison
+                  </Text>
+                  <View
+                    style={[
+                      tw`p-3 rounded-xl mb-3 border`,
+                      { backgroundColor: colors.primary + '10', borderColor: colors.primary },
+                    ]}
+                  >
+                    <Text style={[tw`text-xs font-semibold mb-2`, { color: colors.primary }]}>
+                      Current · Attempt #{result.attemptNumber || 1}
+                    </Text>
+                    <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>
+                      {result.totalScore}/{result.exam?.totalMarks || 0} · {percentage.toFixed(1)}%
+                    </Text>
+                    <Text style={[tw`text-xs mt-1`, { color: colors.textSecondary }]}>
+                      {correctCount} correct · {wrongCount} wrong · {skippedCount} skipped
+                      {result.timeTaken > 0 ? ` · ${formatTime(result.timeTaken)}` : ''}
+                    </Text>
+                  </View>
+                  {previousAttempts.map((prev) => {
+                    const scoreDiff = (result.totalScore || 0) - (prev.totalScore || 0);
+                    const pctDiff = (result.percentage || 0) - (prev.percentage || 0);
+                    return (
+                      <TouchableOpacity
+                        key={prev._id}
+                        style={[
+                          tw`p-3 rounded-xl mb-2 border`,
+                          { backgroundColor: colors.background, borderColor: colors.border },
+                        ]}
+                        onPress={() => navigation.replace('Result', { attemptId: prev._id })}
+                        activeOpacity={0.7}
+                      >
+                        <View style={tw`flex-row items-center justify-between mb-1`}>
+                          <Text style={[tw`text-xs font-semibold`, { color: colors.text }]}>
+                            Attempt #{prev.attemptNumber}
+                          </Text>
+                          <Text style={[tw`text-[10px]`, { color: colors.textSecondary }]}>
+                            {prev.endTime ? formatDate(prev.endTime) : ''}
+                          </Text>
+                        </View>
+                        <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>
+                          {prev.totalScore}/{result.exam?.totalMarks || 0} ·{' '}
+                          {(prev.percentage || 0).toFixed(1)}%
+                        </Text>
+                        {scoreDiff !== 0 && (
+                          <Text
+                            style={[
+                              tw`text-xs mt-1 font-semibold`,
+                              { color: scoreDiff > 0 ? '#10b981' : '#ef4444' },
+                            ]}
+                          >
+                            {scoreDiff > 0 ? '+' : ''}
+                            {scoreDiff} ({pctDiff > 0 ? '+' : ''}
+                            {pctDiff.toFixed(1)}%) vs current
+                          </Text>
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              )}
+
+              {/* Section-wise */}
+              {sectionAnalysis?.length > 0 && (
+                <View
+                  style={[
+                    tw`rounded-2xl p-4 border`,
+                    { backgroundColor: colors.surface, borderColor: colors.border },
+                  ]}
+                >
+                  <Text style={[tw`text-sm font-bold mb-3`, { color: colors.text }]}>
+                    Section-wise Performance
+                  </Text>
+                  {sectionAnalysis.map((section) => (
+                    <View
+                      key={section.index}
+                      style={[
+                        tw`p-3 rounded-xl mb-2 border`,
+                        { backgroundColor: colors.background, borderColor: colors.border },
+                      ]}
+                    >
+                      <View style={tw`flex-row justify-between items-start mb-1`}>
+                        <Text style={[tw`text-sm font-semibold flex-1`, { color: colors.text }]}>
+                          {section.name || `Section ${section.index + 1}`}
+                        </Text>
+                        <Text
+                          style={[
+                            tw`text-sm font-bold`,
+                            {
+                              color:
+                                section.sectionPercentage >= 80
+                                  ? '#10b981'
+                                  : section.sectionPercentage >= 60
+                                  ? '#f59e0b'
+                                  : '#ef4444',
+                            },
+                          ]}
+                        >
+                          {section.sectionPercentage.toFixed(1)}%
+                        </Text>
+                      </View>
+                      <Text style={[tw`text-xs mb-1`, { color: colors.textSecondary }]}>
+                        {section.sectionScore}/{section.sectionTotalMarks} · {section.correct}C ·{' '}
+                        {section.wrong}W · {section.unattempted}S
+                        {section.avgTimePerQuestion > 0
+                          ? ` · avg ${formatTime(Math.round(section.avgTimePerQuestion))}`
+                          : ''}
+                      </Text>
+                      {section.cutoff != null && (
+                        <Text
+                          style={[
+                            tw`text-[10px] font-semibold`,
+                            { color: section.cutoffMet ? '#10b981' : '#ef4444' },
+                          ]}
+                        >
+                          Cutoff {section.cutoff}: {section.cutoffMet ? 'Met' : 'Not met'}
+                        </Text>
+                      )}
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              {/* Subject-wise */}
+              {Object.keys(subjectTopicAnalysis.subjects).filter((s) => s !== 'Unknown').length >
+                0 && (
+                <View
+                  style={[
+                    tw`rounded-2xl p-4 border`,
+                    { backgroundColor: colors.surface, borderColor: colors.border },
+                  ]}
+                >
+                  <Text style={[tw`text-sm font-bold mb-3`, { color: colors.text }]}>
+                    Subject-wise Performance
+                  </Text>
+                  {Object.entries(subjectTopicAnalysis.subjects)
+                    .filter(([s]) => s !== 'Unknown')
+                    .sort((a, b) => a[1].percentage - b[1].percentage)
+                    .map(([subject, stats]) => (
+                      <View key={subject} style={tw`mb-3`}>
+                        <View style={tw`flex-row justify-between mb-1`}>
+                          <Text style={[tw`text-sm font-semibold flex-1`, { color: colors.text }]}>
+                            {subject}
+                          </Text>
+                          <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>
+                            {stats.obtainedMarks.toFixed(1)}/{stats.totalMarks}
+                          </Text>
+                        </View>
+                        <Text style={[tw`text-[10px] mb-1.5`, { color: colors.textSecondary }]}>
+                          {stats.correct}C · {stats.wrong}W · {stats.unattempted}S · Acc{' '}
+                          {stats.accuracy.toFixed(1)}%
+                        </Text>
+                        <View
+                          style={[
+                            tw`h-2 rounded-full overflow-hidden`,
+                            { backgroundColor: colors.border },
+                          ]}
+                        >
+                          <View
+                            style={[
+                              tw`h-full rounded-full`,
+                              {
+                                width: `${Math.min(100, stats.percentage)}%`,
+                                backgroundColor:
+                                  stats.percentage >= 80
+                                    ? '#10b981'
+                                    : stats.percentage >= 60
+                                    ? '#f59e0b'
+                                    : '#ef4444',
+                              },
+                            ]}
+                          />
+                        </View>
+                      </View>
+                    ))}
+                </View>
+              )}
+
+              {/* Topic-wise */}
+              {Object.keys(subjectTopicAnalysis.topics).filter((t) => t !== 'Unknown').length >
+                0 && (
+                <View
+                  style={[
+                    tw`rounded-2xl p-4 border`,
+                    { backgroundColor: colors.surface, borderColor: colors.border },
+                  ]}
+                >
+                  <Text style={[tw`text-sm font-bold mb-3`, { color: colors.text }]}>
+                    Topic-wise Performance
+                  </Text>
+                  {Object.entries(subjectTopicAnalysis.topics)
+                    .filter(([t]) => t !== 'Unknown')
+                    .sort((a, b) => a[1].percentage - b[1].percentage)
+                    .map(([topic, stats]) => (
+                      <View key={topic} style={tw`mb-3`}>
+                        <View style={tw`flex-row justify-between mb-1`}>
+                          <Text style={[tw`text-sm font-semibold flex-1`, { color: colors.text }]}>
+                            {topic}
+                          </Text>
+                          <Text style={[tw`text-xs font-bold`, { color: colors.text }]}>
+                            {stats.percentage.toFixed(1)}%
+                          </Text>
+                        </View>
+                        <Text style={[tw`text-[10px] mb-2`, { color: colors.textSecondary }]}>
+                          {stats.correct}/{stats.total} correct · Acc {stats.accuracy.toFixed(1)}%
+                        </Text>
+                        {stats.accuracy < 60 && stats.total >= 3 && (
+                          <TouchableOpacity
+                            onPress={() => handleStartPracticeTopic(topic)}
+                            disabled={startingPracticeTopic === topic}
+                            style={[
+                              tw`self-start flex-row items-center gap-1.5 px-3 py-1.5 rounded-lg`,
+                              { backgroundColor: colors.primary + '15' },
+                            ]}
+                            activeOpacity={0.7}
+                          >
+                            <Ionicons name="flash" size={12} color={colors.primary} />
+                            <Text style={[tw`text-[11px] font-bold`, { color: colors.primary }]}>
+                              {startingPracticeTopic === topic ? 'Starting…' : 'Start 15 Qs'}
+                            </Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    ))}
+                </View>
+              )}
+
+              {/* Difficulty-wise */}
+              {Object.keys(difficultyAnalysis).length > 0 && (
+                <View
+                  style={[
+                    tw`rounded-2xl p-4 border`,
+                    { backgroundColor: colors.surface, borderColor: colors.border },
+                  ]}
+                >
+                  <Text style={[tw`text-sm font-bold mb-3`, { color: colors.text }]}>
+                    Difficulty-wise Performance
+                  </Text>
+                  {['Easy', 'Medium', 'Hard']
+                    .filter((d) => difficultyAnalysis[d])
+                    .concat(
+                      Object.keys(difficultyAnalysis).filter(
+                        (d) => !['Easy', 'Medium', 'Hard'].includes(d)
+                      )
+                    )
+                    .map((diff) => {
+                      const stats = difficultyAnalysis[diff];
+                      return (
+                        <View key={diff} style={tw`mb-3`}>
+                          <View style={tw`flex-row justify-between mb-1`}>
+                            <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>
+                              {diff}
+                            </Text>
+                            <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>
+                              {stats.accuracy.toFixed(1)}% acc
+                            </Text>
+                          </View>
+                          <Text style={[tw`text-[10px] mb-1.5`, { color: colors.textSecondary }]}>
+                            {stats.correct}C · {stats.wrong}W · {stats.unattempted}S · {stats.total}{' '}
+                            total
+                          </Text>
+                          <View
+                            style={[
+                              tw`h-2 rounded-full overflow-hidden`,
+                              { backgroundColor: colors.border },
+                            ]}
+                          >
+                            <View
+                              style={[
+                                tw`h-full rounded-full`,
+                                {
+                                  width: `${Math.min(100, stats.accuracy)}%`,
+                                  backgroundColor: colors.primary,
+                                },
+                              ]}
+                            />
+                          </View>
+                        </View>
+                      );
+                    })}
+                </View>
+              )}
+
+              {/* Time by difficulty */}
+              {timeAnalysis && Object.keys(timeAnalysis.timeByDifficulty || {}).length > 0 && (
+                <View
+                  style={[
+                    tw`rounded-2xl p-4 border`,
+                    { backgroundColor: colors.surface, borderColor: colors.border },
+                  ]}
+                >
+                  <Text style={[tw`text-sm font-bold mb-3`, { color: colors.text }]}>
+                    Time by Difficulty
+                  </Text>
+                  {Object.entries(timeAnalysis.timeByDifficulty).map(([diff, stats]) => (
+                    <View
+                      key={diff}
+                      style={[
+                        tw`flex-row justify-between items-center py-2`,
+                        { borderBottomWidth: 1, borderBottomColor: colors.border },
+                      ]}
+                    >
+                      <View style={tw`flex-1`}>
+                        <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>
+                          {diff}
+                        </Text>
+                        <Text style={[tw`text-[10px]`, { color: colors.textSecondary }]}>
+                          {stats.count} Q · {stats.correct}C / {stats.wrong}W
+                        </Text>
+                      </View>
+                      <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>
+                        avg {formatTime(Math.round(stats.avgTime))}
+                      </Text>
+                    </View>
+                  ))}
+                  {result.exam?.duration > 0 && timeAnalysis.totalTime > 0 && (
+                    <Text style={[tw`text-xs mt-3`, { color: colors.textSecondary }]}>
+                      Used {formatTime(timeAnalysis.totalTime)} of {result.exam.duration}m (
+                      {(
+                        (timeAnalysis.totalTime / (result.exam.duration * 60)) *
+                        100
+                      ).toFixed(0)}
+                      % of duration)
+                    </Text>
+                  )}
+                </View>
+              )}
+
+              {!peerStats?.sampleSize &&
+                !sectionAnalysis?.length &&
+                Object.keys(subjectTopicAnalysis.subjects).filter((s) => s !== 'Unknown').length ===
+                  0 &&
+                Object.keys(difficultyAnalysis).length === 0 &&
+                previousAttempts.length === 0 && (
+                  <View style={tw`items-center py-10`}>
+                    <Ionicons name="analytics-outline" size={36} color={colors.textSecondary} />
+                    <Text style={[tw`text-sm mt-3 text-center`, { color: colors.textSecondary }]}>
+                      Detailed analytics appear when questions have subject, topic, or difficulty
+                      tags.
+                    </Text>
+                  </View>
+                )}
             </View>
           )}
         </ScrollView>

@@ -1,90 +1,218 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
-  ScrollView,
   FlatList,
   TouchableOpacity,
-  TextInput,
-  ActivityIndicator,
   RefreshControl,
+  ScrollView,
 } from 'react-native';
 import tw from 'twrnc';
 import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
-import { useAuth } from '../context/AuthContext';
-import { formatDate, getExamStatus } from '../utils/helpers';
+import ExamCard, {
+  ExamSearchBar,
+  ExamFilterChips,
+  filterExamsByChip,
+} from '../components/ExamCard';
+import ExamFiltersSheet, { ActiveFilterPills } from '../components/ExamFiltersSheet';
+import { ExamHighlightsBlock } from '../components/ExamHighlights';
+import { ExamCardSkeleton, ExamCardSkeletonList } from '../components/ExamCardSkeleton';
+import { EXAM_SORT_OPTIONS, sortExams } from '../utils/examSort';
+import {
+  filterCategoriesForUser,
+  sortToServerParams,
+  examFilterToAttemptStatus,
+} from '../utils/examListParams';
+
+const ItemSeparator = () => <View style={tw`h-3`} />;
+
+const EXAM_TYPE_OPTIONS = [
+  { key: '', label: 'All types' },
+  { key: 'pyq', label: 'PYQ' },
+];
+
+function deriveDifficultyLabel(difficultyDistribution) {
+  if (!difficultyDistribution) return null;
+  const easy = Number(difficultyDistribution.easy) || 0;
+  const medium = Number(difficultyDistribution.medium) || 0;
+  const hard = Number(difficultyDistribution.hard) || 0;
+  const total = easy + medium + hard;
+  if (total <= 0) return null;
+
+  const max = Math.max(easy, medium, hard);
+  if (hard === max && hard >= 35) return 'Hard';
+  if (medium === max && medium >= 35) return 'Medium';
+  if (easy === max && easy >= 35) return 'Easy';
+  if (hard >= 25 && medium >= 25 && easy >= 25) return 'Mixed';
+  if (hard === max) return 'Hard';
+  if (medium === max) return 'Medium';
+  return 'Easy';
+}
 
 export default function ExamsScreen({ navigation }) {
-  const { colors, isDark } = useTheme();
-  const { user, isPremium } = useAuth();
+  const { colors } = useTheme();
+  const { user } = useAuth();
 
   const [exams, setExams] = useState([]);
+  const [highlights, setHighlights] = useState(null);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
+  const [examFilter, setExamFilter] = useState('all');
+  const [examTypeFilter, setExamTypeFilter] = useState('');
+  const [sortBy, setSortBy] = useState('newest');
+  const [showFiltersSheet, setShowFiltersSheet] = useState(false);
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
     totalExams: 0,
-    limit: 10,
+    limit: 12,
   });
   const [filters, setFilters] = useState({
     category: '',
     language: '',
+    premium: '',
+    difficulty: '',
     sortBy: 'scheduledTime',
     sortOrder: 'desc',
   });
 
-  const searchDebounceRef = useRef(null);
   const filtersRef = useRef(filters);
   const paginationRef = useRef(pagination);
+  const searchQueryRef = useRef(searchQuery);
+  const examFilterRef = useRef(examFilter);
+  const examTypeFilterRef = useRef(examTypeFilter);
+  const sortByRef = useRef(sortBy);
+  const pyqCacheRef = useRef([]);
 
-  // Keep refs in sync
   filtersRef.current = filters;
   paginationRef.current = pagination;
+  searchQueryRef.current = searchQuery;
+  examFilterRef.current = examFilter;
+  examTypeFilterRef.current = examTypeFilter;
+  sortByRef.current = sortBy;
 
-  // Filter change → reload from page 1.
   useEffect(() => {
-    fetchExams(1, false);
-  }, [filters]);
+    api
+      .get('/categories')
+      .then((r) => setCategories(r.data?.categories || []))
+      .catch(() => {});
+  }, []);
 
-  // Debounced search → reload from page 1.
   useEffect(() => {
-    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
-    searchDebounceRef.current = setTimeout(() => {
-      fetchExams(1, false);
-    }, 500);
-    return () => clearTimeout(searchDebounceRef.current);
-  }, [searchQuery]);
+    const delay = searchQuery.trim() ? 400 : 0;
+    const t = setTimeout(() => fetchExams(1, false), delay);
+    return () => clearTimeout(t);
+  }, [filters, searchQuery, examFilter, examTypeFilter, sortBy]);
 
-  // page=1 replaces the list; page>1 appends (infinite scroll).
+  const applyPyqClientFilters = (examList) => {
+    let filtered = [...(examList || [])];
+
+    filtered = filtered.filter((exam) => exam.examType === 'pyq');
+
+    const q = searchQueryRef.current.trim().toLowerCase();
+    if (q) {
+      filtered = filtered.filter((exam) => exam.title?.toLowerCase().includes(q));
+    }
+
+    const currentFilters = filtersRef.current;
+    if (currentFilters.category) {
+      filtered = filtered.filter((exam) => {
+        const catId = exam.category?._id?.toString?.() || exam.category?.toString?.();
+        return catId === currentFilters.category;
+      });
+    }
+
+    if (currentFilters.language) {
+      filtered = filtered.filter((exam) => exam.language === currentFilters.language);
+    }
+
+    if (currentFilters.premium === 'free') {
+      filtered = filtered.filter((exam) => !exam.isPremium);
+    } else if (currentFilters.premium === 'premium') {
+      filtered = filtered.filter((exam) => exam.isPremium);
+    }
+
+    if (currentFilters.difficulty) {
+      filtered = filtered.filter((exam) => {
+        const level = exam.difficultyLevel || deriveDifficultyLabel(exam.difficultyDistribution);
+        return level === currentFilters.difficulty;
+      });
+    }
+
+    filtered = filterExamsByChip(filtered, examFilterRef.current);
+    return sortExams(filtered, sortByRef.current);
+  };
+
   const fetchExams = async (page = 1, append = false) => {
     try {
       if (append) setLoadingMore(true);
       else setLoading(true);
       setError(null);
 
+      const limit = paginationRef.current.limit;
+
+      if (examTypeFilterRef.current === 'pyq') {
+        if (!append || page === 1) {
+          const response = await api.get('/exams/available?examType=pyq');
+          pyqCacheRef.current = applyPyqClientFilters(response.data.exams || []);
+        }
+
+        const totalExams = pyqCacheRef.current.length;
+        const totalPages = Math.max(1, Math.ceil(totalExams / limit));
+        const start = (page - 1) * limit;
+        const pageExams = pyqCacheRef.current.slice(start, start + limit);
+
+        setExams((prev) => (append ? [...prev, ...pageExams] : pageExams));
+        if (!append) setHighlights(null);
+
+        setPagination((prev) => ({
+          ...prev,
+          currentPage: page,
+          totalPages,
+          totalExams,
+          limit,
+        }));
+        return;
+      }
+
       const currentFilters = filtersRef.current;
       const params = new URLSearchParams({
         page: page.toString(),
         limit: paginationRef.current.limit.toString(),
+        minimal: 'true',
+        status: 'active',
       });
+
       Object.entries(currentFilters).forEach(([key, value]) => {
         if (value) params.append(key, value);
       });
-      if (searchQuery.trim()) {
-        params.append('search', searchQuery.trim());
+
+      const q = searchQueryRef.current.trim();
+      if (q) params.append('search', q);
+
+      const attemptStatus = examFilterToAttemptStatus(examFilterRef.current);
+      if (attemptStatus) params.append('attemptStatus', attemptStatus);
+
+      if (!append && page === 1) {
+        params.append('includeHighlights', 'true');
       }
 
       const response = await api.get(`/user/exams?${params.toString()}`);
       const newExams = response.data.exams || [];
       setExams((prev) => (append ? [...prev, ...newExams] : newExams));
+
+      if (!append && response.data.highlights) {
+        setHighlights(response.data.highlights);
+      }
+
       setPagination((prev) => ({
         ...prev,
         ...(response.data.pagination || {}),
@@ -105,412 +233,293 @@ export default function ExamsScreen({ navigation }) {
     fetchExams(1, false);
   };
 
-  // Load next page when the user scrolls near the bottom.
   const loadMore = () => {
     if (loading || loadingMore || refreshing) return;
     if (pagination.currentPage >= pagination.totalPages) return;
     fetchExams(pagination.currentPage + 1, true);
   };
 
-  const handleFilterChange = (key, value) => {
-    setFilters((prev) => ({ ...prev, [key]: value }));
+  const handleSheetApply = ({
+    category,
+    language,
+    premium,
+    difficulty,
+    sortBy: nextSort,
+  }) => {
+    setSortBy(nextSort);
+    const serverSort = sortToServerParams(nextSort);
+    setFilters({
+      category,
+      language,
+      premium,
+      difficulty,
+      ...serverSort,
+    });
+  };
+
+  const removeActiveFilter = (key) => {
+    if (key === 'category') setFilters((prev) => ({ ...prev, category: '' }));
+    else if (key === 'language') setFilters((prev) => ({ ...prev, language: '' }));
+    else if (key === 'premium') setFilters((prev) => ({ ...prev, premium: '' }));
+    else if (key === 'difficulty') setFilters((prev) => ({ ...prev, difficulty: '' }));
+    else if (key === 'sort') {
+      setSortBy('newest');
+      setFilters((prev) => ({
+        ...prev,
+        sortBy: 'scheduledTime',
+        sortOrder: 'desc',
+      }));
+    }     else if (key === 'search') setSearchQuery('');
+    else if (key === 'status') setExamFilter('all');
+    else if (key === 'examType') setExamTypeFilter('');
   };
 
   const clearFilters = () => {
     setFilters({
       category: '',
       language: '',
+      premium: '',
+      difficulty: '',
       sortBy: 'scheduledTime',
       sortOrder: 'desc',
     });
     setSearchQuery('');
+    setExamFilter('all');
+    setExamTypeFilter('');
+    setSortBy('newest');
   };
+
+  const profileCategories = useMemo(
+    () => filterCategoriesForUser(categories, user),
+    [categories, user]
+  );
+
+  const sheetFiltersCount =
+    (filters.category ? 1 : 0) +
+    (filters.language ? 1 : 0) +
+    (filters.premium ? 1 : 0) +
+    (filters.difficulty ? 1 : 0) +
+    (sortBy !== 'newest' ? 1 : 0);
 
   const activeFiltersCount =
-    Object.values(filters).filter(
-      (val) => val !== '' && val !== 'scheduledTime' && val !== 'desc'
-    ).length + (searchQuery.trim() ? 1 : 0);
+    sheetFiltersCount +
+    (searchQuery.trim() ? 1 : 0) +
+    (examFilter !== 'all' ? 1 : 0) +
+    (examTypeFilter ? 1 : 0);
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'available':
-        return colors.primary;
-      case 'completed':
-        return colors.textSecondary;
-      case 'paused':
-        return '#f59e0b';
-      case 'upcoming':
-        return '#3b82f6';
-      case 'expired':
-        return colors.textSecondary;
-      default:
-        return colors.textSecondary;
+  const sortLabel =
+    EXAM_SORT_OPTIONS.find((o) => o.key === sortBy)?.label || 'Newest';
+
+  const activePills = useMemo(() => {
+    const pills = [];
+    if (filters.category) {
+      const cat = profileCategories.find((c) => c._id === filters.category);
+      pills.push({
+        key: 'category',
+        label: cat?.displayName || cat?.name || 'Category',
+      });
     }
-  };
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'available':
-        return 'checkmark-circle';
-      case 'completed':
-        return 'checkmark-done';
-      case 'paused':
-        return 'pause-circle';
-      case 'upcoming':
-        return 'time';
-      case 'expired':
-        return 'close-circle';
-      default:
-        return 'help-circle';
+    if (filters.language) pills.push({ key: 'language', label: filters.language });
+    if (filters.premium === 'free') pills.push({ key: 'premium', label: 'Free' });
+    if (filters.premium === 'premium') pills.push({ key: 'premium', label: 'Pro' });
+    if (filters.difficulty) pills.push({ key: 'difficulty', label: filters.difficulty });
+    if (sortBy !== 'newest') pills.push({ key: 'sort', label: sortLabel });
+    if (searchQuery.trim()) pills.push({ key: 'search', label: `"${searchQuery.trim()}"` });
+    if (examFilter !== 'all') {
+      pills.push({
+        key: 'status',
+        label: examFilter === 'available' ? 'Available' : 'Attempted',
+      });
     }
-  };
+    if (examTypeFilter === 'pyq') pills.push({ key: 'examType', label: 'PYQ' });
+    return pills;
+  }, [filters, sortBy, sortLabel, searchQuery, examFilter, examTypeFilter, profileCategories]);
 
-  // Start an exam, gating premium ones behind the paywall.
-  const startExam = (exam) => {
-    if (exam.isPremium && !isPremium) {
-      navigation.navigate('Paywall', { reason: 'This exam is Premium. Upgrade to unlock it.' });
-      return;
-    }
-    navigation.navigate('ExamDetail', { examId: exam._id });
-  };
+  const filterCounts = useMemo(
+    () => ({ all: pagination.totalExams }),
+    [pagination.totalExams]
+  );
 
-  // ─── Exam card (FlatList renderItem) ───────────────────
-  const renderExam = ({ item: exam }) => {
-    const status = getExamStatus(exam);
-    const statusColor = getStatusColor(status);
-    const locked = exam.isPremium && !isPremium;
-    const isNew =
-      exam.publishedAt &&
-      Date.now() - new Date(exam.publishedAt).getTime() < 48 * 3600 * 1000;
+  const renderExam = useCallback(
+    ({ item: exam }) => (
+      <ExamCard exam={exam} navigation={navigation} colors={colors} showBreadcrumb />
+    ),
+    [navigation, colors]
+  );
 
-    return (
-      <View
-        style={[
-          tw`flex-row items-stretch rounded-2xl border overflow-hidden`,
-          { backgroundColor: colors.card, borderColor: colors.border },
-        ]}
-      >
-        {/* accent bar */}
-        <View style={{ width: 4, backgroundColor: statusColor }} />
+  const showHighlights =
+    examFilter === 'all' &&
+    !examTypeFilter &&
+    !searchQuery.trim() &&
+    sheetFiltersCount === 0 &&
+    sortBy === 'newest';
 
-        <View style={tw`flex-1 p-4`}>
-          {/* Header */}
-          <View style={tw`flex-row justify-between items-start mb-2 gap-2`}>
-            <Text
-              style={[tw`flex-1 text-base font-bold leading-[22px]`, { color: colors.text }]}
-              numberOfLines={2}
-            >
-              {exam.title}
-            </Text>
+  const listHeader = useMemo(
+    () => (
+      <View style={tw`mb-1`}>
+        {showHighlights && (
+          <ExamHighlightsBlock
+            highlights={highlights}
+            navigation={navigation}
+            colors={colors}
+          />
+        )}
+
+        {error && (
             <View
               style={[
-                tw`flex-row items-center px-2.5 py-1 rounded-full gap-1`,
-                { backgroundColor: statusColor + '20' },
-              ]}
-            >
-              <Ionicons name={getStatusIcon(status)} size={12} color={statusColor} />
-              <Text style={[tw`text-[11px] font-bold`, { color: statusColor }]}>
-                {status.charAt(0).toUpperCase() + status.slice(1)}
-              </Text>
-            </View>
-          </View>
-
-          {/* Tags row */}
-          <View style={tw`flex-row items-center gap-1.5 mb-2`}>
-            {exam.isPremium && (
-              <View style={[tw`flex-row items-center px-1.5 py-0.5 rounded gap-0.5`, { backgroundColor: '#f59e0b' }]}>
-                <Ionicons name="diamond" size={9} color="#fff" />
-                <Text style={tw`text-[9px] font-extrabold text-white`}>PREMIUM</Text>
+              tw`flex-row items-center p-3 rounded-xl mb-4 border`,
+              { backgroundColor: '#fef2f2', borderColor: '#fecaca' },
+            ]}
+          >
+            <Ionicons name="alert-circle" size={20} color="#ef4444" style={tw`mr-2`} />
+            <Text style={tw`flex-1 text-sm text-red-600`}>{error}</Text>
+            <TouchableOpacity onPress={() => fetchExams(1, false)} activeOpacity={0.7}>
+              <Text style={[tw`text-sm font-semibold`, { color: colors.primary }]}>Retry</Text>
+            </TouchableOpacity>
               </View>
             )}
-            {isNew && (
-              <View style={[tw`px-1.5 py-0.5 rounded`, { backgroundColor: colors.primary }]}>
-                <Text style={tw`text-[9px] font-extrabold text-white`}>NEW</Text>
-              </View>
-            )}
-          </View>
 
-          {/* Breadcrumb */}
-          <Text style={[tw`text-xs mb-2.5`, { color: colors.textSecondary }]} numberOfLines={1}>
-            {exam.category?.name || exam.category}
-            {exam.subCategory && ` → ${exam.subCategory?.name || exam.subCategory}`}
-            {exam.tier && ` → ${exam.tier?.name || exam.tier}`}
+        <View style={tw`flex-row items-center justify-between mb-3 mt-1`}>
+          <Text style={[tw`text-base font-bold`, { color: colors.text }]}>All exams</Text>
+          {pagination.totalExams > 0 && (
+            <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>
+              {pagination.totalExams} total
           </Text>
-
-          {/* Meta */}
-          <View style={tw`flex-row flex-wrap gap-x-4 gap-y-1.5 mb-3`}>
-            {[
-              { icon: 'calendar-outline', text: formatDate(exam.scheduledTime) },
-              { icon: 'time-outline', text: `${exam.duration} min` },
-              { icon: 'trophy-outline', text: `${exam.totalMarks} marks` },
-              exam.language && { icon: 'language-outline', text: exam.language },
-            ]
-              .filter(Boolean)
-              .map(({ icon, text }, i) => (
-                <View key={i} style={tw`flex-row items-center gap-1.5`}>
-                  <Ionicons name={icon} size={13} color={colors.textSecondary} />
-                  <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>{text}</Text>
-                </View>
-              ))}
-          </View>
-
-          {/* Actions */}
-          <View style={[tw`flex-row gap-2 pt-3 border-t`, { borderColor: colors.border }]}>
-            {exam.isAttempted && exam.attemptId ? (
-              <>
-                <TouchableOpacity
-                  style={[tw`flex-1 flex-row items-center justify-center py-2.5 px-4 rounded-xl gap-1.5`, { backgroundColor: colors.primary }]}
-                  onPress={() => navigation.navigate('Result', { attemptId: exam.attemptId })}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="eye-outline" size={16} color="#fff" />
-                  <Text style={tw`text-sm font-bold text-white`}>View Result</Text>
-                </TouchableOpacity>
-                {status === 'available' && (
-                  <TouchableOpacity
-                    style={[tw`flex-1 flex-row items-center justify-center py-2.5 px-4 rounded-xl gap-1.5 border`, { borderColor: colors.primary, backgroundColor: colors.card }]}
-                    onPress={() => startExam(exam)}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="refresh-outline" size={16} color={colors.primary} />
-                    <Text style={[tw`text-sm font-bold`, { color: colors.primary }]}>Retry</Text>
-                  </TouchableOpacity>
-                )}
-              </>
-            ) : exam.isPaused ? (
-              <TouchableOpacity
-                style={[tw`flex-1 flex-row items-center justify-center py-2.5 px-4 rounded-xl gap-1.5`, { backgroundColor: '#f59e0b' }]}
-                onPress={() => navigation.navigate('ExamDetail', { examId: exam._id })}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="play-outline" size={16} color="#fff" />
-                <Text style={tw`text-sm font-bold text-white`}>Continue</Text>
-              </TouchableOpacity>
-            ) : status === 'available' ? (
-              <TouchableOpacity
-                style={[tw`flex-1 flex-row items-center justify-center py-2.5 px-4 rounded-xl gap-1.5`, { backgroundColor: colors.primary }]}
-                onPress={() => startExam(exam)}
-                activeOpacity={0.7}
-              >
-                <Ionicons name={locked ? 'lock-closed' : 'play-circle-outline'} size={16} color="#fff" />
-                <Text style={tw`text-sm font-bold text-white`}>{locked ? 'Unlock with Premium' : 'Start Exam'}</Text>
-              </TouchableOpacity>
-            ) : (
-              <View style={[tw`flex-1 flex-row items-center justify-center py-2.5 px-4 rounded-xl gap-1.5 border opacity-60`, { borderColor: colors.border, backgroundColor: colors.card }]}>
-                <Ionicons name="time-outline" size={16} color={colors.textSecondary} />
-                <Text style={[tw`text-sm font-semibold`, { color: colors.textSecondary }]}>
-                  {status === 'upcoming' ? 'Upcoming' : status === 'expired' ? 'Expired' : 'Not Available'}
-                </Text>
+          )}
               </View>
-            )}
           </View>
-        </View>
-      </View>
-    );
-  };
+    ),
+    [
+      showHighlights,
+      highlights,
+      navigation,
+      colors,
+      error,
+      pagination.totalExams,
+    ]
+  );
 
-  // ═══════════════════════════════════════════════════════
-  // ─── RENDER ────────────────────────────────────────────
-  // ═══════════════════════════════════════════════════════
   return (
+    <>
     <ScreenWrapper>
       <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
-        {/* ─── Header ────────────────────────────────────── */}
-        <View style={[tw`px-5 pt-5 pb-4 border-b`, { borderColor: colors.border }]}>
-          <Text style={[tw`text-2xl font-bold mb-1`, { color: colors.text }]}>All Exams</Text>
+          <View style={[tw`px-5 pt-5 pb-3 border-b`, { borderColor: colors.border }]}>
+            <View style={tw`flex-row items-start justify-between`}>
+              <View style={tw`flex-1`}>
+                <Text style={[tw`text-2xl font-bold mb-0.5`, { color: colors.text }]}>
+                  Exams
+                </Text>
           <Text style={[tw`text-sm`, { color: colors.textSecondary }]}>
             Browse and attempt available exams
           </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('ExamHistory')}
+                style={tw`flex-row items-center gap-1 pt-1`}
+                activeOpacity={0.7}
+              >
+                <Text style={[tw`text-xs font-semibold`, { color: colors.primary }]}>
+                  History
+                </Text>
+                <Ionicons name="chevron-forward" size={14} color={colors.primary} />
+              </TouchableOpacity>
+            </View>
         </View>
 
-        {/* ─── Search Bar ────────────────────────────────── */}
+          {/* Sticky search + quick filters */}
         <View
           style={[
-            tw`flex-row px-5 py-3 gap-3 border-b`,
-            { borderColor: colors.border },
-          ]}
-        >
-          <View
-            style={[
-              tw`flex-1 flex-row items-center rounded-xl px-3 py-2.5 gap-2 border`,
-              { backgroundColor: colors.surface, borderColor: colors.border },
+              tw`px-5 pt-3 pb-2 border-b`,
+              { backgroundColor: colors.background, borderColor: colors.border },
             ]}
           >
-            <Ionicons name="search" size={20} color={colors.textSecondary} />
-            <TextInput
-              style={[tw`flex-1 text-sm`, { color: colors.text }]}
-              placeholder="Search exams by title..."
-              placeholderTextColor={colors.textSecondary}
+            <ExamSearchBar
               value={searchQuery}
               onChangeText={setSearchQuery}
-              returnKeyType="search"
-            />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery('')} activeOpacity={0.7}>
-                <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
-              </TouchableOpacity>
-            )}
-          </View>
-
+              colors={colors}
+              placeholder="Search exams by title..."
+              rightAccessory={
           <TouchableOpacity
             style={[
               tw`w-11 h-11 rounded-xl items-center justify-center border relative`,
               { backgroundColor: colors.surface, borderColor: colors.border },
             ]}
-            onPress={() => setShowFilters(!showFilters)}
-            activeOpacity={0.7}
+                  onPress={() => setShowFiltersSheet(true)}
+                  activeOpacity={0.75}
+                  accessibilityLabel="Filters and sort"
           >
-            <Ionicons name="filter" size={20} color={colors.primary} />
-            {activeFiltersCount > 0 && (
+                  <Ionicons name="options-outline" size={20} color={colors.primary} />
+                  {sheetFiltersCount > 0 && (
               <View
                 style={[
-                  tw`absolute -top-1 -right-1 min-w-5 h-5 rounded-full items-center justify-center px-1`,
+                        tw`absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full items-center justify-center px-1`,
                   { backgroundColor: colors.primary },
                 ]}
               >
-                <Text style={tw`text-white text-[10px] font-bold`}>{activeFiltersCount}</Text>
+                      <Text style={tw`text-white text-[9px] font-bold`}>
+                        {sheetFiltersCount}
+                      </Text>
               </View>
             )}
           </TouchableOpacity>
-        </View>
+              }
+            />
 
-        {/* ─── Filters Panel ─────────────────────────────── */}
-        {showFilters && (
-          <View
-            style={[
-              tw`px-5 py-4 border-b`,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
-          >
-            {/* Filters Header */}
-            <View style={tw`flex-row justify-between items-center mb-4`}>
-              <Text style={[tw`text-lg font-bold`, { color: colors.text }]}>Filter Exams</Text>
-              {activeFiltersCount > 0 && (
-                <TouchableOpacity onPress={clearFilters} activeOpacity={0.7}>
-                  <Text style={[tw`text-sm font-semibold`, { color: colors.primary }]}>
-                    Clear All
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={tw`gap-2 mb-3 pr-1`}
+            >
+              {EXAM_TYPE_OPTIONS.map(({ key, label }) => {
+                const active = examTypeFilter === key;
+                return (
+                  <TouchableOpacity
+                    key={key || 'all-types'}
+                    style={[
+                      tw`px-3 py-1.5 rounded-full border`,
+                      active
+                        ? { backgroundColor: colors.primary + '18', borderColor: colors.primary }
+                        : { backgroundColor: colors.surface, borderColor: colors.border },
+                    ]}
+                    onPress={() => setExamTypeFilter(key)}
+                    activeOpacity={0.75}
+                  >
+                    <Text
+                      style={[
+                        tw`text-[11px] font-semibold`,
+                        { color: active ? colors.primary : colors.textSecondary },
+                      ]}
+                    >
+                      {label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
 
-           {/* Category Filter */}
-<View style={tw`mb-4`}>
-  <Text style={[tw`text-sm font-semibold mb-2`, { color: colors.text }]}>Category</Text>
-  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-    <FilterChip
-      label="All"
-      active={!filters.category}
-      onPress={() => handleFilterChange('category', '')}
-      colors={colors}
-    />
-    {user?.examPreparations?.map((cat) => {
-      // cat is an object: { category, isPrimary, _id }
-      const categoryName = typeof cat === 'string' ? cat : cat.category;
-      const categoryKey = typeof cat === 'string' ? cat : cat._id;
-      
-      return (
-        <FilterChip
-          key={categoryKey}
-          label={categoryName}
-          active={filters.category === categoryName}
-          onPress={() => handleFilterChange('category', categoryName)}
+            <ExamFilterChips
+              value={examFilter}
+              onChange={setExamFilter}
           colors={colors}
-        />
-      );
-    })}
-  </ScrollView>
-</View>
+              counts={filterCounts}
+            />
 
-            {/* Language Filter */}
-            <View style={tw`mb-4`}>
-              <Text style={[tw`text-sm font-semibold mb-2`, { color: colors.text }]}>Language</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {['', 'English', 'Hindi', 'Both'].map((lang) => (
-                  <FilterChip
-                    key={lang || 'all'}
-                    label={lang || 'All'}
-                    active={filters.language === lang}
-                    onPress={() => handleFilterChange('language', lang)}
+            {activePills.length > 0 && (
+              <View style={tw`mt-1`}>
+                <ActiveFilterPills
+                  items={activePills}
+                  onRemove={removeActiveFilter}
+                  onClearAll={clearFilters}
                     colors={colors}
                   />
-                ))}
-              </ScrollView>
+            </View>
+            )}
             </View>
 
-            {/* Sort By */}
-            <View style={tw`mb-4`}>
-              <Text style={[tw`text-sm font-semibold mb-2`, { color: colors.text }]}>Sort By</Text>
-              <View style={tw`flex-row gap-2`}>
-                {[
-                  { value: 'scheduledTime', label: 'Date' },
-                  { value: 'title', label: 'Title' },
-                ].map(({ value, label }) => (
-                  <TouchableOpacity
-                    key={value}
-                    style={[
-                      tw`flex-1 py-2.5 px-4 rounded-xl items-center border`,
-                      filters.sortBy === value
-                        ? { backgroundColor: colors.primary, borderColor: colors.primary }
-                        : { backgroundColor: colors.background, borderColor: colors.border },
-                    ]}
-                    onPress={() => handleFilterChange('sortBy', value)}
-                    activeOpacity={0.7}
-                  >
-                    <Text
-                      style={[
-                        tw`text-sm font-medium`,
-                        { color: filters.sortBy === value ? '#fff' : colors.text },
-                      ]}
-                    >
-                      {label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            {/* Sort Order */}
-            <View>
-              <Text style={[tw`text-sm font-semibold mb-2`, { color: colors.text }]}>Order</Text>
-              <View style={tw`flex-row gap-2`}>
-                {[
-                  { value: 'desc', label: 'Newest' },
-                  { value: 'asc', label: 'Oldest' },
-                ].map(({ value, label }) => (
-                  <TouchableOpacity
-                    key={value}
-                    style={[
-                      tw`flex-1 py-2.5 px-4 rounded-xl items-center border`,
-                      filters.sortOrder === value
-                        ? { backgroundColor: colors.primary, borderColor: colors.primary }
-                        : { backgroundColor: colors.background, borderColor: colors.border },
-                    ]}
-                    onPress={() => handleFilterChange('sortOrder', value)}
-                    activeOpacity={0.7}
-                  >
-                    <Text
-                      style={[
-                        tw`text-sm font-medium`,
-                        { color: filters.sortOrder === value ? '#fff' : colors.text },
-                      ]}
-                    >
-                      {label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          </View>
-        )}
-
-        {/* ─── Exams List ────────────────────────────────── */}
         {loading && exams.length === 0 ? (
-          <View style={tw`flex-1 items-center justify-center py-16`}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={[tw`mt-3 text-sm`, { color: colors.textSecondary }]}>
-              Loading exams...
-            </Text>
+            <View style={tw`flex-1 px-5 pt-4`}>
+              <ExamCardSkeletonList count={5} colors={colors} />
           </View>
         ) : (
           <FlatList
@@ -518,9 +527,9 @@ export default function ExamsScreen({ navigation }) {
             keyExtractor={(item) => item._id}
             renderItem={renderExam}
             style={tw`flex-1`}
-            contentContainerStyle={tw`p-5 pb-10`}
+              contentContainerStyle={tw`px-5 pt-4 pb-10`}
             showsVerticalScrollIndicator={false}
-            ItemSeparatorComponent={() => <View style={tw`h-4`} />}
+              ItemSeparatorComponent={ItemSeparator}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -530,33 +539,11 @@ export default function ExamsScreen({ navigation }) {
             }
             onEndReached={loadMore}
             onEndReachedThreshold={0.4}
-            ListHeaderComponent={
-              <>
-                {error && (
-                  <View
-                    style={[
-                      tw`flex-row items-center p-3 rounded-xl mb-4 border`,
-                      { backgroundColor: '#fef2f2', borderColor: '#fecaca' },
-                    ]}
-                  >
-                    <Ionicons name="alert-circle" size={20} color="#ef4444" style={tw`mr-2`} />
-                    <Text style={tw`flex-1 text-sm text-red-600`}>{error}</Text>
-                    <TouchableOpacity onPress={() => fetchExams(1, false)} activeOpacity={0.7}>
-                      <Text style={[tw`text-sm font-semibold`, { color: colors.primary }]}>Retry</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-                {exams.length > 0 && (
-                  <Text style={[tw`text-xs mb-4`, { color: colors.textSecondary }]}>
-                    {pagination.totalExams} exam{pagination.totalExams === 1 ? '' : 's'}
-                  </Text>
-                )}
-              </>
-            }
+              ListHeaderComponent={listHeader}
             ListFooterComponent={
               loadingMore ? (
-                <View style={tw`py-5`}>
-                  <ActivityIndicator color={colors.primary} />
+                  <View style={tw`pt-2`}>
+                    <ExamCardSkeleton colors={colors} />
                 </View>
               ) : exams.length > 0 && pagination.currentPage >= pagination.totalPages ? (
                 <Text style={[tw`text-center text-xs py-5`, { color: colors.textSecondary }]}>
@@ -566,15 +553,19 @@ export default function ExamsScreen({ navigation }) {
             }
             ListEmptyComponent={
               !loading ? (
-                <View style={tw`items-center justify-center py-16`}>
-                  <Ionicons name="document-outline" size={64} color={colors.textSecondary} />
-                  <Text style={[tw`text-lg font-semibold mt-4 mb-2`, { color: colors.text }]}>
+                  <View style={tw`items-center justify-center py-12`}>
+                    <Ionicons name="document-outline" size={56} color={colors.textSecondary} />
+                    <Text style={[tw`text-base font-semibold mt-4 mb-2`, { color: colors.text }]}>
                     No exams found
                   </Text>
-                  <Text style={[tw`text-sm text-center mb-6`, { color: colors.textSecondary }]}>
+                    <Text
+                      style={[tw`text-sm text-center mb-6 px-4`, { color: colors.textSecondary }]}
+                    >
                     {searchQuery || activeFiltersCount > 0
-                      ? 'Try adjusting your filters or search query.'
-                      : 'Check back later for new exams.'}
+                        ? 'Try adjusting your filters or search.'
+                        : user?.examPreparations?.length
+                          ? 'No exams are available for your categories yet.'
+                          : 'Add exam categories in your profile to see exams here.'}
                   </Text>
                   {(searchQuery || activeFiltersCount > 0) && (
                     <TouchableOpacity
@@ -582,7 +573,7 @@ export default function ExamsScreen({ navigation }) {
                       onPress={clearFilters}
                       activeOpacity={0.7}
                     >
-                      <Text style={tw`text-sm font-bold text-white`}>Clear Filters</Text>
+                        <Text style={tw`text-sm font-bold text-white`}>Clear filters</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -592,969 +583,19 @@ export default function ExamsScreen({ navigation }) {
         )}
       </View>
     </ScreenWrapper>
+
+      <ExamFiltersSheet
+        visible={showFiltersSheet}
+        onClose={() => setShowFiltersSheet(false)}
+        colors={colors}
+        categories={profileCategories}
+        categoryId={filters.category}
+        language={filters.language}
+        premium={filters.premium}
+        difficulty={filters.difficulty}
+        sortBy={sortBy}
+        onApply={handleSheetApply}
+      />
+    </>
   );
 }
-
-// ─── Extracted FilterChip Component ─────────────────────
-function FilterChip({ label, active, onPress, colors }) {
-  return (
-    <TouchableOpacity
-      style={[
-        tw`px-4 py-2 rounded-full mr-2 border`,
-        active
-          ? { backgroundColor: colors.primary, borderColor: colors.primary }
-          : { backgroundColor: colors.background, borderColor: colors.border },
-      ]}
-      onPress={onPress}
-      activeOpacity={0.7}
-    >
-      <Text
-        style={[
-          tw`text-xs font-medium`,
-          { color: active ? '#fff' : colors.text },
-        ]}
-      >
-        {label}
-      </Text>
-    </TouchableOpacity>
-  );
-}
-
-
-
-
-
-
-
-// import React, { useState, useEffect, useCallback, useRef } from 'react';
-// import {
-//   View,
-//   Text,
-//   StyleSheet,
-//   ScrollView,
-//   TouchableOpacity,
-//   TextInput,
-//   ActivityIndicator,
-//   RefreshControl,
-// } from 'react-native';
-// import ScreenWrapper from '../components/ScreenWrapper';
-// import { useTheme } from '../context/ThemeContext';
-// import { Ionicons } from '@expo/vector-icons';
-// import api from '../services/api';
-// import { useAuth } from '../context/AuthContext';
-// import { formatDate, getExamStatus } from '../utils/helpers';
-// import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-// export default function ExamsScreen({ navigation }) {
-//   const { colors } = useTheme();
-//   const { user } = useAuth();
-//   const [exams, setExams] = useState([]);
-//   const [loading, setLoading] = useState(true);
-//   const [refreshing, setRefreshing] = useState(false);
-//   const [searchQuery, setSearchQuery] = useState('');
-//   const [showFilters, setShowFilters] = useState(false);
-//   const [pagination, setPagination] = useState({
-//     currentPage: 1,
-//     totalPages: 1,
-//     totalExams: 0,
-//     limit: 10,
-//   });
-//   const [filters, setFilters] = useState({
-//     category: '',
-//     language: '',
-//     sortBy: 'scheduledTime',
-//     sortOrder: 'desc',
-//   });
-
-//   const styles = createStyles(colors);
-//   const insets = useSafeAreaInsets();
-//   const searchDebounceRef = useRef(null);
-
-//   // Debounced effect: re-fetch when filters or page change immediately,
-//   // but wait 500ms after search query changes before firing.
-//   useEffect(() => {
-//     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
-//     searchDebounceRef.current = setTimeout(() => {
-//       fetchExams();
-//     }, 500);
-//     return () => clearTimeout(searchDebounceRef.current);
-//   }, [pagination.currentPage, filters, searchQuery]);
-
-//   const fetchExams = async () => {
-//     try {
-//       setLoading(true);
-//       const params = new URLSearchParams({
-//         page: pagination.currentPage.toString(),
-//         limit: pagination.limit.toString(),
-//         ...filters,
-//       });
-
-//       if (searchQuery.trim()) {
-//         params.append('search', searchQuery.trim());
-//       }
-
-//       // Remove empty filter values
-//       Object.keys(filters).forEach(key => {
-//         if (!filters[key]) {
-//           params.delete(key);
-//         }
-//       });
-
-//       const response = await api.get(`/user/exams?${params.toString()}`);
-//       setExams(response.data.exams || []);
-//       setPagination(response.data.pagination || pagination);
-//     } catch (error) {
-//       console.error('Failed to fetch exams:', error);
-//     } finally {
-//       setLoading(false);
-//       setRefreshing(false);
-//     }
-//   };
-
-//   const onRefresh = () => {
-//     setRefreshing(true);
-//     fetchExams();
-//   };
-
-//   const handleFilterChange = (key, value) => {
-//     setFilters({ ...filters, [key]: value });
-//     setPagination({ ...pagination, currentPage: 1 });
-//   };
-
-//   const clearFilters = () => {
-//     setFilters({
-//       category: '',
-//       language: '',
-//       sortBy: 'scheduledTime',
-//       sortOrder: 'desc',
-//     });
-//     setSearchQuery('');
-//     setPagination({ ...pagination, currentPage: 1 });
-//   };
-
-//   const handlePageChange = (newPage) => {
-//     if (newPage >= 1 && newPage <= pagination.totalPages) {
-//       setPagination({ ...pagination, currentPage: newPage });
-//     }
-//   };
-
-//   const activeFiltersCount = Object.values(filters).filter(
-//     (val) => val !== '' && val !== 'scheduledTime' && val !== 'desc'
-//   ).length + (searchQuery.trim() ? 1 : 0);
-
-//   const getStatusColor = (status) => {
-//     switch (status) {
-//       case 'available':
-//         return colors.primary;
-//       case 'completed':
-//         return colors.textSecondary;
-//       case 'paused':
-//         return '#f59e0b';
-//       case 'upcoming':
-//         return '#3b82f6';
-//       case 'expired':
-//         return colors.textSecondary;
-//       default:
-//         return colors.textSecondary;
-//     }
-//   };
-
-//   return (
-//     <ScreenWrapper>
-//       <View style={styles.container}>
-//         {/* Header */}
-//         <View style={styles.header}>
-//           <Text style={styles.headerTitle}>All Exams</Text>
-//           <Text style={styles.headerSubtitle}>Browse and attempt available exams</Text>
-//         </View>
-
-//         {/* Search Bar */}
-//         <View style={styles.searchContainer}>
-//           <View style={styles.searchBar}>
-//             <Ionicons name="search" size={20} color={colors.textSecondary} />
-//             <TextInput
-//               style={styles.searchInput}
-//               placeholder="Search exams by title..."
-//               placeholderTextColor={colors.textSecondary}
-//               value={searchQuery}
-//               onChangeText={setSearchQuery}
-//               returnKeyType="search"
-//             />
-//             {searchQuery.length > 0 && (
-//               <TouchableOpacity onPress={() => setSearchQuery('')}>
-//                 <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
-//               </TouchableOpacity>
-//             )}
-//           </View>
-//           <TouchableOpacity
-//             style={styles.filterButton}
-//             onPress={() => setShowFilters(!showFilters)}
-//             activeOpacity={0.7}
-//           >
-//             <Ionicons name="filter" size={20} color={colors.primary} />
-//             {activeFiltersCount > 0 && (
-//               <View style={styles.filterBadge}>
-//                 <Text style={styles.filterBadgeText}>{activeFiltersCount}</Text>
-//               </View>
-//             )}
-//           </TouchableOpacity>
-//         </View>
-
-//         {/* Filters Panel */}
-//         {showFilters && (
-//           <View style={styles.filtersPanel}>
-//             <View style={styles.filtersHeader}>
-//               <Text style={styles.filtersTitle}>Filter Exams</Text>
-//               {activeFiltersCount > 0 && (
-//                 <TouchableOpacity onPress={clearFilters} activeOpacity={0.7}>
-//                   <Text style={styles.clearFiltersText}>Clear All</Text>
-//                 </TouchableOpacity>
-//               )}
-//             </View>
-
-//             {/* Category Filter */}
-//             <View style={styles.filterRow}>
-//               <Text style={styles.filterLabel}>Category</Text>
-//               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterOptions}>
-//                 <TouchableOpacity
-//                   style={[
-//                     styles.filterChip,
-//                     !filters.category && styles.filterChipActive,
-//                   ]}
-//                   onPress={() => handleFilterChange('category', '')}
-//                   activeOpacity={0.7}
-//                 >
-//                   <Text
-//                     style={[
-//                       styles.filterChipText,
-//                       !filters.category && styles.filterChipTextActive,
-//                     ]}
-//                   >
-//                     All
-//                   </Text>
-//                 </TouchableOpacity>
-//                 {user?.examPreparations && Array.isArray(user.examPreparations) && user.examPreparations.map((cat) => (
-//                   <TouchableOpacity
-//                     key={cat}
-//                     style={[
-//                       styles.filterChip,
-//                       filters.category === cat && styles.filterChipActive,
-//                     ]}
-//                     onPress={() => handleFilterChange('category', cat)}
-//                     activeOpacity={0.7}
-//                   >
-//                     <Text
-//                       style={[
-//                         styles.filterChipText,
-//                         filters.category === cat && styles.filterChipTextActive,
-//                       ]}
-//                     >
-//                       {cat}
-//                     </Text>
-//                   </TouchableOpacity>
-//                 ))}
-//               </ScrollView>
-//             </View>
-
-//             {/* Language Filter */}
-//             <View style={styles.filterRow}>
-//               <Text style={styles.filterLabel}>Language</Text>
-//               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterOptions}>
-//                 {['', 'English', 'Hindi', 'Both'].map((lang) => (
-//                   <TouchableOpacity
-//                     key={lang || 'all'}
-//                     style={[
-//                       styles.filterChip,
-//                       filters.language === lang && styles.filterChipActive,
-//                     ]}
-//                     onPress={() => handleFilterChange('language', lang)}
-//                     activeOpacity={0.7}
-//                   >
-//                     <Text
-//                       style={[
-//                         styles.filterChipText,
-//                         filters.language === lang && styles.filterChipTextActive,
-//                       ]}
-//                     >
-//                       {lang || 'All'}
-//                     </Text>
-//                   </TouchableOpacity>
-//                 ))}
-//               </ScrollView>
-//             </View>
-
-//             {/* Sort By */}
-//             <View style={styles.filterRow}>
-//               <Text style={styles.filterLabel}>Sort By</Text>
-//               <View style={styles.sortContainer}>
-//                 <TouchableOpacity
-//                   style={[
-//                     styles.sortButton,
-//                     filters.sortBy === 'scheduledTime' && styles.sortButtonActive,
-//                   ]}
-//                   onPress={() => handleFilterChange('sortBy', 'scheduledTime')}
-//                   activeOpacity={0.7}
-//                 >
-//                   <Text
-//                     style={[
-//                       styles.sortButtonText,
-//                       filters.sortBy === 'scheduledTime' && styles.sortButtonTextActive,
-//                     ]}
-//                   >
-//                     Date
-//                   </Text>
-//                 </TouchableOpacity>
-//                 <TouchableOpacity
-//                   style={[
-//                     styles.sortButton,
-//                     filters.sortBy === 'title' && styles.sortButtonActive,
-//                   ]}
-//                   onPress={() => handleFilterChange('sortBy', 'title')}
-//                   activeOpacity={0.7}
-//                 >
-//                   <Text
-//                     style={[
-//                       styles.sortButtonText,
-//                       filters.sortBy === 'title' && styles.sortButtonTextActive,
-//                     ]}
-//                   >
-//                     Title
-//                   </Text>
-//                 </TouchableOpacity>
-//               </View>
-//             </View>
-
-//             {/* Sort Order */}
-//             <View style={styles.filterRow}>
-//               <Text style={styles.filterLabel}>Order</Text>
-//               <View style={styles.sortContainer}>
-//                 <TouchableOpacity
-//                   style={[
-//                     styles.sortButton,
-//                     filters.sortOrder === 'desc' && styles.sortButtonActive,
-//                   ]}
-//                   onPress={() => handleFilterChange('sortOrder', 'desc')}
-//                   activeOpacity={0.7}
-//                 >
-//                   <Text
-//                     style={[
-//                       styles.sortButtonText,
-//                       filters.sortOrder === 'desc' && styles.sortButtonTextActive,
-//                     ]}
-//                   >
-//                     Newest
-//                   </Text>
-//                 </TouchableOpacity>
-//                 <TouchableOpacity
-//                   style={[
-//                     styles.sortButton,
-//                     filters.sortOrder === 'asc' && styles.sortButtonActive,
-//                   ]}
-//                   onPress={() => handleFilterChange('sortOrder', 'asc')}
-//                   activeOpacity={0.7}
-//                 >
-//                   <Text
-//                     style={[
-//                       styles.sortButtonText,
-//                       filters.sortOrder === 'asc' && styles.sortButtonTextActive,
-//                     ]}
-//                   >
-//                     Oldest
-//                   </Text>
-//                 </TouchableOpacity>
-//               </View>
-//             </View>
-//           </View>
-//         )}
-
-//         {/* Exams List */}
-//         <ScrollView
-//           style={styles.scrollView}
-//           contentContainerStyle={styles.scrollContent}
-//           refreshControl={
-//             <RefreshControl
-//               refreshing={refreshing}
-//               onRefresh={onRefresh}
-//               tintColor={colors.primary}
-//             />
-//           }
-//           showsVerticalScrollIndicator={false}
-//         >
-//           {loading && exams.length === 0 ? (
-//             <View style={styles.loadingContainer}>
-//               <ActivityIndicator size="large" color={colors.primary} />
-//               <Text style={styles.loadingText}>Loading exams...</Text>
-//             </View>
-//           ) : exams.length > 0 ? (
-//             <>
-//               <View style={styles.resultsInfo}>
-//                 <Text style={styles.resultsText}>
-//                   Showing {((pagination.currentPage - 1) * pagination.limit) + 1} to{' '}
-//                   {Math.min(pagination.currentPage * pagination.limit, pagination.totalExams)} of{' '}
-//                   {pagination.totalExams} exams
-//                 </Text>
-//               </View>
-
-//               <View style={styles.examsGrid}>
-//                 {exams.map((exam) => {
-//                   const status = getExamStatus(exam);
-//                   const statusColor = getStatusColor(status);
-
-//                   return (
-//                     <View key={exam._id} style={styles.examCard}>
-//                       <View style={styles.examCardHeader}>
-//                         <Text style={styles.examCardTitle} numberOfLines={2}>
-//                           {exam.title}
-//                         </Text>
-//                         <View
-//                           style={[
-//                             styles.statusBadge,
-//                             { backgroundColor: statusColor + '20' },
-//                           ]}
-//                         >
-//                           <Text style={[styles.statusBadgeText, { color: statusColor }]}>
-//                             {status.charAt(0).toUpperCase() + status.slice(1)}
-//                           </Text>
-//                         </View>
-//                       </View>
-
-//                       <View style={styles.examCardBody}>
-//                         <Text style={styles.examCategory} numberOfLines={1}>
-//                           {exam.category?.name || exam.category}
-//                           {exam.subCategory && ` → ${exam.subCategory?.name || exam.subCategory}`}
-//                           {exam.tier && ` → ${exam.tier?.name || exam.tier}`}
-//                         </Text>
-
-//                         <View style={styles.examDetails}>
-//                           <View style={styles.examDetailRow}>
-//                             <Ionicons name="calendar-outline" size={14} color={colors.textSecondary} />
-//                             <Text style={styles.examDetailText}>
-//                               {formatDate(exam.scheduledTime)}
-//                             </Text>
-//                           </View>
-//                           <View style={styles.examDetailRow}>
-//                             <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
-//                             <Text style={styles.examDetailText}>
-//                               {exam.duration} minutes
-//                             </Text>
-//                           </View>
-//                           <View style={styles.examDetailRow}>
-//                             <Ionicons name="trophy-outline" size={14} color={colors.textSecondary} />
-//                             <Text style={styles.examDetailText}>
-//                               {exam.totalMarks} marks
-//                             </Text>
-//                           </View>
-//                           {exam.language && (
-//                             <View style={styles.examDetailRow}>
-//                               <Ionicons name="language-outline" size={14} color={colors.textSecondary} />
-//                               <Text style={styles.examDetailText}>
-//                                 {exam.language}
-//                               </Text>
-//                             </View>
-//                           )}
-//                         </View>
-//                       </View>
-
-//                       {/* Action Buttons */}
-//                       <View style={styles.examCardActions}>
-//                         {exam.isAttempted && exam.attemptId ? (
-//                           <>
-//                             <TouchableOpacity
-//                               style={[styles.examActionButton, styles.viewResultButton]}
-//                               onPress={() => navigation.navigate('Result', { attemptId: exam.attemptId })}
-//                               activeOpacity={0.7}
-//                             >
-//                               <Ionicons name="eye-outline" size={16} color="#FFFFFF" />
-//                               <Text style={styles.viewResultButtonText}>View Result</Text>
-//                             </TouchableOpacity>
-//                             {status === 'available' && (
-//                               <TouchableOpacity
-//                                 style={[styles.examActionButton, styles.retryButton]}
-//                                 onPress={() => navigation.navigate('ExamDetail', { examId: exam._id })}
-//                                 activeOpacity={0.7}
-//                               >
-//                                 <Ionicons name="refresh-outline" size={16} color={colors.primary} />
-//                                 <Text style={styles.retryButtonText}>Retry</Text>
-//                               </TouchableOpacity>
-//                             )}
-//                           </>
-//                         ) : exam.isPaused ? (
-//                           <TouchableOpacity
-//                             style={[styles.examActionButton, styles.startExamButton]}
-//                             onPress={() => navigation.navigate('ExamDetail', { examId: exam._id })}
-//                             activeOpacity={0.7}
-//                           >
-//                             <Ionicons name="play-outline" size={16} color="#FFFFFF" />
-//                             <Text style={styles.startExamButtonText}>Continue</Text>
-//                           </TouchableOpacity>
-//                         ) : status === 'available' ? (
-//                           <TouchableOpacity
-//                             style={[styles.examActionButton, styles.startExamButton]}
-//                             onPress={() => navigation.navigate('ExamDetail', { examId: exam._id })}
-//                             activeOpacity={0.7}
-//                           >
-//                             <Ionicons name="play-circle-outline" size={16} color="#FFFFFF" />
-//                             <Text style={styles.startExamButtonText}>Start Exam</Text>
-//                           </TouchableOpacity>
-//                         ) : (
-//                           <View style={[styles.examActionButton, styles.disabledButton]}>
-//                             <Ionicons name="time-outline" size={16} color={colors.textSecondary} />
-//                             <Text style={styles.disabledButtonText}>
-//                               {status === 'upcoming' ? 'Upcoming' : status === 'expired' ? 'Expired' : 'Not Available'}
-//                             </Text>
-//                           </View>
-//                         )}
-//                       </View>
-//                     </View>
-//                   );
-//                 })}
-//               </View>
-
-//               {/* Pagination */}
-//               {pagination.totalPages > 1 && (
-//                 <View style={styles.paginationContainer}>
-//                   <TouchableOpacity
-//                     style={[
-//                       styles.paginationButton,
-//                       pagination.currentPage === 1 && styles.paginationButtonDisabled,
-//                     ]}
-//                     onPress={() => handlePageChange(pagination.currentPage - 1)}
-//                     disabled={pagination.currentPage === 1}
-//                     activeOpacity={0.7}
-//                   >
-//                     <Ionicons
-//                       name="chevron-back"
-//                       size={20}
-//                       color={pagination.currentPage === 1 ? colors.textSecondary : colors.primary}
-//                     />
-//                     <Text
-//                       style={[
-//                         styles.paginationButtonText,
-//                         pagination.currentPage === 1 && styles.paginationButtonTextDisabled,
-//                       ]}
-//                     >
-//                       Previous
-//                     </Text>
-//                   </TouchableOpacity>
-
-//                   <View style={styles.paginationInfo}>
-//                     <Text style={styles.paginationInfoText}>
-//                       Page {pagination.currentPage} of {pagination.totalPages}
-//                     </Text>
-//                   </View>
-
-//                   <TouchableOpacity
-//                     style={[
-//                       styles.paginationButton,
-//                       pagination.currentPage === pagination.totalPages && styles.paginationButtonDisabled,
-//                     ]}
-//                     onPress={() => handlePageChange(pagination.currentPage + 1)}
-//                     disabled={pagination.currentPage === pagination.totalPages}
-//                     activeOpacity={0.7}
-//                   >
-//                     <Text
-//                       style={[
-//                         styles.paginationButtonText,
-//                         pagination.currentPage === pagination.totalPages && styles.paginationButtonTextDisabled,
-//                       ]}
-//                     >
-//                       Next
-//                     </Text>
-//                     <Ionicons
-//                       name="chevron-forward"
-//                       size={20}
-//                       color={pagination.currentPage === pagination.totalPages ? colors.textSecondary : colors.primary}
-//                     />
-//                   </TouchableOpacity>
-//                 </View>
-//               )}
-//             </>
-//           ) : (
-//             <View style={styles.emptyContainer}>
-//               <Ionicons name="document-outline" size={64} color={colors.textSecondary} />
-//               <Text style={styles.emptyText}>No exams found</Text>
-//               <Text style={styles.emptySubtext}>
-//                 {searchQuery || activeFiltersCount > 0
-//                   ? 'Try adjusting your filters or search query.'
-//                   : 'Check back later for new exams.'}
-//               </Text>
-//               {(searchQuery || activeFiltersCount > 0) && (
-//                 <TouchableOpacity
-//                   style={styles.clearFiltersButton}
-//                   onPress={clearFilters}
-//                   activeOpacity={0.7}
-//                 >
-//                   <Text style={styles.clearFiltersButtonText}>Clear Filters</Text>
-//                 </TouchableOpacity>
-//               )}
-//             </View>
-//           )}
-//         </ScrollView>
-//       </View>
-//     </ScreenWrapper>
-//   );
-// }
-
-// const createStyles = (colors) =>
-//   StyleSheet.create({
-//     container: {
-//       flex: 1,
-//       backgroundColor: colors.background,
-//     },
-//     header: {
-//       paddingHorizontal: 20,
-//       paddingTop: 20,
-//       paddingBottom: 16,
-//       borderBottomWidth: 1,
-//       borderBottomColor: colors.border,
-//     },
-//     headerTitle: {
-//       fontSize: 24,
-//       fontWeight: 'bold',
-//       color: colors.text,
-//       marginBottom: 4,
-//     },
-//     headerSubtitle: {
-//       fontSize: 14,
-//       color: colors.textSecondary,
-//     },
-//     searchContainer: {
-//       flexDirection: 'row',
-//       paddingHorizontal: 20,
-//       paddingVertical: 12,
-//       gap: 12,
-//       borderBottomWidth: 1,
-//       borderBottomColor: colors.border,
-//     },
-//     searchBar: {
-//       flex: 1,
-//       flexDirection: 'row',
-//       alignItems: 'center',
-//       backgroundColor: colors.surface,
-//       borderRadius: 12,
-//       paddingHorizontal: 12,
-//       paddingVertical: 10,
-//       gap: 8,
-//       borderWidth: 1,
-//       borderColor: colors.border,
-//     },
-//     searchInput: {
-//       flex: 1,
-//       fontSize: 14,
-//       color: colors.text,
-//     },
-//     filterButton: {
-//       width: 44,
-//       height: 44,
-//       borderRadius: 12,
-//       backgroundColor: colors.surface,
-//       justifyContent: 'center',
-//       alignItems: 'center',
-//       borderWidth: 1,
-//       borderColor: colors.border,
-//       position: 'relative',
-//     },
-//     filterBadge: {
-//       position: 'absolute',
-//       top: -4,
-//       right: -4,
-//       backgroundColor: colors.primary,
-//       borderRadius: 10,
-//       minWidth: 20,
-//       height: 20,
-//       justifyContent: 'center',
-//       alignItems: 'center',
-//       paddingHorizontal: 4,
-//     },
-//     filterBadgeText: {
-//       color: '#FFFFFF',
-//       fontSize: 10,
-//       fontWeight: 'bold',
-//     },
-//     filtersPanel: {
-//       backgroundColor: colors.surface,
-//       borderBottomWidth: 1,
-//       borderBottomColor: colors.border,
-//       paddingHorizontal: 20,
-//       paddingVertical: 16,
-//     },
-//     filtersHeader: {
-//       flexDirection: 'row',
-//       justifyContent: 'space-between',
-//       alignItems: 'center',
-//       marginBottom: 16,
-//     },
-//     filtersTitle: {
-//       fontSize: 18,
-//       fontWeight: 'bold',
-//       color: colors.text,
-//     },
-//     clearFiltersText: {
-//       fontSize: 14,
-//       color: colors.primary,
-//       fontWeight: '600',
-//     },
-//     filterRow: {
-//       marginBottom: 16,
-//     },
-//     filterLabel: {
-//       fontSize: 14,
-//       fontWeight: '600',
-//       color: colors.text,
-//       marginBottom: 8,
-//     },
-//     filterOptions: {
-//       flexDirection: 'row',
-//     },
-//     filterChip: {
-//       paddingHorizontal: 16,
-//       paddingVertical: 8,
-//       borderRadius: 20,
-//       backgroundColor: colors.background,
-//       borderWidth: 1,
-//       borderColor: colors.border,
-//       marginRight: 8,
-//     },
-//     filterChipActive: {
-//       backgroundColor: colors.primary,
-//       borderColor: colors.primary,
-//     },
-//     filterChipText: {
-//       fontSize: 13,
-//       color: colors.text,
-//       fontWeight: '500',
-//     },
-//     filterChipTextActive: {
-//       color: '#FFFFFF',
-//     },
-//     sortContainer: {
-//       flexDirection: 'row',
-//       gap: 8,
-//     },
-//     sortButton: {
-//       flex: 1,
-//       paddingVertical: 10,
-//       paddingHorizontal: 16,
-//       borderRadius: 12,
-//       backgroundColor: colors.background,
-//       borderWidth: 1,
-//       borderColor: colors.border,
-//       alignItems: 'center',
-//     },
-//     sortButtonActive: {
-//       backgroundColor: colors.primary,
-//       borderColor: colors.primary,
-//     },
-//     sortButtonText: {
-//       fontSize: 14,
-//       color: colors.text,
-//       fontWeight: '500',
-//     },
-//     sortButtonTextActive: {
-//       color: '#FFFFFF',
-//     },
-//     scrollView: {
-//       flex: 1,
-//     },
-//     scrollContent: {
-//       padding: 20,
-//       paddingBottom: 40 ,
-//     },
-//     loadingContainer: {
-//       flex: 1,
-//       justifyContent: 'center',
-//       alignItems: 'center',
-//       paddingVertical: 60,
-//     },
-//     loadingText: {
-//       marginTop: 12,
-//       fontSize: 14,
-//       color: colors.textSecondary,
-//     },
-//     resultsInfo: {
-//       marginBottom: 16,
-//     },
-//     resultsText: {
-//       fontSize: 13,
-//       color: colors.textSecondary,
-//     },
-//     examsGrid: {
-//       gap: 16,
-//     },
-//     examCard: {
-//       backgroundColor: colors.surface,
-//       borderRadius: 16,
-//       padding: 16,
-//       borderWidth: 1,
-//       borderColor: colors.border,
-//     },
-//     examCardHeader: {
-//       flexDirection: 'row',
-//       justifyContent: 'space-between',
-//       alignItems: 'flex-start',
-//       marginBottom: 12,
-//       gap: 8,
-//     },
-//     examCardTitle: {
-//       flex: 1,
-//       fontSize: 16,
-//       fontWeight: 'bold',
-//       color: colors.text,
-//       lineHeight: 22,
-//     },
-//     statusBadge: {
-//       paddingHorizontal: 10,
-//       paddingVertical: 4,
-//       borderRadius: 12,
-//       minWidth: 70,
-//       alignItems: 'center',
-//     },
-//     statusBadgeText: {
-//       fontSize: 11,
-//       fontWeight: 'bold',
-//     },
-//     examCardBody: {
-//       marginBottom: 12,
-//     },
-//     examCategory: {
-//       fontSize: 13,
-//       color: colors.textSecondary,
-//       marginBottom: 12,
-//     },
-//     examDetails: {
-//       gap: 8,
-//     },
-//     examDetailRow: {
-//       flexDirection: 'row',
-//       alignItems: 'center',
-//       gap: 8,
-//     },
-//     examDetailText: {
-//       fontSize: 13,
-//       color: colors.textSecondary,
-//     },
-//     examCardActions: {
-//       flexDirection: 'row',
-//       gap: 8,
-//       marginTop: 12,
-//       paddingTop: 12,
-//       borderTopWidth: 1,
-//       borderTopColor: colors.border,
-//     },
-//     examActionButton: {
-//       flexDirection: 'row',
-//       alignItems: 'center',
-//       justifyContent: 'center',
-//       paddingVertical: 10,
-//       paddingHorizontal: 16,
-//       borderRadius: 12,
-//       gap: 6,
-//       flex: 1,
-//     },
-//     startExamButton: {
-//       backgroundColor: colors.primary,
-//     },
-//     startExamButtonText: {
-//       fontSize: 14,
-//       fontWeight: '700',
-//       color: '#FFFFFF',
-//     },
-//     viewResultButton: {
-//       backgroundColor: colors.primary,
-//     },
-//     viewResultButtonText: {
-//       fontSize: 14,
-//       fontWeight: '700',
-//       color: '#FFFFFF',
-//     },
-//     retryButton: {
-//       backgroundColor: colors.surface,
-//       borderWidth: 1,
-//       borderColor: colors.primary,
-//     },
-//     retryButtonText: {
-//       fontSize: 14,
-//       fontWeight: '700',
-//       color: colors.primary,
-//     },
-//     disabledButton: {
-//       backgroundColor: colors.surface,
-//       borderWidth: 1,
-//       borderColor: colors.border,
-//       opacity: 0.6,
-//     },
-//     disabledButtonText: {
-//       fontSize: 14,
-//       fontWeight: '600',
-//       color: colors.textSecondary,
-//     },
-//     paginationContainer: {
-//       flexDirection: 'row',
-//       justifyContent: 'space-between',
-//       alignItems: 'center',
-//       marginTop: 24,
-//       paddingTop: 24,
-//       borderTopWidth: 1,
-//       borderTopColor: colors.border,
-//     },
-//     paginationButton: {
-//       flexDirection: 'row',
-//       alignItems: 'center',
-//       paddingVertical: 10,
-//       paddingHorizontal: 16,
-//       borderRadius: 12,
-//       backgroundColor: colors.surface,
-//       borderWidth: 1,
-//       borderColor: colors.border,
-//       gap: 6,
-//     },
-//     paginationButtonDisabled: {
-//       opacity: 0.5,
-//     },
-//     paginationButtonText: {
-//       fontSize: 14,
-//       fontWeight: '600',
-//       color: colors.primary,
-//     },
-//     paginationButtonTextDisabled: {
-//       color: colors.textSecondary,
-//     },
-//     paginationInfo: {
-//       paddingHorizontal: 16,
-//     },
-//     paginationInfoText: {
-//       fontSize: 14,
-//       color: colors.textSecondary,
-//       fontWeight: '500',
-//     },
-//     emptyContainer: {
-//       flex: 1,
-//       justifyContent: 'center',
-//       alignItems: 'center',
-//       paddingVertical: 60,
-//     },
-//     emptyText: {
-//       fontSize: 18,
-//       fontWeight: '600',
-//       color: colors.text,
-//       marginTop: 16,
-//       marginBottom: 8,
-//     },
-//     emptySubtext: {
-//       fontSize: 14,
-//       color: colors.textSecondary,
-//       textAlign: 'center',
-//       marginBottom: 24,
-//     },
-//     clearFiltersButton: {
-//       paddingVertical: 12,
-//       paddingHorizontal: 24,
-//       borderRadius: 12,
-//       backgroundColor: colors.primary,
-//     },
-//     clearFiltersButtonText: {
-//       fontSize: 14,
-//       fontWeight: '700',
-//       color: '#FFFFFF',
-//     },
-//   });

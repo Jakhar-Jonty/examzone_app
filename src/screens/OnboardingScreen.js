@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TouchableOpacity, ScrollView, ActivityIndicator,
+  View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import tw from 'twrnc';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+
+const mark = require('../../assets/examzone_mark.png');
 
 const GOALS = [
   { value: 1, label: '1 exam / day', sub: 'Light — just getting started' },
@@ -46,7 +48,7 @@ export default function OnboardingScreen({ route }) {
       <ScrollView contentContainerStyle={tw`flex-grow`} showsVerticalScrollIndicator={false}>
         {/* Hero */}
         <View style={tw`px-6 pt-12 pb-8 items-center`}>
-          <Text style={tw`text-5xl mb-3`}>🎉</Text>
+          <Image source={mark} style={tw`h-16 w-16 rounded-2xl mb-4`} resizeMode="cover" />
           <Text style={[tw`text-3xl font-extrabold text-center mb-1`, { color: '#fff' }]}>
             Welcome{user?.name ? `, ${user.name.split(' ')[0]}` : ''}!
           </Text>

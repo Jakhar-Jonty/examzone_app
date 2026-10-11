@@ -17,7 +17,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ImageBackground } from 'react-native';
 import ScreenWrapper from '../components/ScreenWrapper';
-import { formatDate, getExamStatus, getStreakBadge } from '../utils/helpers';
+import ExamCard from '../components/ExamCard';
+import { ExamCardSkeletonList } from '../components/ExamCardSkeleton';
+import { formatDate, getStreakBadge } from '../utils/helpers';
 import { gamificationService } from '../services/gamificationService';
 import { testSeriesService } from '../services/testSeriesService';
 import { notificationApi } from '../services/notificationService';
@@ -236,23 +238,6 @@ export default function DashboardScreen({ navigation }) {
     return '#ef4444';
   };
 
-  const getStatusColor = (status) => {
-    const map = {
-      available: colors.primary,
-      completed: '#10b981',
-      paused: '#f59e0b',
-      upcoming: '#3b82f6',
-      expired: '#9ca3af',
-    };
-    return map[status] || '#9ca3af';
-  };
-
-  const getCategoryName = (cat) => {
-    if (!cat) return 'General';
-    if (typeof cat === 'string') return cat;
-    return cat.displayName || cat.name || 'General';
-  };
-
   // ─── Computed ──────────────────────────────────────────
   const streak = stats?.streak;
   const currentStreak = streak?.currentStreak || 0;
@@ -306,8 +291,10 @@ export default function DashboardScreen({ navigation }) {
   if (loading && !stats) {
     return (
       <ScreenWrapper>
-        <View style={[tw`flex-1 items-center justify-center`, { backgroundColor: colors.background }]}>
-          <ActivityIndicator size="large" color={colors.primary} />
+        <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
+          <View style={tw`px-5 pt-6`}>
+            <ExamCardSkeletonList count={4} colors={colors} />
+          </View>
         </View>
       </ScreenWrapper>
     );
@@ -355,7 +342,7 @@ export default function DashboardScreen({ navigation }) {
                     tw`w-11 h-11 rounded-full items-center justify-center`,
                     { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
                   ]}
-                  onPress={() => navigation.navigate('ProfileTab', { screen: 'Notifications' })}
+                  onPress={() => navigation.navigate('Notifications')}
                   activeOpacity={0.7}
                 >
                   <Ionicons name="notifications-outline" size={20} color={colors.text} />
@@ -513,7 +500,7 @@ export default function DashboardScreen({ navigation }) {
           <TouchableOpacity
             style={tw`px-5 mb-5`}
             activeOpacity={0.85}
-            onPress={() => navigation.navigate('ProfileTab', { screen: 'Leaderboard' })}
+            onPress={() => navigation.navigate('Leaderboard')}
           >
             <View
               style={[
@@ -977,7 +964,7 @@ export default function DashboardScreen({ navigation }) {
                   <Text style={[tw`text-base font-bold`, { color: colors.text }]}>Leaderboard</Text>
                 </View>
                 <TouchableOpacity
-                  onPress={() => navigation.navigate('ProfileTab', { screen: 'Leaderboard' })}
+                  onPress={() => navigation.navigate('Leaderboard')}
                   hitSlop={8}
                 >
                   <Text style={[tw`text-sm font-semibold`, { color: colors.primary }]}>See all ›</Text>
@@ -1105,101 +1092,14 @@ export default function DashboardScreen({ navigation }) {
                 colors={colors}
               />
               <View style={tw`px-5 gap-2.5`}>
-                {recentPublishedExams.slice(0, 4).map((exam) => {
-                  const status = getExamStatus(exam);
-                  const statusColor = getStatusColor(status);
-                  // "NEW" if published within the last 48h.
-                  const isNew =
-                    exam.publishedAt &&
-                    Date.now() - new Date(exam.publishedAt).getTime() < 48 * 3600 * 1000;
-                  const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
-
-                  return (
-                    <TouchableOpacity
-                      key={exam._id}
-                      style={[
-                        tw`flex-row items-stretch rounded-2xl border overflow-hidden`,
-                        { backgroundColor: colors.card, borderColor: colors.border },
-                      ]}
-                      onPress={() => navigation.navigate('ExamDetail', { examId: exam._id })}
-                      activeOpacity={0.8}
-                    >
-                      {/* Color accent bar */}
-                      <View style={{ width: 4, backgroundColor: statusColor }} />
-
-                      <View style={tw`flex-1 flex-row items-center p-3.5`}>
-                        {/* Icon */}
-                        <View
-                          style={[
-                            tw`w-11 h-11 rounded-xl items-center justify-center mr-3`,
-                            { backgroundColor: statusColor + '15' },
-                          ]}
-                        >
-                          <Ionicons
-                            name={
-                              status === 'available'
-                                ? 'play'
-                                : status === 'upcoming'
-                                ? 'time'
-                                : status === 'paused'
-                                ? 'pause'
-                                : 'document-text'
-                            }
-                            size={20}
-                            color={statusColor}
-                          />
-                        </View>
-
-                        {/* Info */}
-                        <View style={tw`flex-1`}>
-                          <View style={tw`flex-row items-center gap-2`}>
-                            <Text
-                              style={[tw`flex-1 text-[15px] font-bold`, { color: colors.text }]}
-                              numberOfLines={1}
-                            >
-                              {exam.title}
-                            </Text>
-                            {isNew && (
-                              <View style={[tw`px-1.5 py-0.5 rounded`, { backgroundColor: colors.primary }]}>
-                                <Text style={tw`text-[9px] font-extrabold text-white`}>NEW</Text>
-                              </View>
-                            )}
-                          </View>
-                          <View style={tw`flex-row items-center mt-1 gap-1.5`}>
-                            <Text style={[tw`text-[11px] font-semibold`, { color: colors.primary }]}>
-                              {getCategoryName(exam.category)}
-                            </Text>
-                            {exam.duration ? (
-                              <Text style={[tw`text-[11px]`, { color: colors.textSecondary }]}>
-                                · {exam.duration}m
-                              </Text>
-                            ) : null}
-                            {exam.totalMarks ? (
-                              <Text style={[tw`text-[11px]`, { color: colors.textSecondary }]}>
-                                · {exam.totalMarks} marks
-                              </Text>
-                            ) : null}
-                          </View>
-                        </View>
-
-                        {/* Status + chevron */}
-                        <View style={tw`items-end ml-2`}>
-                          <View
-                            style={[
-                              tw`px-2 py-0.5 rounded-md mb-1`,
-                              { backgroundColor: statusColor + '15' },
-                            ]}
-                          >
-                            <Text style={[tw`text-[10px] font-bold`, { color: statusColor }]}>
-                              {statusLabel}
-                            </Text>
-                          </View>
-                          <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
-                        </View>
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })}
+                {recentPublishedExams.slice(0, 4).map((exam) => (
+                  <ExamCard
+                    key={exam._id}
+                    exam={exam}
+                    navigation={navigation}
+                    colors={colors}
+                  />
+                ))}
               </View>
             </View>
           )}

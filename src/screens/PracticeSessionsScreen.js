@@ -24,6 +24,8 @@ const SESSION_TYPES = [
   { value: 'topic-wise', label: 'Topic Wise', icon: 'locate-outline' },
   { value: 'difficulty-based', label: 'By Difficulty', icon: 'bar-chart-outline' },
   { value: 'weak-areas', label: 'Weak Areas', icon: 'flash-outline' },
+  { value: 'mistakes', label: 'Wrong Book', icon: 'book-outline' },
+  { value: 'pyq', label: 'PYQ', icon: 'time-outline' },
 ];
 
 const DIFFICULTIES = ['Easy', 'Medium', 'Hard'];

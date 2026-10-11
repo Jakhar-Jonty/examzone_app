@@ -14,10 +14,17 @@ import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
 import { Ionicons } from '@expo/vector-icons';
-import { formatDate, getExamStatus } from '../utils/helpers';
+import ExamCard, {
+  ExamFilterChips,
+  ExamSortChips,
+  filterExamsByChip,
+  examFilterCounts,
+} from '../components/ExamCard';
+import { ExamCardSkeletonList } from '../components/ExamCardSkeleton';
+import { sortExams } from '../utils/examSort';
+import { trackRecentSubcategory } from '../utils/recentSubcategories';
 
-// ─── Shared Components (ideally in separate files) ───────
-// Reuse Header from a shared location
+// ─── Shared Components ───────────────────────────────────
 function Header({ title, navigation, colors }) {
   return (
     <View
@@ -40,137 +47,6 @@ function Header({ title, navigation, colors }) {
   );
 }
 
-function getStatusColor(status, colors) {
-  const map = {
-    available: colors.primary,
-    completed: '#10b981',
-    paused: '#f59e0b',
-    upcoming: '#3b82f6',
-    expired: '#9ca3af',
-  };
-  return map[status] || colors.textSecondary;
-}
-
-// Reuse ExamCard from CategoryDetailScreen
-function ExamCard({ exam, navigation, colors }) {
-  if (!exam) return null;
-  const status = getExamStatus(exam);
-  const statusColor = getStatusColor(status, colors);
-
-  return (
-    <View
-      style={[
-        tw`rounded-2xl p-4 border`,
-        { backgroundColor: colors.surface, borderColor: colors.border },
-      ]}
-    >
-      <View style={tw`flex-row justify-between items-start mb-3 gap-2`}>
-        <Text
-          style={[tw`flex-1 text-sm font-semibold leading-5`, { color: colors.text }]}
-          numberOfLines={2}
-        >
-          {exam.title}
-        </Text>
-        <View style={[tw`px-2 py-1 rounded-lg`, { backgroundColor: statusColor + '15' }]}>
-          <Text style={[tw`text-[10px] font-semibold`, { color: statusColor }]}>
-            {status.charAt(0).toUpperCase() + status.slice(1)}
-          </Text>
-        </View>
-      </View>
-
-      <View style={tw`gap-1.5 mb-3`}>
-        <View style={tw`flex-row items-center gap-1.5`}>
-          <Ionicons name="calendar-outline" size={12} color={colors.textSecondary} />
-          <Text style={[tw`text-[11px]`, { color: colors.textSecondary }]}>
-            {formatDate(exam.scheduledTime)}
-          </Text>
-        </View>
-        <View style={tw`flex-row items-center gap-1.5`}>
-          <Ionicons name="time-outline" size={12} color={colors.textSecondary} />
-          <Text style={[tw`text-[11px]`, { color: colors.textSecondary }]}>
-            {exam.duration} min • {exam.totalMarks} marks
-          </Text>
-        </View>
-        {exam.totalQuestions > 0 && (
-          <View style={tw`flex-row items-center gap-1.5`}>
-            <Ionicons name="document-text-outline" size={12} color={colors.textSecondary} />
-            <Text style={[tw`text-[11px]`, { color: colors.textSecondary }]}>
-              {exam.totalQuestions} questions
-            </Text>
-          </View>
-        )}
-      </View>
-
-      <View style={[tw`flex-row gap-2 pt-3 border-t`, { borderColor: colors.border }]}>
-        {exam.isAttempted && exam.attemptId ? (
-          <>
-            <TouchableOpacity
-              style={[
-                tw`flex-1 flex-row items-center justify-center py-2.5 rounded-xl gap-1.5`,
-                { backgroundColor: colors.primary },
-              ]}
-              onPress={() => navigation.navigate('Result', { attemptId: exam.attemptId })}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="eye-outline" size={14} color="#fff" />
-              <Text style={tw`text-xs font-bold text-white`}>Result</Text>
-            </TouchableOpacity>
-            {status === 'available' && (
-              <TouchableOpacity
-                style={[
-                  tw`flex-1 flex-row items-center justify-center py-2.5 rounded-xl gap-1.5 border`,
-                  { borderColor: colors.primary },
-                ]}
-                onPress={() => navigation.navigate('ExamDetail', { examId: exam._id })}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="refresh-outline" size={14} color={colors.primary} />
-                <Text style={[tw`text-xs font-bold`, { color: colors.primary }]}>Retry</Text>
-              </TouchableOpacity>
-            )}
-          </>
-        ) : exam.isPaused ? (
-          <TouchableOpacity
-            style={[
-              tw`flex-1 flex-row items-center justify-center py-2.5 rounded-xl gap-1.5`,
-              { backgroundColor: '#f59e0b' },
-            ]}
-            onPress={() => navigation.navigate('ExamDetail', { examId: exam._id })}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="play" size={14} color="#fff" />
-            <Text style={tw`text-xs font-bold text-white`}>Continue</Text>
-          </TouchableOpacity>
-        ) : status === 'available' ? (
-          <TouchableOpacity
-            style={[
-              tw`flex-1 flex-row items-center justify-center py-2.5 rounded-xl gap-1.5`,
-              { backgroundColor: colors.primary },
-            ]}
-            onPress={() => navigation.navigate('ExamDetail', { examId: exam._id })}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="play-circle" size={14} color="#fff" />
-            <Text style={tw`text-xs font-bold text-white`}>Start Exam</Text>
-          </TouchableOpacity>
-        ) : status === 'upcoming' ? (
-          <View
-            style={[
-              tw`flex-1 flex-row items-center justify-center py-2.5 rounded-xl gap-1.5 border opacity-50`,
-              { borderColor: colors.border },
-            ]}
-          >
-            <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
-            <Text style={[tw`text-xs font-semibold`, { color: colors.textSecondary }]}>
-              Coming Soon
-            </Text>
-          </View>
-        ) : null}
-      </View>
-    </View>
-  );
-}
-
 // ─── Main Component ──────────────────────────────────────
 const LIMIT = 20;
 
@@ -188,6 +64,8 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [examFilter, setExamFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('newest');
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -199,6 +77,7 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
 
   // ─── Initial load ──────────────────────────────────────
   useEffect(() => {
+    trackRecentSubcategory(subCategoryId);
     fetchSubCategory();
   }, [subCategoryId]);
 
@@ -304,6 +183,7 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
     setExams([]);
     setSelectedTierId(null);
     setSearchQuery('');
+    setExamFilter('all');
     fetchSubCategory();
   };
 
@@ -313,8 +193,8 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
       <ScreenWrapper>
         <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
           <Header title="Subcategory" navigation={navigation} colors={colors} />
-          <View style={tw`flex-1 items-center justify-center`}>
-            <ActivityIndicator size="large" color={colors.primary} />
+          <View style={tw`flex-1 px-5 pt-4`}>
+            <ExamCardSkeletonList count={4} colors={colors} />
           </View>
         </View>
       </ScreenWrapper>
@@ -347,6 +227,8 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
 
   // ─── Computed ──────────────────────────────────────────
   const selectedTierName = tiers.find((t) => t._id === selectedTierId)?.name;
+  const filteredExams = sortExams(filterExamsByChip(exams, examFilter), sortBy);
+  const examCounts = examFilterCounts(exams);
   const isEmpty = tiers.length === 0 && exams.length === 0 && !loadingExams && !searchQuery;
 
   // ═══════════════════════════════════════════════════════
@@ -371,17 +253,15 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
           }
           showsVerticalScrollIndicator={false}
         >
-          {/* ─── Subcategory Info ──────────────────────── */}
-          <View
-            style={[
-              tw`flex-row rounded-2xl p-4 mt-4 mb-5 border`,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
-          >
+          {/* ─── Compact subcategory banner ───────────── */}
+          <View style={tw`flex-row items-center mt-4 mb-5`}>
             {subCategory.logo ? (
               <Image
                 source={{ uri: subCategory.logo }}
-                style={[tw`w-14 h-14 rounded-2xl mr-3.5`, { backgroundColor: colors.background }]}
+                style={[
+                  tw`w-14 h-14 rounded-2xl mr-3.5`,
+                  { backgroundColor: colors.surface },
+                ]}
                 resizeMode="cover"
               />
             ) : (
@@ -391,35 +271,44 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
                   { backgroundColor: colors.primary + '10' },
                 ]}
               >
-                <Ionicons name="layers" size={28} color={colors.primary} />
+                <Ionicons name="layers" size={24} color={colors.primary} />
               </View>
             )}
             <View style={tw`flex-1`}>
-              <Text style={[tw`text-lg font-bold`, { color: colors.text }]}>
+              <Text style={[tw`text-base font-bold`, { color: colors.text }]} numberOfLines={1}>
                 {subCategory.displayName || subCategory.name}
               </Text>
               {parentCategory && (
-                <Text style={[tw`text-xs font-semibold mt-0.5`, { color: colors.primary }]}>
-                  {parentCategory.displayName || parentCategory.name}
-                </Text>
+                <TouchableOpacity
+                  onPress={() =>
+                    navigation.navigate('CategoryDetail', {
+                      categoryId: parentCategory._id,
+                    })
+                  }
+                  activeOpacity={0.7}
+                >
+                  <Text style={[tw`text-[11px] font-semibold mt-0.5`, { color: colors.primary }]}>
+                    {parentCategory.displayName || parentCategory.name}
+                  </Text>
+                </TouchableOpacity>
               )}
-              {subCategory.description && (
+              {subCategory.description ? (
                 <Text
-                  style={[tw`text-xs leading-4 mt-1.5`, { color: colors.textSecondary }]}
+                  style={[tw`text-[11px] leading-4 mt-0.5`, { color: colors.textSecondary }]}
                   numberOfLines={2}
                 >
                   {subCategory.description}
                 </Text>
-              )}
+              ) : null}
               {subCategory.examCount > 0 && (
                 <View
                   style={[
-                    tw`self-start px-2.5 py-1 rounded-lg mt-2`,
+                    tw`self-start px-2 py-0.5 rounded-md mt-2`,
                     { backgroundColor: colors.primary + '12' },
                   ]}
                 >
                   <Text style={[tw`text-[10px] font-semibold`, { color: colors.primary }]}>
-                    {subCategory.examCount} {subCategory.examCount === 1 ? 'Exam' : 'Exams'}
+                    {subCategory.examCount} {subCategory.examCount === 1 ? 'exam' : 'exams'}
                   </Text>
                 </View>
               )}
@@ -538,24 +427,29 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
               )}
             </View>
 
+            <ExamFilterChips
+              value={examFilter}
+              onChange={setExamFilter}
+              colors={colors}
+              counts={examCounts}
+            />
+
+            <ExamSortChips value={sortBy} onChange={setSortBy} colors={colors} />
+
             {/* Loading */}
             {loadingExams && exams.length === 0 ? (
-              <View style={tw`items-center py-12`}>
-                <ActivityIndicator size="large" color={colors.primary} />
-                <Text style={[tw`mt-2 text-xs`, { color: colors.textSecondary }]}>
-                  Loading exams...
-                </Text>
-              </View>
-            ) : exams.length > 0 ? (
+              <ExamCardSkeletonList count={4} colors={colors} />
+            ) : filteredExams.length > 0 ? (
               <>
                 {/* Exam Cards */}
                 <View style={tw`gap-3`}>
-                  {exams.map((exam) => (
+                  {filteredExams.map((exam) => (
                     <ExamCard
                       key={exam._id}
                       exam={exam}
                       navigation={navigation}
                       colors={colors}
+                      showBreadcrumb={false}
                     />
                   ))}
                 </View>
@@ -656,6 +550,12 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
                   </Text>
                 )}
               </>
+            ) : exams.length > 0 ? (
+              <View style={tw`items-center py-12`}>
+                <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>
+                  No exams match this filter
+                </Text>
+              </View>
             ) : (
               /* Empty exams */
               <View style={tw`items-center py-12`}>
