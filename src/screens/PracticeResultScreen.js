@@ -12,6 +12,7 @@ const SESSION_TYPE_LABELS = {
   'weak-areas': 'Weak Areas',
   mistakes: 'Wrong Book',
   pyq: 'PYQ',
+  'daily-quiz': 'Daily Quiz',
 };
 
 export default function PracticeResultScreen({ route, navigation }) {

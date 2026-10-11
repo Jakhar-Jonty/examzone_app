@@ -104,7 +104,7 @@ export default function RewardCelebration({ rewards, visible, onClose }) {
 
         <Animated.View style={[styles.card, { opacity, transform: [{ scale }] }]}>
           <LinearGradient
-            colors={[colors.primary, colors.primaryDark]}
+            colors={[colors.primary, colors.primaryGradientEnd]}
             style={styles.hero}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}

@@ -10,9 +10,9 @@ const EC2_API_URL = 'http://13.233.215.71/api';
 const API_URL = process.env.EXPO_PUBLIC_API_URL
   || (__DEV__
     ? Platform.select({
-      android: 'http://10.0.2.2:8000/api',
-      ios: 'http://localhost:8000/api',
-      default: 'http://localhost:8000/api',
+      android: 'http://10.0.2.2:6001/api',
+      ios: 'http://localhost:6001/api',
+      default: 'http://localhost:6001/api',
     })
     : PROD_API_URL);
 

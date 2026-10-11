@@ -14,6 +14,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
 import { practiceSessionService } from '../services/practiceSessionService';
+import { useAuth } from '../context/AuthContext';
+import {
+  getLocalizedQuestionText,
+  getLocalizedQuestionOptions,
+  getLocalizedExplanation,
+  hasHindiContent,
+} from '../utils/questionLanguage';
 
 const SESSION_TYPE_LABELS = {
   random: 'Random',
@@ -23,6 +30,7 @@ const SESSION_TYPE_LABELS = {
   'weak-areas': 'Weak Areas',
   mistakes: 'Wrong Book',
   pyq: 'PYQ',
+  'daily-quiz': 'Daily Quiz',
 };
 
 function getOptionLabel(option, index) {
@@ -94,8 +102,10 @@ function QuestionPaletteGrid({
 export default function PracticeInterfaceScreen({ route, navigation }) {
   const { sessionId, sessionType } = route.params;
   const { colors } = useTheme();
+  const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const questionStartRef = useRef(Date.now());
+  const [language, setLanguage] = useState(user?.preferredLanguage === 'Hindi' ? 'Hindi' : 'English');
 
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -276,7 +286,10 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
     );
   }
 
-  const opts = normalizeOptions(currentQuestion.options);
+  const opts = normalizeOptions(getLocalizedQuestionOptions(currentQuestion, language));
+  const questionText = getLocalizedQuestionText(currentQuestion, language);
+  const explanation = getLocalizedExplanation(currentQuestion, language);
+  const canSwitchLanguage = hasHindiContent(currentQuestion);
   const correctOpt = opts.find((o) => o.label === currentQuestion.correctAnswer);
   const isMarked = markedForReview.has(currentId);
 
@@ -292,6 +305,24 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
             Q {currentIndex + 1}/{questions.length} · {answeredCount} done
           </Text>
         </View>
+        {canSwitchLanguage && (
+          <TouchableOpacity
+            onPress={() => setLanguage(language === 'Hindi' ? 'English' : 'Hindi')}
+            hitSlop={8}
+            accessibilityLabel={`Showing ${language}. Tap to switch language.`}
+            style={{
+              marginRight: 14,
+              paddingHorizontal: 10,
+              paddingVertical: 5,
+              borderRadius: 999,
+              backgroundColor: colors.surfaceMuted,
+            }}
+          >
+            <Text style={{ fontSize: 12, fontWeight: '700', color: colors.text }}>
+              {language === 'Hindi' ? 'हिन्दी' : 'EN'}
+            </Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity onPress={() => setShowPalette(true)} hitSlop={12}>
           <Ionicons name="grid-outline" size={24} color={colors.text} />
         </TouchableOpacity>
@@ -319,7 +350,7 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
         </View>
 
         <View style={styles.questionCard}>
-          <Text style={styles.questionText}>{currentQuestion.questionText}</Text>
+          <Text style={styles.questionText}>{questionText}</Text>
 
           {opts.map((opt) => {
             const isCorrect = revealed && opt.label === currentQuestion.correctAnswer;
@@ -361,10 +392,10 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
             </View>
           )}
 
-          {revealed && currentQuestion.explanation ? (
+          {revealed && explanation ? (
             <View style={styles.explanationBox}>
               <Ionicons name="bulb-outline" size={18} color={colors.success} />
-              <Text style={styles.explanationText}>{currentQuestion.explanation}</Text>
+              <Text style={styles.explanationText}>{explanation}</Text>
             </View>
           ) : null}
         </View>

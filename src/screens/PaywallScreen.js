@@ -111,7 +111,7 @@ export default function PaywallScreen({ navigation, route }) {
         >
           {/* Hero */}
           <LinearGradient
-            colors={[colors.primary, colors.primaryDark]}
+            colors={[colors.primary, colors.primaryGradientEnd]}
             style={styles.hero}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}

@@ -7,19 +7,17 @@ import {
   ActivityIndicator,
   RefreshControl,
   Image,
+  Alert,
+  Dimensions,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import tw from 'twrnc';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { ImageBackground } from 'react-native';
 import ScreenWrapper from '../components/ScreenWrapper';
-import ExamCard from '../components/ExamCard';
 import { ExamCardSkeletonList } from '../components/ExamCardSkeleton';
-import { formatDate, getStreakBadge } from '../utils/helpers';
 import { gamificationService } from '../services/gamificationService';
 import { testSeriesService } from '../services/testSeriesService';
 import { notificationApi } from '../services/notificationService';
@@ -32,7 +30,23 @@ const PRACTICE_TYPE_LABELS = {
   'topic-wise': 'Topic Wise',
   'difficulty-based': 'By Difficulty',
   'weak-areas': 'Weak Areas',
+  mistakes: 'Wrong Book',
+  pyq: 'PYQ',
+  'daily-quiz': 'Daily Quiz',
 };
+
+const EXAM_TYPE_LABELS = {
+  mock: 'Mock test',
+  'full-length': 'Full mock',
+  sectional: 'Sectional',
+  pyq: 'PYQ paper',
+  practice: 'Practice',
+  quiz: 'Quiz',
+  adaptive: 'Adaptive',
+};
+
+const SERIES_CARD_WIDTH = Math.min(300, Dimensions.get('window').width - 80);
+const SERIES_CARD_GAP = 12;
 
 function computePlanProgress(plan) {
   const total =
@@ -63,20 +77,38 @@ function pickActiveStudyPlan(plans) {
   })[0];
 }
 
-function getNextMilestone(plan) {
-  return (plan.milestones || [])
-    .filter((m) => !m.isCompleted)
-    .sort((a, b) => new Date(a.targetDate) - new Date(b.targetDate))[0];
+const idOf = (v) => String(v?._id || v || '');
+
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
 }
 
-function formatShortDate(d) {
-  if (!d) return '';
-  return new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+function startsIn(date) {
+  const ms = new Date(date) - new Date();
+  if (ms <= 0) return 'Starting now';
+  const mins = Math.round(ms / 60000);
+  if (mins < 60) return `Starts in ${mins}m`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `Starts in ${hrs}h ${mins % 60}m`;
+  const days = Math.floor(hrs / 24);
+  return `Starts in ${days} day${days === 1 ? '' : 's'}`;
+}
+
+function timeAgo(date) {
+  const mins = Math.round((new Date() - new Date(date)) / 60000);
+  if (mins < 60) return `${Math.max(1, mins)}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ago`;
 }
 
 export default function DashboardScreen({ navigation }) {
-  const { colors, isDark } = useTheme();
-  const { user, isPremium } = useAuth();
+  const { colors } = useTheme();
+  const { user, isPremium, updateUser } = useAuth();
 
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -84,16 +116,17 @@ export default function DashboardScreen({ navigation }) {
   const [error, setError] = useState(null);
   const [wordOfDay, setWordOfDay] = useState(null);
   const [quote, setQuote] = useState(null);
-  const [recentResults, setRecentResults] = useState([]);
-  const [recentPublishedExams, setRecentPublishedExams] = useState([]);
+  const [availableExams, setAvailableExams] = useState([]);
   const [progress, setProgress] = useState(null);
   const [testSeries, setTestSeries] = useState([]);
   const [activeAttempt, setActiveAttempt] = useState(null);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [leaderboard, setLeaderboard] = useState({ top: [], me: null });
-  const [resuming, setResuming] = useState(false);
   const [activePractice, setActivePractice] = useState(null);
-  const [studyPlanHighlight, setStudyPlanHighlight] = useState(null);
+  const [studyPlan, setStudyPlan] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [updates, setUpdates] = useState([]);
+  const [selectedTargetId, setSelectedTargetId] = useState(null);
+  const [seriesIndex, setSeriesIndex] = useState(0);
+  const [busy, setBusy] = useState(null); // 'resume' | 'quiz' | 'lang'
 
   useFocusEffect(
     useCallback(() => {
@@ -106,66 +139,45 @@ export default function DashboardScreen({ navigation }) {
       setLoading(true);
       setError(null);
 
-      const [statsRes, wordRes, quoteRes, examsRes, progressData, seriesRes, activeRes, unreadRes, lbRes, practiceRes, plansRes] = await Promise.all([
-        api.get('/user/dashboard-stats').catch(() => ({ data: null })),
-        api.get('/user/word-of-day').catch(() => ({ data: null })),
-        api.get('/user/motivational-quote').catch(() => ({ data: null })),
-        api.get('/user/exams').catch(() => ({ data: { exams: [] } })),
-        gamificationService.getMyProgress().catch(() => null),
-        testSeriesService.list({ limit: 6 }).catch(() => ({ series: [] })),
-        api.get('/exams/active-attempt').then((r) => r.data).catch(() => null),
-        notificationApi.unreadCount().catch(() => ({ unreadCount: 0 })),
-        gamificationService.getLeaderboard(5).catch(() => null),
-        practiceSessionService.list({ limit: 8 }).catch(() => ({ sessions: [] })),
-        studyPlanService.list().catch(() => ({ plans: [] })),
-      ]);
+      const [statsRes, wordRes, quoteRes, examsRes, progressData, seriesRes, activeRes, unreadRes, practiceRes, plansRes, notifRes] =
+        await Promise.all([
+          api.get('/user/dashboard-stats').catch(() => ({ data: null })),
+          api.get('/user/word-of-day').catch(() => ({ data: null })),
+          api.get('/user/motivational-quote').catch(() => ({ data: null })),
+          api.get('/exams/available').catch(() => ({ data: { exams: [] } })),
+          gamificationService.getMyProgress().catch(() => null),
+          testSeriesService.list({ limit: 6 }).catch(() => ({ series: [] })),
+          api.get('/exams/active-attempt').then((r) => r.data).catch(() => null),
+          notificationApi.unreadCount().catch(() => ({ unreadCount: 0 })),
+          practiceSessionService.list({ limit: 8 }).catch(() => ({ sessions: [] })),
+          studyPlanService.list().catch(() => ({ plans: [] })),
+          notificationApi.list(1, 3).catch(() => ({ notifications: [] })),
+        ]);
 
+      setStats(statsRes.data);
+      setAvailableExams(examsRes.data?.exams || []);
       setProgress(progressData);
       setTestSeries(seriesRes?.series || []);
       setActiveAttempt(activeRes?.attempt || null);
       setUnreadCount(unreadRes?.unreadCount || 0);
-      if (lbRes) setLeaderboard({ top: (lbRes.leaderboard || []).slice(0, 3), me: lbRes.me || null });
+      setStudyPlan(pickActiveStudyPlan(plansRes?.plans || []));
+      setUpdates(notifRes?.notifications || []);
+      if (wordRes.data) setWordOfDay(wordRes.data?.wordOfDay || wordRes.data?.word || wordRes.data);
+      if (quoteRes.data) setQuote(quoteRes.data?.quote || quoteRes.data?.motivationalQuote || quoteRes.data);
 
-      const inProgressPractice = (practiceRes?.sessions || []).find((s) => !s.isCompleted);
-      if (inProgressPractice) {
+      const inProgress = (practiceRes?.sessions || []).find((s) => !s.isCompleted);
+      if (inProgress) {
         try {
-          const detail = await practiceSessionService.get(inProgressPractice._id);
-          setActivePractice({
-            ...inProgressPractice,
-            answeredCount: detail?.session?.answers?.length || 0,
-          });
+          const detail = await practiceSessionService.get(inProgress._id);
+          setActivePractice({ ...inProgress, answeredCount: detail?.session?.answers?.length || 0 });
         } catch {
-          setActivePractice(inProgressPractice);
+          setActivePractice(inProgress);
         }
       } else {
         setActivePractice(null);
       }
 
-      setStudyPlanHighlight(pickActiveStudyPlan(plansRes?.plans || []));
-
-      if (statsRes.data) {
-        setStats(statsRes.data);
-        setRecentResults((statsRes.data?.recentExamResults || []).slice(0, 5));
-        setRecentPublishedExams((statsRes.data?.todaysPublishedExams || []).slice(0, 5));
-      } else {
-        const allExams = examsRes.data?.exams || [];
-        setRecentResults(
-          allExams
-            .filter((e) => e.isAttempted)
-            .sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0))
-            .slice(0, 5)
-        );
-        setRecentPublishedExams(
-          allExams.filter((e) => !e.isAttempted && e.status === 'active').slice(0, 5)
-        );
-      }
-
-      if (wordRes.data) setWordOfDay(wordRes.data?.wordOfDay || wordRes.data?.word || wordRes.data);
-      if (quoteRes.data) setQuote(quoteRes.data?.quote || quoteRes.data?.motivationalQuote || quoteRes.data);
-
-      if (!statsRes.data && !wordRes.data && !quoteRes.data && !examsRes.data?.exams?.length) {
-        setError('Unable to load data. Pull down to retry.');
-      }
+      if (!statsRes.data) setError('Unable to load your dashboard. Pull down to retry.');
     } catch {
       setError('Something went wrong. Pull down to retry.');
     } finally {
@@ -179,14 +191,44 @@ export default function DashboardScreen({ navigation }) {
     fetchDashboardData();
   };
 
-  // Resume an in-progress attempt — the start endpoint resumes existing ones.
-  const handleResume = async () => {
-    if (!activeAttempt || resuming) return;
+  // ─── Derived data ──────────────────────────────────────
+  const targetExams = stats?.targetExams || [];
+  const target =
+    targetExams.find((t) => idOf(t.category) === selectedTargetId) || targetExams[0] || null;
+  const inTarget = (exam) => !target || !exam.category || idOf(exam.category) === idOf(target.category);
+
+  const currentStreak = stats?.streak?.currentStreak || 0;
+  const totalAttempts = Number(stats?.stats?.totalAttempts) || 0;
+  const averageScore = parseFloat(stats?.stats?.averageScore);
+  const xp = progress?.xp || 0;
+  const rank = progress?.rank || 'Beginner';
+  const nextRank = progress?.nextRank || null;
+  const xpToNext = progress?.xpToNextRank || 0;
+  const rankProgress = Math.max(0, Math.min(1, progress?.progressToNext || 0));
+
+  const targetExamsList = availableExams.filter(inTarget);
+  const recommended = [
+    ...targetExamsList.filter((e) => !e.isAttempted),
+    ...targetExamsList.filter((e) => e.isAttempted),
+  ].slice(0, 3);
+  const liveTests = (stats?.upcomingExams || []).filter(inTarget);
+  const recentResults = (stats?.recentExamResults || []).slice(0, 3);
+  const dailyQuiz = stats?.dailyQuiz || null;
+  const dailyQuizDone = !!dailyQuiz?.isCompleted;
+
+  // ─── Actions ───────────────────────────────────────────
+  const openPracticeSession = (session) =>
+    navigation.navigate('StudyTab', {
+      screen: 'PracticeInterface',
+      params: { sessionId: session._id, sessionType: session.sessionType },
+    });
+
+  const resumeExam = async () => {
+    if (!activeAttempt || busy) return;
     try {
-      setResuming(true);
+      setBusy('resume');
       const res = await api.post(`/exams/${activeAttempt.examId}/start`);
       const attemptData = res.data.attempt;
-      // ExamInterface is a root-stack screen (above the tabs).
       navigation.navigate('ExamInterface', {
         examId: activeAttempt.examId,
         attemptId: attemptData._id,
@@ -194,95 +236,125 @@ export default function DashboardScreen({ navigation }) {
         attempt: attemptData,
         isResumed: res.data.isResumed ?? true,
       });
-    } catch (e) {
-      // fall back to the exam detail screen
+    } catch {
       navigation.navigate('ExamDetail', { examId: activeAttempt.examId });
     } finally {
-      setResuming(false);
+      setBusy(null);
     }
   };
 
-  const openPractice = () => {
-    navigation.navigate('StudyTab', { screen: 'PracticeSessions' });
+  const openDailyQuiz = async () => {
+    if (busy) return;
+    try {
+      setBusy('quiz');
+      if (dailyQuizDone) {
+        const detail = await practiceSessionService.get(dailyQuiz.sessionId);
+        navigation.navigate('StudyTab', { screen: 'PracticeResult', params: { session: detail.session } });
+        return;
+      }
+      const { session } = await practiceSessionService.create({
+        sessionType: 'daily-quiz',
+        filters: target ? { category: idOf(target.category) } : {},
+      });
+      openPracticeSession(session);
+    } catch (e) {
+      Alert.alert('Daily quiz', e?.response?.data?.message || 'Could not start today’s quiz. Try again.');
+    } finally {
+      setBusy(null);
+    }
   };
 
-  const resumePractice = () => {
-    if (!activePractice) return;
-    navigation.navigate('StudyTab', {
-      screen: 'PracticeInterface',
-      params: {
-        sessionId: activePractice._id,
-        sessionType: activePractice.sessionType,
-      },
-    });
+  const toggleLanguage = async () => {
+    if (busy) return;
+    const next = user?.preferredLanguage === 'Hindi' ? 'English' : 'Hindi';
+    try {
+      setBusy('lang');
+      const res = await api.put('/user/profile', { preferredLanguage: next });
+      if (res.data?.user) await updateUser(res.data.user);
+    } catch {
+      Alert.alert('Language', 'Could not change language. Try again.');
+    } finally {
+      setBusy(null);
+    }
   };
 
-  const openStudyPlans = () => {
-    navigation.navigate('StudyTab', { screen: 'StudyPlans' });
+  const chooseTarget = () => {
+    if (targetExams.length < 2) {
+      navigation.navigate('EditProfile');
+      return;
+    }
+    Alert.alert('Preparing for', 'Show content for:', [
+      ...targetExams.slice(0, 3).map((t) => ({
+        text: t.name,
+        onPress: () => setSelectedTargetId(idOf(t.category)),
+      })),
+      { text: 'Edit exams', onPress: () => navigation.navigate('EditProfile') },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   };
 
-  // ─── Helpers ───────────────────────────────────────────
-  const getInitials = (name) => {
-    if (!name) return 'U';
-    return name
-      .split(' ')
-      .map((n) => n[0] || '')
-      .join('')
-      .toUpperCase()
-      .slice(0, 2) || 'U';
-  };
-
-  const getScoreColor = (pct) => {
-    if (pct >= 70) return '#10b981';
-    if (pct >= 50) return '#f59e0b';
-    return '#ef4444';
-  };
-
-  // ─── Computed ──────────────────────────────────────────
-  const streak = stats?.streak;
-  const currentStreak = streak?.currentStreak || 0;
-  const longestStreak = streak?.longestStreak || 0;
-  const totalExamsAttempted = stats?.totalExamsAttempted || stats?.examsAttempted || 0;
-  const averageScore = stats?.averageScore || stats?.averagePercentage || 0;
-  const totalStudyDays = streak?.totalStudyDays || 0;
-  const streakBadge = getStreakBadge(currentStreak);
-  const xp = progress?.xp || 0;
-  const rank = progress?.rank || 'Beginner';
-  const nextRank = progress?.nextRank || null;
-  const xpToNext = progress?.xpToNextRank || 0;
-  const rankProgress = Math.max(0, Math.min(1, progress?.progressToNext || 0));
-  const primaryAction = (() => {
+  // Hero priority: unfinished exam → unfinished practice → today's quiz → next recommended test.
+  const hero = (() => {
     if (activeAttempt) {
       return {
-        kind: 'resume-exam',
-        badge: activeAttempt.isPaused ? 'PAUSED EXAM' : 'EXAM IN PROGRESS',
-        title: activeAttempt.examTitle || 'Resume your mock test',
-        subtitle: `${activeAttempt.answeredCount || 0} answered`,
+        label: activeAttempt.isPaused ? 'PAUSED EXAM' : 'CONTINUE EXAM',
+        title: activeAttempt.examTitle || 'Your mock test',
+        subtitle: `${activeAttempt.answeredCount || 0} questions answered`,
         icon: 'play',
-        color: '#f59e0b',
-        onPress: handleResume,
+        cta: 'Resume',
+        pct: activeAttempt.totalQuestions
+          ? (activeAttempt.answeredCount || 0) / activeAttempt.totalQuestions
+          : null,
+        loading: busy === 'resume',
+        onPress: resumeExam,
       };
     }
     if (activePractice) {
       const answered = activePractice.answeredCount || 0;
       const total = activePractice.totalQuestions || 0;
+      const isQuiz = activePractice.sessionType === 'daily-quiz';
       return {
-        kind: 'resume-practice',
-        badge: 'PRACTICE IN PROGRESS',
-        title: `${PRACTICE_TYPE_LABELS[activePractice.sessionType] || 'Practice'} Session`,
-        subtitle: total ? `${answered}/${total} answered` : `${answered} answered`,
+        isDailyQuiz: isQuiz,
+        label: isQuiz ? 'TODAY' : 'CONTINUE',
+        title: isQuiz ? 'Daily quiz' : `${PRACTICE_TYPE_LABELS[activePractice.sessionType] || 'Practice'} session`,
+        subtitle: total ? `${answered} of ${total} questions answered` : `${answered} answered`,
         icon: 'flash',
-        color: colors.primary,
-        onPress: resumePractice,
+        cta: 'Resume',
+        pct: total ? answered / total : null,
+        onPress: () => openPracticeSession(activePractice),
+      };
+    }
+    if (!dailyQuizDone) {
+      return {
+        isDailyQuiz: true,
+        label: 'TODAY',
+        title: 'Daily quiz',
+        subtitle: `10 questions${target ? ` · ${target.name}` : ''} · about 5 min`,
+        icon: 'today',
+        cta: 'Start quiz',
+        pct: null,
+        loading: busy === 'quiz',
+        onPress: openDailyQuiz,
+      };
+    }
+    if (recommended[0]) {
+      return {
+        label: 'UP NEXT',
+        title: recommended[0].title,
+        subtitle: `${EXAM_TYPE_LABELS[recommended[0].examType] || 'Test'} · ${recommended[0].duration || 0} min`,
+        icon: 'play-circle',
+        cta: 'View test',
+        pct: null,
+        onPress: () => navigation.navigate('ExamDetail', { examId: recommended[0]._id }),
       };
     }
     return {
-      kind: 'start-mock',
-      badge: 'TODAY FOCUS',
-      title: 'Start your next mock test',
-      subtitle: 'Track progress and improve accuracy',
-      icon: 'play-circle',
-      color: colors.primary,
+      label: 'GET STARTED',
+      title: 'Find your next mock test',
+      subtitle: 'Browse tests for your exam',
+      icon: 'search',
+      cta: 'Browse exams',
+      pct: null,
       onPress: () => navigation.navigate('ExamsTab'),
     };
   })();
@@ -290,845 +362,476 @@ export default function DashboardScreen({ navigation }) {
   // ─── Loading ───────────────────────────────────────────
   if (loading && !stats) {
     return (
-      <ScreenWrapper>
-        <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
-          <View style={tw`px-5 pt-6`}>
-            <ExamCardSkeletonList count={4} colors={colors} />
-          </View>
+      <ScreenWrapper backgroundColor={colors.surface}>
+        <View style={[tw`flex-1 px-5 pt-6`, { backgroundColor: colors.surface }]}>
+          <ExamCardSkeletonList count={4} colors={colors} />
         </View>
       </ScreenWrapper>
     );
   }
 
+  const card = { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border };
+  const firstName = (user?.name || '').split(' ')[0] || 'there';
+  const isHindi = user?.preferredLanguage === 'Hindi';
+
   return (
-    <ScreenWrapper>
-      <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
+    <ScreenWrapper backgroundColor={colors.surface}>
+      <View style={[tw`flex-1`, { backgroundColor: colors.surface }]}>
         <ScrollView
           style={tw`flex-1`}
-          contentContainerStyle={tw`pb-28`}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
-          }
+          contentContainerStyle={tw`px-5 pt-3 pb-28`}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.text} />}
           showsVerticalScrollIndicator={false}
         >
+          {/* ─── Header ───────────────────────────────── */}
+          <View style={tw`flex-row items-center justify-between mb-4`}>
+            <TouchableOpacity
+              style={tw`flex-row items-center flex-1`}
+              onPress={() => navigation.navigate('ProfileTab')}
+              activeOpacity={0.8}
+              accessibilityLabel="Open profile"
+            >
+              {user?.profileImage ? (
+                <Image source={{ uri: user.profileImage }} style={tw`w-11 h-11 rounded-full`} />
+              ) : (
+                <View style={[tw`w-11 h-11 rounded-full items-center justify-center`, { backgroundColor: colors.surfaceMuted }]}>
+                  <Text style={[tw`text-base font-bold`, { color: colors.text }]}>{firstName[0]?.toUpperCase()}</Text>
+                </View>
+              )}
+              <View style={tw`ml-3 flex-1`}>
+                <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>{greeting()}</Text>
+                <Text style={[tw`text-xl font-extrabold`, { color: colors.text }]} numberOfLines={1}>
+                  {firstName}
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            <View style={tw`flex-row items-center gap-2`}>
+              <TouchableOpacity
+                onPress={toggleLanguage}
+                activeOpacity={0.8}
+                accessibilityLabel={`Question language: ${isHindi ? 'Hindi' : 'English'}. Tap to switch.`}
+                style={[tw`flex-row rounded-full p-1`, card]}
+              >
+                {['EN', 'हिन्दी'].map((label, i) => {
+                  const on = (i === 1) === isHindi;
+                  return (
+                    <View
+                      key={label}
+                      style={[tw`px-2.5 py-1.5 rounded-full`, on && { backgroundColor: colors.hero }]}
+                    >
+                      <Text style={[tw`text-xs font-bold`, { color: on ? colors.heroText : colors.textSecondary }]}>
+                        {label}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('Notifications')}
+                activeOpacity={0.8}
+                accessibilityLabel="Notifications"
+                style={[tw`w-11 h-11 rounded-full items-center justify-center`, card]}
+              >
+                <Ionicons name="notifications-outline" size={20} color={colors.text} />
+                {unreadCount > 0 && (
+                  <View
+                    style={[
+                      tw`absolute top-2 right-2.5 w-2.5 h-2.5 rounded-full`,
+                      { backgroundColor: colors.tones.red.fg, borderWidth: 2, borderColor: colors.card },
+                    ]}
+                  />
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* ─── Target exam ──────────────────────────── */}
+          <TouchableOpacity
+            onPress={chooseTarget}
+            activeOpacity={0.85}
+            style={[tw`flex-row items-center justify-between px-3.5 py-2.5 rounded-2xl mb-5`, card]}
+          >
+            <View style={tw`flex-row items-center flex-1`}>
+              <View style={[tw`w-8 h-8 rounded-lg items-center justify-center mr-3`, { backgroundColor: colors.surfaceMuted }]}>
+                <Ionicons name="locate-outline" size={17} color={colors.text} />
+              </View>
+              <View style={tw`flex-1`}>
+                <Text style={[tw`text-[11px]`, { color: colors.textSecondary }]}>
+                  {target ? 'Preparing for' : 'Set your goal'}
+                </Text>
+                <Text style={[tw`text-sm font-bold`, { color: colors.text }]} numberOfLines={1}>
+                  {target ? target.name : 'Choose the exam you’re preparing for'}
+                </Text>
+              </View>
+            </View>
+            <View style={tw`flex-row items-center`}>
+              <Text style={[tw`text-xs font-semibold mr-1`, { color: colors.textSecondary }]}>
+                {target ? 'Change' : 'Choose'}
+              </Text>
+              <Ionicons name="chevron-down" size={16} color={colors.textSecondary} />
+            </View>
+          </TouchableOpacity>
+
           {/* ─── Error ────────────────────────────────── */}
           {error && (
             <TouchableOpacity
-              style={[tw`mx-5 mt-3 p-3 rounded-2xl flex-row items-center`, { backgroundColor: '#fef2f2' }]}
-              onPress={fetchDashboardData}
-              activeOpacity={0.7}
+              onPress={onRefresh}
+              style={[tw`flex-row items-center p-3 rounded-2xl mb-4`, { backgroundColor: colors.tones.red.bg }]}
             >
-              <Ionicons name="alert-circle" size={18} color="#ef4444" />
-              <Text style={tw`flex-1 text-xs text-red-500 ml-2`}>{error}</Text>
-              <Ionicons name="refresh" size={16} color="#ef4444" />
+              <Ionicons name="alert-circle-outline" size={18} color={colors.tones.red.fg} />
+              <Text style={[tw`text-xs ml-2 flex-1`, { color: colors.tones.red.fg }]}>{error}</Text>
             </TouchableOpacity>
           )}
 
-          {/* ─── Greeting ─────────────────────────────── */}
-          <View style={tw`px-5 pt-2 pb-5`}>
-            <View style={tw`flex-row items-center justify-between`}>
-              <View style={tw`flex-1`}>
-                <Text style={[tw`text-sm`, { color: colors.textSecondary }]}>
-                  Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'},
+          {/* ─── Hero (Continue / Today) ──────────────── */}
+          <View style={[tw`p-5 rounded-3xl mb-4`, { backgroundColor: colors.hero }]}>
+            <View style={tw`flex-row justify-between items-start`}>
+              <View style={tw`flex-1 pr-3`}>
+                <Text style={[tw`text-[11px] font-bold tracking-widest`, { color: colors.heroMuted }]}>{hero.label}</Text>
+                <Text style={[tw`text-xl font-extrabold mt-1`, { color: colors.heroText }]} numberOfLines={2}>
+                  {hero.title}
                 </Text>
-                <Text style={[tw`text-2xl font-bold mt-0.5`, { color: colors.text }]}>
-                  {user?.name?.split(' ')[0] || 'User'} 👋
-                </Text>
+                <Text style={[tw`text-xs mt-1`, { color: colors.heroTextSecondary }]}>{hero.subtitle}</Text>
               </View>
-              <View style={tw`flex-row items-center gap-3`}>
-                {/* Notification bell */}
-                <TouchableOpacity
-                  style={[
-                    tw`w-11 h-11 rounded-full items-center justify-center`,
-                    { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
-                  ]}
-                  onPress={() => navigation.navigate('Notifications')}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="notifications-outline" size={20} color={colors.text} />
-                  {unreadCount > 0 && (
-                    <View
-                      style={[
-                        tw`absolute -top-0.5 -right-0.5 rounded-full items-center justify-center px-1`,
-                        { minWidth: 18, height: 18, backgroundColor: '#ef4444', borderWidth: 2, borderColor: colors.background },
-                      ]}
-                    >
-                      <Text style={tw`text-[10px] font-bold text-white`}>
-                        {unreadCount > 9 ? '9+' : unreadCount}
-                      </Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-
-                {/* Avatar */}
-                <TouchableOpacity
-                  style={[
-                    tw`w-11 h-11 rounded-full items-center justify-center overflow-hidden`,
-                    { backgroundColor: colors.primary + '15' },
-                  ]}
-                  onPress={() => navigation.navigate('ProfileTab')}
-                  activeOpacity={0.7}
-                >
-                  {user?.profileImage ? (
-                    <Image source={{ uri: user.profileImage }} style={tw`w-11 h-11`} />
-                  ) : (
-                    <Text style={[tw`text-sm font-bold`, { color: colors.primary }]}>
-                      {getInitials(user?.name)}
-                    </Text>
-                  )}
-                </TouchableOpacity>
+              <View style={[tw`w-11 h-11 rounded-2xl items-center justify-center`, { backgroundColor: colors.heroRaised }]}>
+                <Ionicons name={hero.icon} size={22} color={colors.heroAccent} />
               </View>
             </View>
-          </View>
-
-          {/* ─── Primary Action ───────────────────────── */}
-          <TouchableOpacity
-            style={tw`px-5 mb-5`}
-            activeOpacity={0.9}
-            onPress={primaryAction.onPress}
-            disabled={resuming && primaryAction.kind === 'resume-exam'}
-          >
-            <View
-              style={[
-                tw`flex-row items-center p-4 rounded-2xl`,
-                { backgroundColor: primaryAction.color + '14', borderWidth: 1, borderColor: primaryAction.color + '40' },
-              ]}
-            >
-              <View
-                style={[
-                  tw`w-11 h-11 rounded-full items-center justify-center`,
-                  { backgroundColor: primaryAction.color + '22' },
-                ]}
-              >
-                <Ionicons name={primaryAction.icon} size={20} color={primaryAction.color} />
-              </View>
-              <View style={tw`flex-1 ml-3`}>
-                <Text style={[tw`text-xs font-semibold`, { color: primaryAction.color }]}>
-                  {primaryAction.badge}
-                </Text>
-                <Text style={[tw`text-sm font-bold mt-0.5`, { color: colors.text }]} numberOfLines={1}>
-                  {primaryAction.title}
-                </Text>
-                <Text style={[tw`text-xs mt-0.5`, { color: colors.textSecondary }]}>
-                  {primaryAction.subtitle} · {primaryAction.kind === 'start-mock' ? 'tap to begin' : 'tap to continue'}
-                </Text>
-              </View>
-              {resuming && primaryAction.kind === 'resume-exam' ? (
-                <ActivityIndicator color={primaryAction.color} />
-              ) : (
-                <Ionicons name="arrow-forward-circle" size={26} color={primaryAction.color} />
-              )}
-            </View>
-          </TouchableOpacity>
-
-          {/* ─── Streak + Stats Row ───────────────────── */}
-          <View style={tw`px-5 mb-5`}>
-            <View style={tw`flex-row gap-2.5`}>
-              {/* Streak */}
-              <View
-                style={[
-                  tw`flex-1 p-3.5 rounded-2xl`,
-                  { backgroundColor: colors.primary + '10' },
-                ]}
-              >
-                <View style={tw`flex-row items-center justify-between mb-1`}>
-                  <View style={tw`flex-row items-center gap-1.5`}>
-                    <Ionicons name="flame" size={16} color={colors.primary} />
-                    <Text style={[tw`text-[11px] font-medium`, { color: colors.primary }]}>Streak</Text>
-                  </View>
-                  {streakBadge.current && (
-                    <Text style={tw`text-base`}>{streakBadge.current.icon}</Text>
-                  )}
-                </View>
-                <Text style={[tw`text-2xl font-bold`, { color: colors.primary }]}>
-                  {currentStreak}
-                  <Text style={[tw`text-xs font-medium`, { color: colors.primary }]}> days</Text>
-                </Text>
-                {streakBadge.current ? (
-                  <Text style={[tw`text-[10px] mt-0.5`, { color: colors.primary, opacity: 0.8 }]} numberOfLines={1}>
-                    {streakBadge.current.name}
-                  </Text>
-                ) : longestStreak > currentStreak ? (
-                  <Text style={[tw`text-[10px] mt-0.5`, { color: colors.primary, opacity: 0.7 }]}>
-                    Best: {longestStreak}
-                  </Text>
-                ) : null}
-              </View>
-
-              {/* Exams Done */}
-              <View
-                style={[
-                  tw`flex-1 p-3.5 rounded-2xl`,
-                  { backgroundColor: '#3b82f6' + '10' },
-                ]}
-              >
-                <View style={tw`flex-row items-center gap-1.5 mb-1`}>
-                  <Ionicons name="document-text" size={14} color="#3b82f6" />
-                  <Text style={[tw`text-[11px] font-medium`, { color: '#3b82f6' }]}>Exams</Text>
-                </View>
-                <Text style={[tw`text-2xl font-bold`, { color: '#3b82f6' }]}>
-                  {totalExamsAttempted}
-                </Text>
-                <Text style={[tw`text-[10px] mt-0.5`, { color: '#3b82f6', opacity: 0.7 }]}>
-                  attempted
-                </Text>
-              </View>
-
-              {/* Avg Score */}
-              <View
-                style={[
-                  tw`flex-1 p-3.5 rounded-2xl`,
-                  { backgroundColor: '#10b981' + '10' },
-                ]}
-              >
-                <View style={tw`flex-row items-center gap-1.5 mb-1`}>
-                  <Ionicons name="trending-up" size={14} color="#10b981" />
-                  <Text style={[tw`text-[11px] font-medium`, { color: '#10b981' }]}>Average</Text>
-                </View>
-                <Text style={[tw`text-2xl font-bold`, { color: '#10b981' }]}>
-                  {typeof averageScore === 'number' ? averageScore.toFixed(0) : '0'}
-                  <Text style={[tw`text-xs font-medium`, { color: '#10b981' }]}>%</Text>
-                </Text>
-                <Text style={[tw`text-[10px] mt-0.5`, { color: '#10b981', opacity: 0.7 }]}>
-                  score
-                </Text>
-              </View>
-            </View>
-          </View>
-
-          {/* ─── Rank & XP ────────────────────────────── */}
-          <TouchableOpacity
-            style={tw`px-5 mb-5`}
-            activeOpacity={0.85}
-            onPress={() => navigation.navigate('Leaderboard')}
-          >
-            <View
-              style={[
-                tw`p-4 rounded-2xl`,
-                { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
-              ]}
-            >
-              <View style={tw`flex-row items-center justify-between mb-2.5`}>
-                <View style={tw`flex-row items-center gap-2`}>
-                  <Ionicons name="trophy" size={18} color={colors.primary} />
-                  <Text style={[tw`text-base font-bold`, { color: colors.text }]}>{rank}</Text>
-                </View>
-                <View style={tw`flex-row items-center gap-1`}>
-                  <Text style={[tw`text-sm font-bold`, { color: colors.primary }]}>{xp} XP</Text>
-                  <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
-                </View>
-              </View>
-              {/* Progress bar */}
-              <View
-                style={[
-                  tw`h-2 rounded-full overflow-hidden`,
-                  { backgroundColor: colors.border },
-                ]}
-              >
+            {hero.pct != null && (
+              <View style={[tw`h-1.5 rounded-full mt-4 overflow-hidden`, { backgroundColor: colors.heroTrack }]}>
                 <View
                   style={[
                     tw`h-full rounded-full`,
-                    { width: `${rankProgress * 100}%`, backgroundColor: colors.primary },
+                    { width: `${Math.max(3, Math.round(hero.pct * 100))}%`, backgroundColor: colors.heroAccent },
                   ]}
                 />
               </View>
-              <Text style={[tw`text-[11px] mt-1.5`, { color: colors.textSecondary }]}>
-                {nextRank ? `${xpToNext} XP to ${nextRank}` : 'Max rank reached 🎉'}
-              </Text>
-            </View>
-          </TouchableOpacity>
-
-          {/* ─── Go Premium banner ────────────────────── */}
-          {!isPremium && (
+            )}
             <TouchableOpacity
-              style={tw`px-5 mb-5`}
+              onPress={hero.onPress}
               activeOpacity={0.85}
-              onPress={() => navigation.navigate('Paywall')}
+              style={[tw`flex-row items-center justify-center h-12 rounded-2xl mt-4`, { backgroundColor: colors.heroText }]}
             >
-              <View
-                style={[
-                  tw`flex-row items-center p-4 rounded-2xl`,
-                  { backgroundColor: colors.primary },
-                ]}
-              >
-                <Ionicons name="diamond" size={22} color="#fff" />
-                <View style={tw`flex-1 ml-3`}>
-                  <Text style={tw`text-sm font-bold text-white`}>Go Premium</Text>
-                  <Text style={tw`text-xs text-white opacity-90 mt-0.5`}>
-                    Unlimited exams · all study material · ad-free
-                  </Text>
+              {hero.loading ? (
+                <ActivityIndicator color={colors.hero} />
+              ) : (
+                <>
+                  <Text style={[tw`text-[15px] font-bold mr-2`, { color: colors.hero }]}>{hero.cta}</Text>
+                  <Ionicons name="arrow-forward" size={18} color={colors.hero} />
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          {/* ─── Stats + rank ─────────────────────────── */}
+          <View style={[tw`p-4 rounded-3xl mb-4`, card]}>
+            <View style={tw`flex-row`}>
+              <Stat icon="flame" iconColor={colors.tones.orange.fg} label="Streak" colors={colors}
+                value={String(currentStreak)} unit={currentStreak === 1 ? 'day' : 'days'} />
+              <Stat icon="document-text-outline" label="Exams" colors={colors} divider
+                value={String(totalAttempts)} />
+              <Stat icon="trending-up" label="Average" colors={colors} divider
+                value={totalAttempts > 0 && !Number.isNaN(averageScore) ? averageScore.toFixed(0) : '—'}
+                unit={totalAttempts > 0 && !Number.isNaN(averageScore) ? '%' : undefined} />
+            </View>
+            <View style={[tw`h-px my-4`, { backgroundColor: colors.border }]} />
+            <TouchableOpacity onPress={() => navigation.navigate('Leaderboard')} activeOpacity={0.8}>
+              <View style={tw`flex-row justify-between items-center mb-2`}>
+                <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>
+                  {rank} <Text style={[tw`font-normal`, { color: colors.textSecondary }]}>· {xp.toLocaleString('en-IN')} XP</Text>
+                </Text>
+                <View style={tw`flex-row items-center`}>
+                  <Text style={[tw`text-xs font-semibold`, { color: colors.text }]}>Leaderboard</Text>
+                  <Ionicons name="chevron-forward" size={14} color={colors.text} />
                 </View>
-                <Ionicons name="chevron-forward" size={18} color="#fff" />
               </View>
+              <View style={[tw`h-1.5 rounded-full overflow-hidden`, { backgroundColor: colors.surfaceMuted }]}>
+                <View style={[tw`h-full rounded-full`, { width: `${Math.round(rankProgress * 100)}%`, backgroundColor: colors.primary }]} />
+              </View>
+              <Text style={[tw`text-xs mt-2`, { color: colors.textSecondary }]}>
+                {nextRank ? `${xpToNext.toLocaleString('en-IN')} XP to ${nextRank}` : 'Top rank reached'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* ─── Daily quiz (when not already the hero) ── */}
+          {!hero.isDailyQuiz && (
+            <TouchableOpacity
+              onPress={openDailyQuiz}
+              activeOpacity={0.85}
+              style={[tw`flex-row items-center p-4 rounded-3xl mb-4`, card]}
+            >
+              <View style={[tw`w-10 h-10 rounded-xl items-center justify-center mr-3`, { backgroundColor: colors.tones.purple.bg }]}>
+                <Ionicons name="today-outline" size={20} color={colors.tones.purple.fg} />
+              </View>
+              <View style={tw`flex-1`}>
+                <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>Daily quiz</Text>
+                <Text style={[tw`text-xs mt-0.5`, { color: colors.textSecondary }]}>
+                  {dailyQuizDone
+                    ? `Done today · ${dailyQuiz.correctAnswers || 0}/${dailyQuiz.totalQuestions || 10} correct`
+                    : dailyQuiz
+                      ? 'In progress · tap to continue'
+                      : '10 questions · about 5 min'}
+                </Text>
+              </View>
+              {busy === 'quiz' ? (
+                <ActivityIndicator color={colors.text} />
+              ) : dailyQuizDone ? (
+                <Ionicons name="checkmark-circle" size={22} color={colors.tones.green.fg} />
+              ) : (
+                <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+              )}
             </TouchableOpacity>
           )}
 
-          {/* ─── Quick Actions ────────────────────────── */}
-          <View style={tw`px-5 mb-6`}>
-            <Text style={[tw`text-base font-bold mb-3`, { color: colors.text }]}>
-              Quick Start
-            </Text>
-            <View style={tw`flex-row gap-2.5`}>
-              <QuickActionTile
-                icon="play-circle"
-                label="Mock Test"
-                subtitle="Full exam"
-                colors={colors}
-                primary
-                onPress={() => navigation.navigate('ExamsTab')}
-              />
-              <QuickActionTile
-                icon="flash"
-                label="Practice"
-                subtitle="Quick drill"
-                colors={colors}
-                accent={colors.primary}
-                onPress={openPractice}
-              />
-              <QuickActionTile
-                icon="time-outline"
-                label="History"
-                subtitle="Past attempts"
-                colors={colors}
-                onPress={() => navigation.navigate('ExamHistory')}
-              />
-            </View>
+          {/* ─── Quick actions ────────────────────────── */}
+          <View style={tw`flex-row flex-wrap justify-between mb-2`}>
+            <QuickTile icon="play-circle-outline" tone={colors.tones.green} label="Mock test" subtitle="Full exam"
+              colors={colors} onPress={() => navigation.navigate('ExamsTab')} />
+            <QuickTile icon="flash-outline" tone={colors.tones.orange} label="Practice" subtitle="Quick drill"
+              colors={colors} onPress={() => navigation.navigate('StudyTab', { screen: 'PracticeSessions' })} />
+            <QuickTile icon="book-outline" tone={colors.tones.blue} label="PYQ" subtitle="Past papers"
+              colors={colors} onPress={() => navigation.navigate('StudyTab', { screen: 'Pyq' })} />
+            <QuickTile icon="close-circle-outline" tone={colors.tones.red} label="Wrong Book" subtitle="Fix mistakes"
+              colors={colors} onPress={() => navigation.navigate('StudyTab', { screen: 'WrongBook' })} />
           </View>
 
-          {/* ─── Active study plan ────────────────────── */}
-          {studyPlanHighlight && (() => {
-            const { total, completed, pct } = computePlanProgress(studyPlanHighlight);
-            const nextMilestone = getNextMilestone(studyPlanHighlight);
-            const daysLeft = studyPlanHighlight.endDate
-              ? Math.max(0, Math.ceil((new Date(studyPlanHighlight.endDate) - new Date()) / 86400000))
-              : null;
+          {/* ─── Live tests ───────────────────────────── */}
+          {liveTests.length > 0 && (
+            <Section title="Live tests" colors={colors}>
+              <View style={[tw`rounded-3xl overflow-hidden`, card]}>
+                {liveTests.map((exam, i) => (
+                  <ListRow
+                    key={exam._id}
+                    colors={colors}
+                    last={i === liveTests.length - 1}
+                    icon="radio-outline"
+                    iconTone={colors.tones.red}
+                    title={exam.title}
+                    subtitle={`${startsIn(exam.scheduledTime)} · ${exam.duration || 0} min`}
+                    onPress={() => navigation.navigate('ExamDetail', { examId: exam._id })}
+                  />
+                ))}
+              </View>
+            </Section>
+          )}
 
+          {/* ─── Study plan ───────────────────────────── */}
+          {studyPlan && (() => {
+            const { completed, total, pct } = computePlanProgress(studyPlan);
             return (
               <TouchableOpacity
-                style={tw`px-5 mb-6`}
-                activeOpacity={0.88}
-                onPress={openStudyPlans}
+                onPress={() => navigation.navigate('StudyTab', { screen: 'StudyPlans' })}
+                activeOpacity={0.85}
+                style={[tw`p-4 rounded-3xl mb-6`, card]}
               >
-                <View
-                  style={[
-                    tw`p-4 rounded-2xl`,
-                    { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
-                  ]}
-                >
-                  <View style={tw`flex-row items-center justify-between mb-3`}>
-                    <View style={tw`flex-row items-center gap-2`}>
-                      <View
-                        style={[
-                          tw`w-9 h-9 rounded-xl items-center justify-center`,
-                          { backgroundColor: '#3b82f6' + '18' },
-                        ]}
-                      >
-                        <Ionicons name="calendar" size={18} color="#3b82f6" />
-                      </View>
-                      <View>
-                        <Text style={[tw`text-[11px] font-semibold uppercase tracking-wide`, { color: '#3b82f6' }]}>
-                          Study Plan
-                        </Text>
-                        <Text style={[tw`text-sm font-bold`, { color: colors.text }]} numberOfLines={1}>
-                          {studyPlanHighlight.title}
-                        </Text>
-                      </View>
-                    </View>
-                    <View style={tw`items-end`}>
-                      <Text style={[tw`text-lg font-bold`, { color: colors.primary }]}>{pct}%</Text>
-                      {daysLeft != null && (
-                        <Text style={[tw`text-[10px]`, { color: colors.textSecondary }]}>
-                          {daysLeft === 0 ? 'Ends today' : `${daysLeft}d left`}
-                        </Text>
-                      )}
-                    </View>
-                  </View>
-
-                  <View style={[tw`h-2 rounded-full overflow-hidden mb-2`, { backgroundColor: colors.border }]}>
-                    <View
-                      style={[
-                        tw`h-full rounded-full`,
-                        { width: `${pct}%`, backgroundColor: colors.primary },
-                      ]}
-                    />
-                  </View>
-
-                  <View style={tw`flex-row items-center justify-between`}>
-                    <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>
-                      {completed} of {total} topics completed
-                    </Text>
-                    <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
-                  </View>
-
-                  {nextMilestone && (
-                    <View
-                      style={[
-                        tw`flex-row items-center gap-2 mt-3 pt-3`,
-                        { borderTopWidth: 1, borderTopColor: colors.border },
-                      ]}
-                    >
-                      <Ionicons name="flag-outline" size={14} color="#f59e0b" />
-                      <Text style={[tw`text-xs flex-1`, { color: colors.textSecondary }]} numberOfLines={1}>
-                        Next: <Text style={{ fontWeight: '600', color: colors.text }}>{nextMilestone.title}</Text>
-                        {nextMilestone.targetDate ? ` · ${formatShortDate(nextMilestone.targetDate)}` : ''}
-                      </Text>
-                    </View>
-                  )}
+                <View style={tw`flex-row items-center justify-between mb-2`}>
+                  <Text style={[tw`text-sm font-bold flex-1`, { color: colors.text }]} numberOfLines={1}>
+                    {studyPlan.title}
+                  </Text>
+                  <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>{pct}%</Text>
                 </View>
+                <View style={[tw`h-1.5 rounded-full overflow-hidden`, { backgroundColor: colors.surfaceMuted }]}>
+                  <View style={[tw`h-full rounded-full`, { width: `${pct}%`, backgroundColor: colors.primary }]} />
+                </View>
+                <Text style={[tw`text-xs mt-2`, { color: colors.textSecondary }]}>
+                  Study plan · {completed} of {total} topics done
+                </Text>
               </TouchableOpacity>
             );
           })()}
 
-          {/* ─── Daily Insights ───────────────────────── */}
-          {(wordOfDay || quote) && (
-            <View style={tw`px-5 mb-6`}>
-              <Text style={[tw`text-base font-bold mb-3`, { color: colors.text }]}>
-                Daily Insights
-              </Text>
+          {/* ─── Recommended ──────────────────────────── */}
+          <Section
+            title={target ? `Recommended for ${target.name}` : 'Recommended for you'}
+            onSeeAll={() => navigation.navigate('ExamsTab')}
+            colors={colors}
+          >
+            {recommended.length > 0 ? (
+              <View style={[tw`rounded-3xl overflow-hidden`, card]}>
+                {recommended.map((exam, i) => (
+                  <ListRow
+                    key={exam._id}
+                    colors={colors}
+                    last={i === recommended.length - 1}
+                    icon={exam.examType === 'pyq' ? 'book-outline' : 'document-text-outline'}
+                    title={exam.title}
+                    subtitle={[
+                      EXAM_TYPE_LABELS[exam.examType] || 'Test',
+                      `${exam.totalQuestions || exam.questions || 0} Qs`,
+                      `${exam.duration || 0} min`,
+                    ].join(' · ')}
+                    badge={exam.isAttempted ? 'DONE' : exam.isPremium ? 'PRO' : 'FREE'}
+                    badgeTone={exam.isAttempted ? null : exam.isPremium ? colors.tones.purple : colors.tones.green}
+                    onPress={() => navigation.navigate('ExamDetail', { examId: exam._id })}
+                  />
+                ))}
+              </View>
+            ) : (
+              <EmptyCard
+                colors={colors}
+                icon="document-text-outline"
+                title="No tests here yet"
+                body="New tests for your exam will show up here."
+              />
+            )}
+          </Section>
 
-              {wordOfDay && (
-                <TouchableOpacity
-                  style={[
-                    tw`p-4 rounded-2xl mb-2.5 border`,
-                    { backgroundColor: colors.surface, borderColor: colors.border },
-                  ]}
-                  onPress={() => wordOfDay?.word && navigation.navigate('WordOfDayDetail', { word: wordOfDay })}
-                  activeOpacity={0.7}
-                >
-                  <View style={tw`flex-row items-center justify-between`}>
-                    <View style={tw`flex-row items-center flex-1`}>
-                      <View
-                        style={[
-                          tw`w-8 h-8 rounded-xl items-center justify-center mr-3`,
-                          { backgroundColor: colors.primary + '12' },
-                        ]}
-                      >
-                        <Text style={tw`text-base`}>📖</Text>
-                      </View>
-                      <View style={tw`flex-1`}>
-                        <Text style={[tw`text-[11px] font-medium mb-0.5`, { color: colors.textSecondary }]}>
-                          WORD OF THE DAY
-                        </Text>
-                        <Text style={[tw`text-base font-bold`, { color: colors.primary }]}>
-                          {wordOfDay.word}
-                        </Text>
-                      </View>
-                    </View>
-                    <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
-                  </View>
-                  <Text
-                    style={[tw`text-xs mt-2 ml-11 leading-4`, { color: colors.textSecondary }]}
-                    numberOfLines={2}
-                  >
-                    {wordOfDay.meaning}
-                  </Text>
-                </TouchableOpacity>
-              )}
-
-              {quote && (
-                <TouchableOpacity
-                  style={[
-                    tw`p-4 rounded-2xl border`,
-                    { backgroundColor: colors.surface, borderColor: colors.border },
-                  ]}
-                  onPress={() => quote?.quote && navigation.navigate('QuoteDetail', { quote })}
-                  activeOpacity={0.7}
-                >
-                  <View style={tw`flex-row items-start`}>
-                    <View
-                      style={[
-                        tw`w-8 h-8 rounded-xl items-center justify-center mr-3 mt-0.5`,
-                        { backgroundColor: '#f59e0b' + '12' },
-                      ]}
-                    >
-                      <Text style={tw`text-base`}>💬</Text>
-                    </View>
-                    <View style={tw`flex-1`}>
-                      <Text
-                        style={[tw`text-sm italic leading-5`, { color: colors.text }]}
-                        numberOfLines={3}
-                      >
-                        "{quote.quote}"
-                      </Text>
-                      {quote.author && (
-                        <Text style={[tw`text-xs mt-1.5 font-medium`, { color: colors.textSecondary }]}>
-                          — {quote.author}
-                        </Text>
-                      )}
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              )}
-            </View>
+          {/* ─── Exam updates ─────────────────────────── */}
+          {updates.length > 0 && (
+            <Section title="Updates" onSeeAll={() => navigation.navigate('Notifications')} colors={colors}>
+              <View style={[tw`rounded-3xl overflow-hidden`, card]}>
+                {updates.slice(0, 2).map((n, i, arr) => (
+                  <ListRow
+                    key={n._id}
+                    colors={colors}
+                    last={i === arr.length - 1}
+                    icon="megaphone-outline"
+                    iconTone={n.isRead ? null : colors.tones.blue}
+                    title={n.title}
+                    subtitle={`${timeAgo(n.createdAt)} · ${n.message}`}
+                    onPress={() => navigation.navigate('Notifications')}
+                  />
+                ))}
+              </View>
+            </Section>
           )}
 
-          {/* ─── Categories ───────────────────────────── */}
-          {stats?.categories?.length > 0 && (
-            <View style={tw`mb-6`}>
-              <SectionHeader
-                title="Categories"
-                onSeeAll={() => navigation.navigate('Categories')}
-                colors={colors}
-              />
+          {/* ─── Test series carousel ─────────────────── */}
+          {testSeries.length > 0 && (
+            <Section
+              title="Test series"
+              onSeeAll={() => navigation.navigate('SeriesTab', { screen: 'TestSeriesList' })}
+              colors={colors}
+            >
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
+                snapToInterval={SERIES_CARD_WIDTH + SERIES_CARD_GAP}
+                decelerationRate="fast"
+                style={tw`-mx-5`}
                 contentContainerStyle={tw`px-5`}
+                onMomentumScrollEnd={(e) =>
+                  setSeriesIndex(Math.round(e.nativeEvent.contentOffset.x / (SERIES_CARD_WIDTH + SERIES_CARD_GAP)))
+                }
               >
-                {stats.categories.slice(0, 6).map((category, index) => (
-                  <TouchableOpacity
-                    key={category._id}
-                    style={[
-                      tw`items-center mr-4`,
-                      { width: 76 },
-                    ]}
-                    onPress={() => navigation.navigate('CategoryDetail', { categoryId: category._id })}
-                    activeOpacity={0.7}
-                  >
-                    {category.logo ? (
-                      <Image
-                        source={{ uri: category.logo }}
-                        style={[
-                          tw`w-14 h-14 rounded-2xl mb-2`,
-                          { backgroundColor: colors.surface },
-                        ]}
-                        resizeMode="cover"
-                      />
-                    ) : (
-                      <View
-                        style={[
-                          tw`w-14 h-14 rounded-2xl items-center justify-center mb-2`,
-                          { backgroundColor: colors.primary + '10' },
-                        ]}
-                      >
-                        <Ionicons name="book-outline" size={24} color={colors.primary} />
-                      </View>
-                    )}
-                    <Text
-                      style={[tw`text-[11px] font-medium text-center`, { color: colors.text }]}
-                      numberOfLines={2}
-                    >
-                      {category.displayName || category.name}
-                    </Text>
-                    {category.examCount > 0 && (
-                      <Text style={[tw`text-[10px] mt-0.5`, { color: colors.textSecondary }]}>
-                        {category.examCount} exams
-                      </Text>
-                    )}
-                  </TouchableOpacity>
+                {testSeries.map((s) => (
+                  <SeriesCard
+                    key={s._id}
+                    series={s}
+                    colors={colors}
+                    onPress={() =>
+                      navigation.navigate('SeriesTab', { screen: 'TestSeriesDetail', params: { id: s._id } })
+                    }
+                  />
                 ))}
               </ScrollView>
-            </View>
-          )}
-
-          {/* ─── Test Series (featured banner) ────────── */}
-          {testSeries.length > 0 && (() => {
-            // Feature the first not-yet-enrolled series, else the first one.
-            const featured = testSeries.find((s) => !s.isEnrolled) || testSeries[0];
-            const paid = featured.accessType === 'paid' || featured.isPremium || featured.price > 0;
-            const priceText = !paid
-              ? 'Free'
-              : `₹${featured.discountPrice && featured.discountPrice < featured.price ? featured.discountPrice : featured.price}`;
-            const goDetail = () =>
-              navigation.navigate('SeriesTab', {
-                screen: 'TestSeriesDetail',
-                params: { id: featured._id },
-              });
-
-            const Banner = ({ children }) =>
-              featured.thumbnail ? (
-                <ImageBackground
-                  source={{ uri: featured.thumbnail }}
-                  style={tw`w-full`}
-                  imageStyle={tw`rounded-3xl`}
-                >
-                  <LinearGradient
-                    colors={['rgba(0,0,0,0.15)', 'rgba(0,0,0,0.78)']}
-                    style={tw`rounded-3xl p-5`}
-                  >
-                    {children}
-                  </LinearGradient>
-                </ImageBackground>
-              ) : (
-                <LinearGradient
-                  colors={[colors.primary, colors.primaryDark]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={tw`rounded-3xl p-5`}
-                >
-                  {children}
-                </LinearGradient>
-              );
-
-            return (
-              <View style={tw`px-5 mb-6`}>
-                {/* Header */}
-                <View style={tw`flex-row items-center justify-between mb-3`}>
-                  <View style={tw`flex-row items-center gap-2`}>
-                    <Ionicons name="albums" size={18} color={colors.primary} />
-                    <Text style={[tw`text-base font-bold`, { color: colors.text }]}>Test Series</Text>
-                  </View>
-                  <TouchableOpacity
-                    onPress={() => navigation.navigate('SeriesTab', { screen: 'TestSeriesList' })}
-                    hitSlop={8}
-                  >
-                    <Text style={[tw`text-sm font-semibold`, { color: colors.primary }]}>See all ›</Text>
-                  </TouchableOpacity>
-                </View>
-
-                {/* Hero card */}
-                <TouchableOpacity activeOpacity={0.9} onPress={goDetail}>
-                  <View style={tw`rounded-3xl overflow-hidden`}>
-                    <Banner>
-                      {/* top row: type + enrolled */}
-                      <View style={tw`flex-row items-center justify-between`}>
-                        <View style={[tw`px-2.5 py-1 rounded-lg`, { backgroundColor: 'rgba(255,255,255,0.25)' }]}>
-                          <Text style={tw`text-[11px] font-bold text-white uppercase`}>
-                            {featured.seriesType || 'mock'}
-                          </Text>
-                        </View>
-                        {featured.isEnrolled && (
-                          <View style={[tw`px-2.5 py-1 rounded-lg flex-row items-center gap-1`, { backgroundColor: 'rgba(255,255,255,0.25)' }]}>
-                            <Ionicons name="checkmark-circle" size={13} color="#fff" />
-                            <Text style={tw`text-[11px] font-bold text-white`}>Enrolled</Text>
-                          </View>
-                        )}
-                      </View>
-
-                      {/* title */}
-                      <Text style={tw`text-xl font-extrabold text-white mt-4`} numberOfLines={2}>
-                        {featured.title}
-                      </Text>
-
-                      {/* meta */}
-                      <View style={tw`flex-row items-center gap-4 mt-2`}>
-                        <View style={tw`flex-row items-center gap-1`}>
-                          <Ionicons name="document-text" size={14} color="rgba(255,255,255,0.9)" />
-                          <Text style={[tw`text-xs`, { color: 'rgba(255,255,255,0.9)' }]}>{featured.totalTests || 0} tests</Text>
-                        </View>
-                        {featured.estimatedDuration ? (
-                          <View style={tw`flex-row items-center gap-1`}>
-                            <Ionicons name="time" size={14} color="rgba(255,255,255,0.9)" />
-                            <Text style={[tw`text-xs`, { color: 'rgba(255,255,255,0.9)' }]}>{featured.estimatedDuration}h</Text>
-                          </View>
-                        ) : null}
-                        {featured.enrollments ? (
-                          <View style={tw`flex-row items-center gap-1`}>
-                            <Ionicons name="people" size={14} color="rgba(255,255,255,0.9)" />
-                            <Text style={[tw`text-xs`, { color: 'rgba(255,255,255,0.9)' }]}>{featured.enrollments}</Text>
-                          </View>
-                        ) : null}
-                      </View>
-
-                      {/* CTA row */}
-                      <View style={tw`flex-row items-center justify-between mt-5`}>
-                        <Text style={tw`text-2xl font-extrabold text-white`}>{priceText}</Text>
-                        <View style={tw`bg-white px-5 py-2.5 rounded-xl flex-row items-center gap-1.5`}>
-                          <Text style={[tw`text-sm font-bold`, { color: colors.primary }]}>
-                            {featured.isEnrolled ? 'Continue' : 'Enroll Now'}
-                          </Text>
-                          <Ionicons name="arrow-forward" size={15} color={colors.primary} />
-                        </View>
-                      </View>
-                    </Banner>
-                  </View>
-                </TouchableOpacity>
-
-                {/* tiny dots if more than one */}
-                {testSeries.length > 1 && (
-                  <View style={tw`flex-row justify-center gap-1.5 mt-3`}>
-                    {testSeries.slice(0, 5).map((s, i) => (
-                      <View
-                        key={s._id}
-                        style={[
-                          tw`h-1.5 rounded-full`,
-                          {
-                            width: s._id === featured._id ? 16 : 6,
-                            backgroundColor: s._id === featured._id ? colors.primary : colors.border,
-                          },
-                        ]}
-                      />
-                    ))}
-                  </View>
-                )}
-              </View>
-            );
-          })()}
-
-          {/* ─── Leaderboard snapshot ─────────────────── */}
-          {leaderboard.top.length > 0 && (
-            <View style={tw`px-5 mb-6`}>
-              <View style={tw`flex-row items-center justify-between mb-3`}>
-                <View style={tw`flex-row items-center gap-2`}>
-                  <Ionicons name="trophy" size={18} color={colors.primary} />
-                  <Text style={[tw`text-base font-bold`, { color: colors.text }]}>Leaderboard</Text>
-                </View>
-                <TouchableOpacity
-                  onPress={() => navigation.navigate('Leaderboard')}
-                  hitSlop={8}
-                >
-                  <Text style={[tw`text-sm font-semibold`, { color: colors.primary }]}>See all ›</Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={[tw`rounded-2xl border overflow-hidden`, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                {leaderboard.top.map((u, i) => {
-                  const medal = ['#FFD700', '#C0C0C0', '#CD7F32'][i];
-                  const isMe = leaderboard.me && String(u.userId) === String(leaderboard.me.userId);
-                  return (
+              {testSeries.length > 1 && (
+                <View style={tw`flex-row justify-center mt-3`}>
+                  {testSeries.map((s, i) => (
                     <View
-                      key={String(u.userId)}
+                      key={s._id}
                       style={[
-                        tw`flex-row items-center px-3 py-2.5`,
-                        i < leaderboard.top.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border },
-                        isMe && { backgroundColor: colors.primary + '0d' },
+                        tw`h-1.5 rounded-full mx-0.5`,
+                        { width: i === seriesIndex ? 16 : 6, backgroundColor: i === seriesIndex ? colors.text : colors.border },
                       ]}
-                    >
-                      <View style={tw`w-7 items-center`}>
-                        <Ionicons name="medal" size={18} color={medal} />
-                      </View>
-                      <View style={[tw`w-8 h-8 rounded-full items-center justify-center mx-2`, { backgroundColor: colors.primary + '18' }]}>
-                        <Text style={[tw`text-xs font-bold`, { color: colors.primary }]}>{getInitials(u.name)}</Text>
-                      </View>
-                      <Text style={[tw`flex-1 text-sm font-semibold`, { color: colors.text }]} numberOfLines={1}>
-                        {u.name}{isMe ? ' (You)' : ''}
-                      </Text>
-                      <Text style={[tw`text-sm font-extrabold`, { color: colors.primary }]}>{u.xp} XP</Text>
-                    </View>
-                  );
-                })}
-
-                {/* Your rank if outside top 3 */}
-                {leaderboard.me && leaderboard.me.position > 3 && (
-                  <View style={[tw`flex-row items-center px-3 py-2.5`, { borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: colors.primary + '0d' }]}>
-                    <Text style={[tw`w-7 text-center text-xs font-bold`, { color: colors.textSecondary }]}>
-                      #{leaderboard.me.position}
-                    </Text>
-                    <View style={[tw`w-8 h-8 rounded-full items-center justify-center mx-2`, { backgroundColor: colors.primary }]}>
-                      <Text style={tw`text-xs font-bold text-white`}>{getInitials(leaderboard.me.name)}</Text>
-                    </View>
-                    <Text style={[tw`flex-1 text-sm font-semibold`, { color: colors.text }]} numberOfLines={1}>
-                      You
-                    </Text>
-                    <Text style={[tw`text-sm font-extrabold`, { color: colors.primary }]}>{leaderboard.me.xp} XP</Text>
-                  </View>
-                )}
-              </View>
-            </View>
+                    />
+                  ))}
+                </View>
+              )}
+            </Section>
           )}
 
-          {/* ─── Recent Results ────────────────────────── */}
-          {recentResults.length > 0 && (
-            <View style={tw`mb-6`}>
-              <SectionHeader
-                title="Recent Results"
-                onSeeAll={() => navigation.navigate('ExamHistory')}
-                colors={colors}
-              />
-              <View style={tw`px-5 gap-2`}>
-                {recentResults.slice(0, 4).map((attempt) => {
+          {/* ─── Recent results ───────────────────────── */}
+          <Section
+            title="Recent results"
+            onSeeAll={recentResults.length ? () => navigation.navigate('ExamHistory') : null}
+            colors={colors}
+          >
+            {recentResults.length > 0 ? (
+              <View style={[tw`rounded-3xl overflow-hidden`, card]}>
+                {recentResults.map((attempt, i) => {
                   const pct = attempt.percentage || 0;
-                  const scoreColor = getScoreColor(pct);
-                  const totalScore = attempt.totalScore || 0;
-                  const totalMarks = attempt.exam?.totalMarks || 0;
-
+                  const tone = pct >= 70 ? colors.tones.green : pct >= 40 ? colors.tones.orange : colors.tones.red;
                   return (
                     <TouchableOpacity
                       key={attempt._id}
+                      onPress={() => navigation.navigate('Result', { attemptId: attempt._id })}
+                      activeOpacity={0.8}
                       style={[
-                        tw`flex-row items-center p-3.5 rounded-2xl border`,
-                        { backgroundColor: colors.surface, borderColor: colors.border },
+                        tw`flex-row items-center px-4 py-3.5`,
+                        i < recentResults.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border },
                       ]}
-                      onPress={() => attempt._id && navigation.navigate('Result', { attemptId: attempt._id })}
-                      activeOpacity={0.7}
                     >
-                      {/* Score Circle */}
-                      <View
-                        style={[
-                          tw`w-11 h-11 rounded-full items-center justify-center mr-3`,
-                          { backgroundColor: scoreColor + '15' },
-                        ]}
-                      >
-                        <Text style={[tw`text-sm font-bold`, { color: scoreColor }]}>
-                          {pct.toFixed(0)}%
-                        </Text>
+                      <View style={[tw`w-11 h-11 rounded-full items-center justify-center mr-3`, { backgroundColor: tone.bg }]}>
+                        <Text style={[tw`text-xs font-bold`, { color: tone.fg }]}>{pct.toFixed(0)}%</Text>
                       </View>
-
-                      {/* Info */}
                       <View style={tw`flex-1`}>
-                        <Text
-                          style={[tw`text-sm font-semibold`, { color: colors.text }]}
-                          numberOfLines={1}
-                        >
+                        <Text style={[tw`text-sm font-bold`, { color: colors.text }]} numberOfLines={1}>
                           {attempt.exam?.title || 'Exam'}
                         </Text>
-                        <View style={tw`flex-row items-center mt-0.5 gap-3`}>
-                          <Text style={[tw`text-[11px]`, { color: colors.textSecondary }]}>
-                            {totalScore}/{totalMarks}
-                          </Text>
-                          <Text style={[tw`text-[11px]`, { color: '#10b981' }]}>
-                            ✓ {attempt.correctAnswers || 0}
-                          </Text>
-                          <Text style={[tw`text-[11px]`, { color: '#ef4444' }]}>
-                            ✗ {attempt.incorrectAnswers || 0}
-                          </Text>
-                        </View>
+                        <Text style={[tw`text-xs mt-0.5`, { color: colors.textSecondary }]}>
+                          {attempt.totalScore || 0}/{attempt.exam?.totalMarks || 0} marks · {attempt.correctAnswers || 0} correct · {attempt.incorrectAnswers || 0} wrong
+                        </Text>
                       </View>
-
                       <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
                     </TouchableOpacity>
                   );
                 })}
               </View>
-            </View>
-          )}
-
-          {/* ─── New Exams ─────────────────────────────── */}
-          {recentPublishedExams.length > 0 && (
-            <View style={tw`mb-6`}>
-              <SectionHeader
-                title="New Exams"
-                onSeeAll={() => navigation.navigate('ExamsTab')}
+            ) : (
+              <EmptyCard
                 colors={colors}
+                icon="bar-chart-outline"
+                title="No results yet"
+                body="Finish a mock test to see your score and accuracy here."
               />
-              <View style={tw`px-5 gap-2.5`}>
-                {recentPublishedExams.slice(0, 4).map((exam) => (
-                  <ExamCard
-                    key={exam._id}
-                    exam={exam}
-                    navigation={navigation}
-                    colors={colors}
-                  />
-                ))}
+            )}
+          </Section>
+
+          {/* ─── Go Premium (free users) ──────────────── */}
+          {!isPremium && (
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Paywall')}
+              activeOpacity={0.85}
+              style={[tw`flex-row items-center p-4 rounded-3xl mb-6`, card]}
+            >
+              <View style={[tw`w-10 h-10 rounded-xl items-center justify-center mr-3`, { backgroundColor: colors.tones.purple.bg }]}>
+                <Ionicons name="diamond-outline" size={20} color={colors.tones.purple.fg} />
               </View>
-            </View>
+              <View style={tw`flex-1`}>
+                <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>Go Premium</Text>
+                <Text style={[tw`text-xs mt-0.5`, { color: colors.textSecondary }]}>Unlimited tests and all study material</Text>
+              </View>
+              <View style={[tw`px-3.5 py-2 rounded-xl`, { backgroundColor: colors.hero }]}>
+                <Text style={[tw`text-xs font-bold`, { color: colors.heroText }]}>Upgrade</Text>
+              </View>
+            </TouchableOpacity>
           )}
 
-          {/* ─── Empty State ──────────────────────────── */}
-          {!loading && !recentResults.length && !recentPublishedExams.length && !stats?.categories?.length && (
-            <View style={tw`items-center px-10 py-16`}>
-              <View
-                style={[
-                  tw`w-16 h-16 rounded-full items-center justify-center mb-4`,
-                  { backgroundColor: colors.primary + '10' },
-                ]}
-              >
-                <Ionicons name="rocket-outline" size={32} color={colors.primary} />
+          {/* ─── Word of the day ──────────────────────── */}
+          {wordOfDay?.word && (
+            <TouchableOpacity
+              onPress={() => navigation.navigate('WordOfDayDetail', { word: wordOfDay })}
+              activeOpacity={0.85}
+              style={[tw`p-4 rounded-3xl`, card]}
+            >
+              <View style={tw`flex-row justify-between items-center`}>
+                <Text style={[tw`text-[11px] font-bold tracking-widest`, { color: colors.textSecondary }]}>WORD OF THE DAY</Text>
+                {quote?.quote && (
+                  <TouchableOpacity onPress={() => navigation.navigate('QuoteDetail', { quote })} hitSlop={10}>
+                    <Text style={[tw`text-xs font-semibold`, { color: colors.text }]}>Quote ›</Text>
+                  </TouchableOpacity>
+                )}
               </View>
-              <Text style={[tw`text-lg font-bold mb-1 text-center`, { color: colors.text }]}>
-                Let's get started!
-              </Text>
-              <Text style={[tw`text-sm text-center mb-5`, { color: colors.textSecondary }]}>
-                Browse available exams and start your preparation journey.
-              </Text>
-              <TouchableOpacity
-                style={[tw`px-6 py-3 rounded-2xl`, { backgroundColor: colors.primary }]}
-                onPress={() => navigation.navigate('ExamsTab')}
-                activeOpacity={0.7}
-              >
-                <Text style={tw`text-sm font-semibold text-white`}>Browse Exams</Text>
-              </TouchableOpacity>
-            </View>
+              <Text style={[tw`text-lg font-extrabold mt-1.5`, { color: colors.text }]}>{wordOfDay.word}</Text>
+              {!!wordOfDay.meaning && (
+                <Text style={[tw`text-xs mt-1 leading-5`, { color: colors.textSecondary }]} numberOfLines={2}>
+                  {wordOfDay.meaning}
+                </Text>
+              )}
+            </TouchableOpacity>
           )}
         </ScrollView>
       </View>
@@ -1136,1244 +839,155 @@ export default function DashboardScreen({ navigation }) {
   );
 }
 
-// ─── Section Header Component ────────────────────────────
-function QuickActionTile({ icon, label, subtitle, colors, primary, accent, onPress }) {
-  const iconColor = primary ? '#fff' : accent || colors.text;
-  const bg = primary ? colors.primary : colors.surface;
-  const border = primary ? colors.primary : colors.border;
+// ─── Small building blocks ───────────────────────────────
 
+function Section({ title, onSeeAll, colors, children }) {
   return (
-    <TouchableOpacity
-      style={[
-        tw`flex-1 items-center py-3.5 px-2 rounded-2xl`,
-        {
-          backgroundColor: bg,
-          borderWidth: primary ? 0 : 1,
-          borderColor: border,
-        },
-      ]}
-      onPress={onPress}
-      activeOpacity={0.75}
-    >
-      <View
-        style={[
-          tw`w-10 h-10 rounded-xl items-center justify-center mb-2`,
-          { backgroundColor: primary ? 'rgba(255,255,255,0.2)' : (accent || colors.primary) + '14' },
-        ]}
-      >
-        <Ionicons name={icon} size={22} color={iconColor} />
+    <View style={tw`mb-6`}>
+      <View style={tw`flex-row justify-between items-center mb-3`}>
+        <Text style={[tw`text-lg font-extrabold flex-1 pr-3`, { color: colors.text }]} numberOfLines={1}>
+          {title}
+        </Text>
+        {onSeeAll && (
+          <TouchableOpacity onPress={onSeeAll} hitSlop={10}>
+            <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>See all</Text>
+          </TouchableOpacity>
+        )}
       </View>
-      <Text
-        style={[
-          tw`text-xs font-bold text-center`,
-          { color: primary ? '#fff' : colors.text },
-        ]}
-        numberOfLines={1}
-      >
-        {label}
-      </Text>
-      <Text
-        style={[
-          tw`text-[10px] text-center mt-0.5`,
-          { color: primary ? 'rgba(255,255,255,0.85)' : colors.textSecondary },
-        ]}
-        numberOfLines={1}
-      >
-        {subtitle}
-      </Text>
-    </TouchableOpacity>
-  );
-}
-
-function SectionHeader({ title, onSeeAll, colors }) {
-  return (
-    <View style={tw`flex-row justify-between items-center px-5 mb-3`}>
-      <Text style={[tw`text-base font-bold`, { color: colors.text }]}>{title}</Text>
-      {onSeeAll && (
-        <TouchableOpacity onPress={onSeeAll} activeOpacity={0.7}>
-          <Text style={[tw`text-xs font-semibold`, { color: colors.primary }]}>See all</Text>
-        </TouchableOpacity>
-      )}
+      {children}
     </View>
   );
 }
 
+function Stat({ icon, iconColor, label, value, unit, divider, colors }) {
+  return (
+    <View style={[tw`flex-1`, divider && { paddingLeft: 14, borderLeftWidth: 1, borderLeftColor: colors.border }]}>
+      <View style={tw`flex-row items-center`}>
+        <Ionicons name={icon} size={14} color={iconColor || colors.textSecondary} />
+        <Text style={[tw`text-xs ml-1`, { color: colors.textSecondary }]}>{label}</Text>
+      </View>
+      <Text style={[tw`text-2xl font-extrabold mt-1`, { color: value === '—' ? colors.textSecondary : colors.text }]}>
+        {value}
+        {unit ? <Text style={[tw`text-xs font-semibold`, { color: colors.textSecondary }]}>{unit === '%' ? unit : ` ${unit}`}</Text> : null}
+      </Text>
+    </View>
+  );
+}
 
+function QuickTile({ icon, tone, label, subtitle, onPress, colors }) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.8}
+      style={[
+        tw`flex-row items-center p-3.5 rounded-2xl mb-2.5`,
+        { width: '48.5%', backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
+      ]}
+    >
+      <View style={[tw`w-10 h-10 rounded-xl items-center justify-center mr-3`, { backgroundColor: tone.bg }]}>
+        <Ionicons name={icon} size={20} color={tone.fg} />
+      </View>
+      <View style={tw`flex-1`}>
+        <Text style={[tw`text-sm font-bold`, { color: colors.text }]} numberOfLines={1}>{label}</Text>
+        <Text style={[tw`text-xs`, { color: colors.textSecondary }]} numberOfLines={1}>{subtitle}</Text>
+      </View>
+    </TouchableOpacity>
+  );
+}
 
+function ListRow({ icon, iconTone, title, subtitle, badge, badgeTone, last, onPress, colors }) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.8}
+      style={[
+        tw`flex-row items-center px-4 py-3.5`,
+        !last && { borderBottomWidth: 1, borderBottomColor: colors.border },
+      ]}
+    >
+      <View
+        style={[
+          tw`w-11 h-11 rounded-xl items-center justify-center mr-3`,
+          { backgroundColor: iconTone ? iconTone.bg : colors.surfaceMuted },
+        ]}
+      >
+        <Ionicons name={icon} size={20} color={iconTone ? iconTone.fg : colors.text} />
+      </View>
+      <View style={tw`flex-1 pr-2`}>
+        <Text style={[tw`text-sm font-bold`, { color: colors.text }]} numberOfLines={1}>{title}</Text>
+        <Text style={[tw`text-xs mt-0.5`, { color: colors.textSecondary }]} numberOfLines={1}>{subtitle}</Text>
+      </View>
+      {badge ? (
+        <View style={[tw`px-2 py-1 rounded-md`, { backgroundColor: badgeTone ? badgeTone.bg : colors.surfaceMuted }]}>
+          <Text style={[tw`text-[10px] font-bold`, { color: badgeTone ? badgeTone.fg : colors.textSecondary }]}>{badge}</Text>
+        </View>
+      ) : (
+        <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
+      )}
+    </TouchableOpacity>
+  );
+}
 
+function EmptyCard({ icon, title, body, colors }) {
+  return (
+    <View
+      style={[
+        tw`flex-row items-center p-4 rounded-3xl`,
+        { backgroundColor: colors.card, borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.border },
+      ]}
+    >
+      <View style={[tw`w-11 h-11 rounded-full items-center justify-center mr-3`, { backgroundColor: colors.surfaceMuted }]}>
+        <Ionicons name={icon} size={20} color={colors.textSecondary} />
+      </View>
+      <View style={tw`flex-1`}>
+        <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>{title}</Text>
+        <Text style={[tw`text-xs mt-0.5 leading-4`, { color: colors.textSecondary }]}>{body}</Text>
+      </View>
+    </View>
+  );
+}
 
-// import React, { useEffect, useState } from 'react';
-// import {
-//   View,
-//   Text,
-//   StyleSheet,
-//   ScrollView,
-//   TouchableOpacity,
-//   ActivityIndicator,
-//   RefreshControl,
-//   Image,
-//   Dimensions,
-// } from 'react-native';
-// import { useTheme } from '../context/ThemeContext';
-// import { useAuth } from '../context/AuthContext';
-// import api from '../services/api';
-// import { Ionicons } from '@expo/vector-icons';
-// import { LinearGradient } from 'expo-linear-gradient';
-// import ScreenWrapper from '../components/ScreenWrapper';
-
-// const { width } = Dimensions.get('window');
-
-// export default function DashboardScreen({ navigation }) {
-//   const { colors, isDark } = useTheme();
-//   const { user } = useAuth();
-//   const [stats, setStats] = useState(null);
-//   const [loading, setLoading] = useState(true);
-//   const [refreshing, setRefreshing] = useState(false);
-//   const [wordOfDay, setWordOfDay] = useState(null);
-//   const [quote, setQuote] = useState(null);
-//   const [recentResults, setRecentResults] = useState([]);
-//   const [recentPublishedExams, setRecentPublishedExams] = useState([]);
-
-//   useEffect(() => {
-//     fetchDashboardData();
-//   }, []);
-
-//   const fetchDashboardData = async () => {
-//     try {
-//       setLoading(true);
-
-//       // Fetch all endpoints, but handle failures gracefully
-//       const promises = [
-//         api.get('/user/dashboard-stats').catch(err => {
-//           console.warn('Failed to fetch dashboard-stats:', err);
-//           return { data: null };
-//         }),
-//         api.get('/user/word-of-day').catch(err => {
-//           console.warn('Failed to fetch word-of-day:', err);
-//           return { data: null };
-//         }),
-//         api.get('/user/motivational-quote').catch(err => {
-//           console.warn('Failed to fetch motivational-quote:', err);
-//           return { data: null };
-//         }),
-//         api.get('/user/exams').catch(err => {
-//           console.warn('Failed to fetch exams:', err);
-//           return { data: { exams: [] } };
-//         }),
-//       ];
-
-//       const [statsRes, wordRes, quoteRes, examsRes] = await Promise.all(promises);
-
-//       // Set stats if available
-//       if (statsRes.data) {
-//         setStats(statsRes.data);
-
-//         // Use recentExamResults from dashboard-stats (matches web frontend)
-//         const recentResultsData = statsRes.data?.recentExamResults || [];
-//         setRecentResults(recentResultsData.slice(0, 5));
-
-//         // Use todaysPublishedExams from dashboard-stats if available
-//         const publishedExams = statsRes.data?.todaysPublishedExams || [];
-//         setRecentPublishedExams(publishedExams.slice(0, 5));
-//       } else {
-//         // Fallback: try to get recent results from exams endpoint
-//         const allExams = examsRes.data?.exams || [];
-//         const attemptedExams = allExams
-//           .filter(exam => exam.isAttempted)
-//           .sort((a, b) => {
-//             const dateA = new Date(a.updatedAt || a.createdAt || 0);
-//             const dateB = new Date(b.updatedAt || b.createdAt || 0);
-//             return dateB - dateA;
-//           })
-//           .slice(0, 5);
-//         setRecentResults(attemptedExams);
-
-//         // Get published exams
-//         const publishedExams = allExams
-//           .filter(exam => !exam.isAttempted && exam.status === 'active')
-//           .slice(0, 5);
-//         setRecentPublishedExams(publishedExams);
-//       }
-
-//       // Set word of day if available
-//       if (wordRes.data) {
-//         const wordData = wordRes.data?.wordOfDay || wordRes.data?.word || wordRes.data;
-//         setWordOfDay(wordData);
-//       }
-
-//       // Set quote if available
-//       if (quoteRes.data) {
-//         const quoteData = quoteRes.data?.quote || quoteRes.data?.motivationalQuote || quoteRes.data;
-//         setQuote(quoteData);
-//       }
-//     } catch (error) {
-//       console.error('Failed to fetch dashboard data:', error);
-//     } finally {
-//       setLoading(false);
-//       setRefreshing(false);
-//     }
-//   };
-
-//   const onRefresh = () => {
-//     setRefreshing(true);
-//     fetchDashboardData();
-//   };
-
-//   const getExamStatus = (exam) => {
-//     const now = new Date();
-
-//     // Parse scheduledTime
-//     let scheduledTime;
-//     if (typeof exam.scheduledTime === 'string') {
-//       scheduledTime = new Date(exam.scheduledTime);
-//     } else if (typeof exam.scheduledTime === 'number') {
-//       scheduledTime = new Date(exam.scheduledTime);
-//     } else {
-//       scheduledTime = new Date(exam.scheduledTime);
-//     }
-
-//     // Validate scheduledTime
-//     if (isNaN(scheduledTime.getTime())) {
-//       return 'available';
-//     }
-
-//     // Handle expiresAt
-//     let expiresAt = null;
-//     if (exam.expiresAt !== null && exam.expiresAt !== undefined && exam.expiresAt !== '') {
-//       if (typeof exam.expiresAt === 'string') {
-//         expiresAt = new Date(exam.expiresAt);
-//       } else if (typeof exam.expiresAt === 'number') {
-//         expiresAt = new Date(exam.expiresAt);
-//       } else {
-//         expiresAt = new Date(exam.expiresAt);
-//       }
-//       if (isNaN(expiresAt.getTime())) {
-//         expiresAt = null;
-//       }
-//     }
-
-//     // Check if exam is already completed
-//     if (exam.isAttempted) return 'completed';
-
-//     // Check if exam is paused
-//     if (exam.isPaused) return 'paused';
-
-//     // Check if exam hasn't started yet
-//     if (now < scheduledTime) {
-//       return 'upcoming';
-//     }
-
-//     // Check if exam has expired
-//     if (expiresAt && !isNaN(expiresAt.getTime()) && now > expiresAt) {
-//       return 'expired';
-//     }
-
-//     // If exam has started and not expired, it's available
-//     if (now >= scheduledTime) {
-//       return 'available';
-//     }
-
-//     return 'available';
-//   };
-
-//   const formatDate = (dateString) => {
-//     if (!dateString) return '';
-//     const date = new Date(dateString);
-//     if (isNaN(date.getTime())) return '';
-
-//     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-//     const month = months[date.getMonth()];
-//     const day = date.getDate();
-//     const year = date.getFullYear();
-//     const hours = date.getHours().toString().padStart(2, '0');
-//     const minutes = date.getMinutes().toString().padStart(2, '0');
-
-//     return `${month} ${day}, ${year} ${hours}:${minutes}`;
-//   };
-
-//   const styles = createStyles(colors, isDark);
-
-//   if (loading && !stats) {
-//     return (
-//       <View style={styles.container}>
-//         <View style={styles.loadingContainer}>
-//           <ActivityIndicator size="large" color={colors.primary} />
-//         </View>
-//       </View>
-//     );
-//   }
-
-//   return (
-//     <ScreenWrapper>
-//       <View style={styles.container}>
-//         <ScrollView
-//           style={styles.scrollView}
-//           contentContainerStyle={styles.scrollContent}
-//           refreshControl={
-//             <RefreshControl
-//               refreshing={refreshing}
-//               onRefresh={onRefresh}
-//               tintColor={colors.primary}
-//             />
-//           }
-//           showsVerticalScrollIndicator={false}
-//         >
-//           {/* Hero Header */}
-//           <View style={styles.heroSection}>
-//             <View style={styles.heroContent}>
-//               <Text style={styles.greeting}>Welcome back,</Text>
-//               <Text style={styles.userName}>{user?.name?.split(' ')[0] || 'User'}! 👋</Text>
-//               <Text style={styles.heroSubtitle}>Ready to ace your exams today?</Text>
-//             </View>
-//             <View style={styles.heroIcon}>
-//               <Ionicons name="trophy" size={40} color={colors.primary} />
-//             </View>
-//           </View>
-
-//           {/* Streak Card */}
-//           {stats?.streak && (() => {
-//             const currentStreak = stats.streak.currentStreak || 0;
-//             const longestStreak = stats.streak.longestStreak || 0;
-//             const totalStudyDays = stats.streak.totalStudyDays || 0;
-
-//             // Calculate next milestone
-//             const milestones = [1, 3, 7, 14, 30, 60, 100, 200, 300, 365];
-//             const nextMilestone = milestones.find(m => m > currentStreak) || null;
-//             const progressToNext = nextMilestone ? Math.min((currentStreak / nextMilestone) * 100, 100) : 100;
-
-//             return (
-//               <View style={styles.streakCard}>
-//                 <LinearGradient
-//                   colors={[colors.primary, colors.primaryDark || '#15803d']}
-//                   start={{ x: 0, y: 0 }}
-//                   end={{ x: 1, y: 1 }}
-//                   style={styles.streakGradient}
-//                 >
-//                   <View style={styles.streakContent}>
-//                     <View style={styles.streakLeft}>
-//                       <View style={styles.streakIconContainer}>
-//                         <Ionicons name="flame" size={40} color="#FFFFFF" />
-//                       </View>
-//                       <View style={styles.streakTextContainer}>
-//                         <Text style={styles.streakSubLabel}>Study Streak</Text>
-//                         <View style={styles.streakNumberContainer}>
-//                           <Text style={styles.streakNumber}>{currentStreak}</Text>
-//                           <Text style={styles.streakDaysLabel}>days</Text>
-//                         </View>
-//                       </View>
-//                     </View>
-//                     {longestStreak > 0 && (
-//                       <View style={styles.streakRight}>
-//                         <Text style={styles.streakBestLabel}>Longest</Text>
-//                         <View style={styles.streakBestContainer}>
-//                           <Ionicons name="trophy" size={18} color="#FFFFFF" />
-//                           <Text style={styles.streakBestNumber}>{longestStreak}</Text>
-//                         </View>
-//                       </View>
-//                     )}
-//                   </View>
-
-//                   {/* Next Milestone Progress */}
-//                   {nextMilestone && (
-//                     <View style={styles.streakProgressContainer}>
-//                       <View style={styles.streakProgressHeader}>
-//                         <Text style={styles.streakProgressLabel}>Next: {nextMilestone} days</Text>
-//                         <Text style={styles.streakProgressPercent}>{Math.round(progressToNext)}%</Text>
-//                       </View>
-//                       <View style={styles.streakProgressBar}>
-//                         <View
-//                           style={[
-//                             styles.streakProgressFill,
-//                             { width: `${progressToNext}%` }
-//                           ]}
-//                         />
-//                       </View>
-//                     </View>
-//                   )}
-
-//                   {/* Total Study Days */}
-//                   {totalStudyDays > 0 && (
-//                     <View style={styles.streakFooter}>
-//                       <Ionicons name="calendar-outline" size={14} color="#FFFFFF" style={{ opacity: 0.9 }} />
-//                       <Text style={styles.streakFooterText}>
-//                         {totalStudyDays} total study {totalStudyDays === 1 ? 'day' : 'days'}
-//                       </Text>
-//                     </View>
-//                   )}
-//                 </LinearGradient>
-//               </View>
-//             );
-//           })()}
-
-//           {/* Daily Content - Word of Day and Quote */}
-//           <View style={styles.dailyContentRow}>
-//             {wordOfDay && (
-//               <TouchableOpacity
-//                 style={styles.dailyCard}
-//                 onPress={() => {
-//                   console.log('Navigating with wordOfDay:', wordOfDay);
-//                   if (wordOfDay && wordOfDay.word) {
-//                     navigation.navigate('WordOfDayDetail', { word: wordOfDay });
-//                   } else {
-//                     console.log('WordOfDay is missing or invalid:', wordOfDay);
-//                   }
-//                 }}
-//                 activeOpacity={0.7}
-//               >
-//                 <View style={styles.dailyCardHeader}>
-//                   <View style={styles.dailyIconContainer}>
-//                     <Ionicons name="book" size={20} color={colors.primary} />
-//                   </View>
-//                   <Text style={styles.dailyCardTitle}>Word of Day</Text>
-//                   <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} style={{ marginLeft: 'auto' }} />
-//                 </View>
-//                 <Text style={styles.wordText}>{wordOfDay.word}</Text>
-//                 <Text style={styles.wordMeaning} numberOfLines={2}>
-//                   {wordOfDay.meaning}
-//                 </Text>
-//               </TouchableOpacity>
-//             )}
-
-//             {quote && (
-//               <TouchableOpacity
-//                 style={styles.dailyCard}
-//                 onPress={() => {
-//                   if (quote && quote.quote) {
-//                     navigation.navigate('QuoteDetail', { quote });
-//                   }
-//                 }}
-//                 activeOpacity={0.7}
-//               >
-//                 <View style={styles.dailyCardHeader}>
-//                   <View style={styles.dailyIconContainer}>
-//                     <Ionicons name="chatbubble-ellipses" size={20} color={colors.primary} />
-//                   </View>
-//                   <Text style={styles.dailyCardTitle}>Daily Quote</Text>
-//                   <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} style={{ marginLeft: 'auto' }} />
-//                 </View>
-//                 <Text style={styles.quoteText} numberOfLines={3}>
-//                   "{quote.quote}"
-//                 </Text>
-//                 {quote.author && (
-//                   <Text style={styles.quoteAuthor}>— {quote.author}</Text>
-//                 )}
-//               </TouchableOpacity>
-//             )}
-//           </View>
-
-//           {/* Categories Section */}
-//           {stats?.categories && stats.categories.length > 0 && (
-//             <View style={styles.section}>
-//               <View style={styles.sectionHeader}>
-//                 <Text style={styles.sectionTitle}>Categories</Text>
-//                 <TouchableOpacity
-//                   onPress={() => navigation.navigate('Categories')}
-//                 >
-//                   <Text style={styles.seeAll}>See All →</Text>
-//                 </TouchableOpacity>
-//               </View>
-//               <ScrollView
-//                 horizontal
-//                 showsHorizontalScrollIndicator={false}
-//                 contentContainerStyle={styles.categoriesContainer}
-//               >
-//                 {stats.categories.slice(0, 5).map((category, index) => (
-//                   <TouchableOpacity
-//                     key={category._id}
-//                     style={[
-//                       styles.categoryCard,
-//                       index === 0 && styles.categoryCardFirst,
-//                     ]}
-//                     onPress={() => {
-//                       navigation.navigate('CategoryDetail', { categoryId: category._id });
-//                     }}
-//                   >
-//                     {category.logo ? (
-//                       <Image
-//                         source={{ uri: category.logo }}
-//                         style={styles.categoryLogo}
-//                         resizeMode="cover"
-//                       />
-//                     ) : (
-//                       <View style={styles.categoryIconContainer}>
-//                         <Ionicons name="book" size={36} color={colors.primary} />
-//                       </View>
-//                     )}
-//                     <Text style={styles.categoryName} numberOfLines={2}>
-//                       {category.displayName || category.name}
-//                     </Text>
-//                     {category.examCount > 0 && (
-//                       <View style={styles.categoryBadge}>
-//                         <Text style={styles.categoryBadgeText}>
-//                           {category.examCount} {category.examCount === 1 ? 'exam' : 'exams'}
-//                         </Text>
-//                       </View>
-//                     )}
-
-
-//                   </TouchableOpacity>
-//                 ))}
-//               </ScrollView>
-//             </View>
-//           )}
-
-//           {/* Recent Exam Results */}
-//           {recentResults.length > 0 && (
-//             <View style={styles.section}>
-//               <View style={styles.sectionHeader}>
-//                 <Text style={styles.sectionTitle}>Recent Results</Text>
-//                 <TouchableOpacity onPress={() => navigation.navigate('ExamHistory')}>
-//                   <Text style={styles.seeAll}>See All →</Text>
-//                 </TouchableOpacity>
-//               </View>
-//               <ScrollView
-//                 horizontal
-//                 showsHorizontalScrollIndicator={false}
-//                 contentContainerStyle={styles.horizontalScrollContainer}
-//               >
-//                 {recentResults.map((attempt, index) => {
-//                   // Use percentage from attempt (already calculated by backend)
-//                   const percentage = attempt.percentage || 0;
-//                   const totalScore = attempt.totalScore || 0;
-//                   const totalMarks = attempt.exam?.totalMarks || 0;
-
-//                   const getScoreColor = () => {
-//                     if (percentage >= 70) return ['#10b981', '#059669']; // green
-//                     if (percentage >= 50) return ['#f59e0b', '#d97706']; // yellow
-//                     return ['#ef4444', '#dc2626']; // red
-//                   };
-//                   const scoreColors = getScoreColor();
-
-//                   return (
-//                     <TouchableOpacity
-//                       key={attempt._id}
-//                       style={[
-//                         styles.resultCard,
-//                         index === 0 && styles.resultCardFirst,
-//                       ]}
-//                       onPress={() => {
-//                         if (attempt._id) {
-//                           navigation.navigate('Result', { attemptId: attempt._id });
-//                         }
-//                       }}
-//                       activeOpacity={0.7}
-//                     >
-//                       <LinearGradient
-//                         colors={scoreColors}
-//                         start={{ x: 0, y: 0 }}
-//                         end={{ x: 1, y: 0 }}
-//                         style={styles.resultTopBar}
-//                       />
-//                       <View style={styles.resultCardContent}>
-//                         <View style={styles.resultCardHeader}>
-//                           <Text style={styles.resultCardTitle} numberOfLines={2}>
-//                             {attempt.exam?.title || 'Exam'}
-//                           </Text>
-//                           <View style={[
-//                             styles.resultBadge,
-//                             percentage >= 70 && styles.resultBadgeSuccess,
-//                             percentage >= 50 && percentage < 70 && styles.resultBadgeWarning,
-//                             percentage < 50 && styles.resultBadgeDanger,
-//                           ]}>
-//                             <Text style={[
-//                               styles.resultBadgeText,
-//                               percentage >= 70 && { color: '#10b981' },
-//                               percentage >= 50 && percentage < 70 && { color: '#f59e0b' },
-//                               percentage < 50 && { color: '#ef4444' },
-//                             ]}>{percentage.toFixed(1)}%</Text>
-//                           </View>
-//                         </View>
-//                         {attempt.exam?.category && (
-//                           <Text style={styles.resultCategory} numberOfLines={1}>
-//                             {attempt.exam.category.name || attempt.exam.category.displayName || 'General'}
-//                             {attempt.exam.subCategory && ` → ${attempt.exam.subCategory.name}`}
-//                             {attempt.exam.tier && ` → ${attempt.exam.tier.name}`}
-//                           </Text>
-//                         )}
-//                         <View style={styles.resultStatsContainer}>
-//                           <View style={styles.resultStatRow}>
-//                             <Text style={styles.resultStatLabel}>Score</Text>
-//                             <Text style={styles.resultStatValue}>
-//                               {totalScore} / {totalMarks}
-//                             </Text>
-//                           </View>
-//                           <View style={styles.resultStatRow}>
-//                             <Text style={styles.resultStatLabel}>Correct</Text>
-//                             <Text style={[styles.resultStatValue, { color: '#10b981' }]}>
-//                               {attempt.correctAnswers || 0}
-//                             </Text>
-//                           </View>
-//                           <View style={styles.resultStatRow}>
-//                             <Text style={styles.resultStatLabel}>Incorrect</Text>
-//                             <Text style={[styles.resultStatValue, { color: '#ef4444' }]}>
-//                               {attempt.incorrectAnswers || 0}
-//                             </Text>
-//                           </View>
-//                         </View>
-//                       </View>
-//                     </TouchableOpacity>
-//                   );
-//                 })}
-//               </ScrollView>
-//             </View>
-//           )}
-
-//           {/* Recent Published Exams */}
-//           {recentPublishedExams.length > 0 && (
-//             <View style={styles.section}>
-//               <View style={styles.sectionHeader}>
-//                 <Text style={styles.sectionTitle}>New Exams</Text>
-//                 <TouchableOpacity onPress={() => navigation.navigate('Exams')}>
-//                   <Text style={styles.seeAll}>See All →</Text>
-//                 </TouchableOpacity>
-//               </View>
-//               <ScrollView
-//                 horizontal
-//                 showsHorizontalScrollIndicator={false}
-//                 contentContainerStyle={styles.horizontalScrollContainer}
-//               >
-//                 {recentPublishedExams.map((exam, index) => {
-//                   const status = getExamStatus(exam);
-//                   const statusText = status.charAt(0).toUpperCase() + status.slice(1);
-
-//                   return (
-//                     <TouchableOpacity
-//                       key={exam._id}
-//                       style={[
-//                         styles.newExamCard,
-//                         index === 0 && styles.newExamCardFirst,
-//                       ]}
-//                       onPress={() => {
-//                         navigation.navigate('ExamDetail', { examId: exam._id });
-//                       }}
-//                       activeOpacity={0.7}
-//                     >
-//                       <View style={styles.newExamLeftBorder} />
-//                       <View style={styles.newExamCardContent}>
-//                         <View style={styles.newExamCardHeader}>
-//                           <Text style={styles.newExamCardTitle} numberOfLines={2}>
-//                             {exam.title}
-//                           </Text>
-//                           <View style={[
-//                             styles.newExamBadge,
-//                             status === 'available' && styles.newExamBadgeAvailable,
-//                             status === 'completed' && styles.newExamBadgeCompleted,
-//                             status === 'upcoming' && styles.newExamBadgeUpcoming,
-//                             status === 'paused' && styles.newExamBadgePaused,
-//                             status === 'expired' && styles.newExamBadgeExpired,
-//                           ]}>
-//                             <Text style={[
-//                               styles.newExamBadgeText,
-//                               status === 'available' && { color: colors.primary },
-//                               status === 'completed' && { color: colors.textSecondary },
-//                               status === 'upcoming' && { color: '#f59e0b' },
-//                               status === 'paused' && { color: colors.primary },
-//                               status === 'expired' && { color: '#6b7280' },
-//                             ]}>{statusText}</Text>
-//                           </View>
-//                         </View>
-//                         {exam.category && (
-//                           <Text style={styles.newExamCategory} numberOfLines={1}>
-//                             {exam.category?.name || exam.category?.displayName || 'General'}
-//                             {exam.subCategory && ` → ${exam.subCategory.name}`}
-//                             {exam.tier && ` → ${exam.tier.name}`}
-//                           </Text>
-//                         )}
-//                         <View style={styles.newExamDetailsContainer}>
-//                           {exam.scheduledTime && (
-//                             <View style={styles.newExamDetailRow}>
-//                               <Ionicons name="calendar-outline" size={14} color={colors.primary} />
-//                               <Text style={styles.newExamDetailText}>
-//                                 {formatDate(exam.scheduledTime)}
-//                               </Text>
-//                             </View>
-//                           )}
-//                           <View style={styles.newExamDetailRow}>
-//                             {exam.duration && (
-//                               <>
-//                                 <Ionicons name="time-outline" size={14} color="#10b981" />
-//                                 <Text style={styles.newExamDetailText}>{exam.duration} min</Text>
-//                               </>
-//                             )}
-//                             {exam.totalMarks && (
-//                               <>
-//                                 <Ionicons name="trophy-outline" size={14} color="#22c55e" style={{ marginLeft: 12 }} />
-//                                 <Text style={styles.newExamDetailText}>{exam.totalMarks} marks</Text>
-//                               </>
-//                             )}
-//                           </View>
-//                         </View>
-//                       </View>
-//                     </TouchableOpacity>
-//                   );
-//                 })}
-//               </ScrollView>
-//             </View>
-//           )}
-
-//           <View style={{ height: 20 }} />
-//         </ScrollView>
-//       </View>
-//     </ScreenWrapper>
-//   );
-// }
-
-// const createStyles = (colors, isDark) =>
-//   StyleSheet.create({
-//     container: {
-//       flex: 1,
-//       backgroundColor: colors.background,
-//     },
-//     scrollView: {
-//       flex: 1,
-//     },
-//     scrollContent: {
-//       paddingBottom: 100,
-//     },
-//     loadingContainer: {
-//       flex: 1,
-//       justifyContent: 'center',
-//       alignItems: 'center',
-//     },
-//     heroSection: {
-//       flexDirection: 'row',
-//       justifyContent: 'space-between',
-//       alignItems: 'center',
-//       paddingHorizontal: 20,
-//       marginBottom: 24,
-//     },
-//     heroContent: {
-//       flex: 1,
-//     },
-//     greeting: {
-//       fontSize: 16,
-//       color: colors.textSecondary,
-//       marginBottom: 4,
-//       fontWeight: '500',
-//     },
-//     userName: {
-//       fontSize: 32,
-//       fontWeight: 'bold',
-//       color: colors.text,
-//       marginBottom: 8,
-//       letterSpacing: -0.5,
-//     },
-//     heroSubtitle: {
-//       fontSize: 15,
-//       color: colors.textSecondary,
-//       fontWeight: '500',
-//     },
-//     heroIcon: {
-//       width: 60,
-//       height: 60,
-//       borderRadius: 30,
-//       backgroundColor: colors.primary + '20',
-//       justifyContent: 'center',
-//       alignItems: 'center',
-//     },
-//     streakCard: {
-//       marginHorizontal: 20,
-//       marginBottom: 24,
-//       borderRadius: 24,
-//       overflow: 'hidden',
-//       shadowColor: colors.primary,
-//       shadowOffset: { width: 0, height: 8 },
-//       shadowOpacity: 0.3,
-//       shadowRadius: 16,
-//       elevation: 8,
-//     },
-//     streakGradient: {
-//       padding: 20,
-//       borderRadius: 24,
-//     },
-//     streakContent: {
-//       flexDirection: 'row',
-//       justifyContent: 'space-between',
-//       alignItems: 'center',
-//       marginBottom: 12,
-//     },
-//     streakLeft: {
-//       flexDirection: 'row',
-//       alignItems: 'center',
-//       flex: 1,
-//     },
-//     streakIconContainer: {
-//       marginRight: 12,
-//       backgroundColor: 'rgba(255, 255, 255, 0.2)',
-//       borderRadius: 20,
-//       padding: 10,
-//     },
-//     streakTextContainer: {
-//       justifyContent: 'center',
-//     },
-//     streakSubLabel: {
-//       fontSize: 12,
-//       color: '#FFFFFF',
-//       opacity: 0.9,
-//       marginBottom: 4,
-//       fontWeight: '500',
-//     },
-//     streakNumberContainer: {
-//       flexDirection: 'row',
-//       alignItems: 'baseline',
-//       gap: 6,
-//     },
-//     streakNumber: {
-//       fontSize: 32,
-//       fontWeight: 'bold',
-//       color: '#FFFFFF',
-//     },
-//     streakDaysLabel: {
-//       fontSize: 14,
-//       color: '#FFFFFF',
-//       opacity: 0.85,
-//       fontWeight: '500',
-//     },
-//     streakRight: {
-//       alignItems: 'flex-end',
-//     },
-//     streakBestLabel: {
-//       fontSize: 11,
-//       color: '#FFFFFF',
-//       opacity: 0.9,
-//       marginBottom: 4,
-//       fontWeight: '500',
-//     },
-//     streakBestContainer: {
-//       flexDirection: 'row',
-//       alignItems: 'center',
-//       gap: 4,
-//     },
-//     streakBestNumber: {
-//       fontSize: 20,
-//       fontWeight: 'bold',
-//       color: '#FFFFFF',
-//     },
-//     streakProgressContainer: {
-//       marginTop: 12,
-//       paddingTop: 12,
-//       borderTopWidth: 1,
-//       borderTopColor: 'rgba(255, 255, 255, 0.2)',
-//     },
-//     streakProgressHeader: {
-//       flexDirection: 'row',
-//       justifyContent: 'space-between',
-//       alignItems: 'center',
-//       marginBottom: 8,
-//     },
-//     streakProgressLabel: {
-//       fontSize: 11,
-//       color: '#FFFFFF',
-//       opacity: 0.9,
-//       fontWeight: '500',
-//     },
-//     streakProgressPercent: {
-//       fontSize: 11,
-//       color: '#FFFFFF',
-//       opacity: 0.9,
-//       fontWeight: '600',
-//     },
-//     streakProgressBar: {
-//       width: '100%',
-//       height: 6,
-//       backgroundColor: 'rgba(255, 255, 255, 0.2)',
-//       borderRadius: 3,
-//       overflow: 'hidden',
-//     },
-//     streakProgressFill: {
-//       height: '100%',
-//       backgroundColor: '#FFFFFF',
-//       borderRadius: 3,
-//     },
-//     streakFooter: {
-//       flexDirection: 'row',
-//       alignItems: 'center',
-//       marginTop: 12,
-//       paddingTop: 12,
-//       borderTopWidth: 1,
-//       borderTopColor: 'rgba(255, 255, 255, 0.2)',
-//       gap: 6,
-//     },
-//     streakFooterText: {
-//       fontSize: 11,
-//       color: '#FFFFFF',
-//       opacity: 0.9,
-//       fontWeight: '500',
-//     },
-//     dailyContentRow: {
-//       flexDirection: 'row',
-//       paddingHorizontal: 20,
-//       marginBottom: 24,
-//       gap: 12,
-//     },
-//     dailyCard: {
-//       flex: 1,
-//       backgroundColor: colors.surface,
-//       borderRadius: 20,
-//       padding: 18,
-//       borderWidth: 1,
-//       borderColor: colors.border,
-//     },
-//     dailyCardHeader: {
-//       flexDirection: 'row',
-//       alignItems: 'center',
-//       marginBottom: 12,
-//     },
-//     dailyIconContainer: {
-//       width: 32,
-//       height: 32,
-//       borderRadius: 16,
-//       backgroundColor: colors.primary + '15',
-//       justifyContent: 'center',
-//       alignItems: 'center',
-//       marginRight: 10,
-//     },
-//     dailyCardTitle: {
-//       fontSize: 13,
-//       fontWeight: '700',
-//       color: colors.text,
-//       textTransform: 'uppercase',
-//       letterSpacing: 0.5,
-//     },
-//     wordText: {
-//       fontSize: 20,
-//       fontWeight: 'bold',
-//       color: colors.primary,
-//       marginBottom: 6,
-//     },
-//     wordMeaning: {
-//       fontSize: 13,
-//       color: colors.text,
-//       lineHeight: 18,
-//     },
-//     quoteText: {
-//       fontSize: 14,
-//       color: colors.text,
-//       lineHeight: 20,
-//       marginBottom: 8,
-//       fontStyle: 'italic',
-//     },
-//     quoteAuthor: {
-//       fontSize: 12,
-//       color: colors.textSecondary,
-//       fontWeight: '600',
-//     },
-//     section: {
-//       marginBottom: 28,
-//     },
-//     sectionHeader: {
-//       flexDirection: 'row',
-//       justifyContent: 'space-between',
-//       alignItems: 'center',
-//       paddingHorizontal: 20,
-//       marginBottom: 16,
-//     },
-//     sectionTitle: {
-//       fontSize: 22,
-//       fontWeight: 'bold',
-//       color: colors.text,
-//       letterSpacing: -0.5,
-//     },
-//     seeAll: {
-//       fontSize: 15,
-//       color: colors.primary,
-//       fontWeight: '600',
-//     },
-//     categoriesContainer: {
-//       paddingLeft: 20,
-//       paddingRight: 20,
-//     },
-//     categoryCard: {
-//       width: 160,
-//       backgroundColor: colors.surface,
-//       borderRadius: 20,
-//       padding: 18,
-//       marginRight: 12,
-//       alignItems: 'center',
-//       borderWidth: 1,
-//       borderColor: colors.border,
-//     },
-//     categoryCardFirst: {
-//       marginLeft: 0,
-//     },
-//     categoryLogo: {
-//       width: 56,
-//       height: 56,
-//       borderRadius: 16,
-//       marginBottom: 12,
-//     },
-//     categoryIconContainer: {
-//       width: 56,
-//       height: 56,
-//       borderRadius: 16,
-//       backgroundColor: colors.primary + '15',
-//       justifyContent: 'center',
-//       alignItems: 'center',
-//       marginBottom: 12,
-//     },
-//     categoryName: {
-//       fontSize: 15,
-//       fontWeight: '700',
-//       color: colors.text,
-//       textAlign: 'center',
-//       marginBottom: 8,
-//     },
-//     categoryBadge: {
-//       backgroundColor: colors.primary + '15',
-//       paddingHorizontal: 10,
-//       paddingVertical: 4,
-//       borderRadius: 12,
-//     },
-//     categoryBadgeText: {
-//       fontSize: 11,
-//       color: colors.primary,
-//       fontWeight: '600',
-//     },
-//     horizontalScrollContainer: {
-//       paddingLeft: 20,
-//       paddingRight: 20,
-//     },
-//     // Recent Results Card Styles
-//     resultCard: {
-//       width: 280,
-//       backgroundColor: colors.card,
-//       borderRadius: 16,
-//       marginRight: 12,
-//       overflow: 'hidden',
-//       borderWidth: 1,
-//       borderColor: colors.border,
-//       shadowColor: '#000',
-//       shadowOffset: { width: 0, height: 2 },
-//       shadowOpacity: 0.1,
-//       shadowRadius: 8,
-//       elevation: 3,
-//     },
-//     resultCardFirst: {
-//       marginLeft: 0,
-//     },
-//     resultTopBar: {
-//       height: 4,
-//       width: '100%',
-//     },
-//     resultCardContent: {
-//       padding: 16,
-//     },
-//     resultCardHeader: {
-//       flexDirection: 'row',
-//       justifyContent: 'space-between',
-//       alignItems: 'flex-start',
-//       marginBottom: 8,
-//       gap: 8,
-//     },
-//     resultCardTitle: {
-//       flex: 1,
-//       fontSize: 14,
-//       fontWeight: 'bold',
-//       color: colors.text,
-//       lineHeight: 20,
-//     },
-//     resultBadge: {
-//       paddingHorizontal: 8,
-//       paddingVertical: 4,
-//       borderRadius: 12,
-//       minWidth: 50,
-//       alignItems: 'center',
-//     },
-//     resultBadgeSuccess: {
-//       backgroundColor: '#10b981' + '20',
-//     },
-//     resultBadgeWarning: {
-//       backgroundColor: '#f59e0b' + '20',
-//     },
-//     resultBadgeDanger: {
-//       backgroundColor: '#ef4444' + '20',
-//     },
-//     resultBadgeText: {
-//       fontSize: 12,
-//       fontWeight: 'bold',
-//     },
-//     resultCategory: {
-//       fontSize: 12,
-//       color: colors.textSecondary,
-//       marginBottom: 12,
-//     },
-//     resultStatsContainer: {
-//       backgroundColor: colors.surface,
-//       borderRadius: 12,
-//       padding: 12,
-//       gap: 8,
-//     },
-//     resultStatRow: {
-//       flexDirection: 'row',
-//       justifyContent: 'space-between',
-//       alignItems: 'center',
-//     },
-//     resultStatLabel: {
-//       fontSize: 11,
-//       color: colors.textSecondary,
-//       fontWeight: '600',
-//     },
-//     resultStatValue: {
-//       fontSize: 11,
-//       fontWeight: 'bold',
-//       color: colors.text,
-//     },
-//     // New Exams Card Styles
-//     newExamCard: {
-//       width: 280,
-//       backgroundColor: colors.card,
-//       borderRadius: 12,
-//       marginRight: 12,
-//       overflow: 'hidden',
-//       borderWidth: 1,
-//       borderColor: colors.border,
-//       shadowColor: '#000',
-//       shadowOffset: { width: 0, height: 1 },
-//       shadowOpacity: 0.08,
-//       shadowRadius: 4,
-//       elevation: 2,
-//       flexDirection: 'row',
-//     },
-//     newExamCardFirst: {
-//       marginLeft: 0,
-//     },
-//     newExamLeftBorder: {
-//       width: 4,
-//       backgroundColor: colors.primary,
-//     },
-//     newExamCardContent: {
-//       flex: 1,
-//       padding: 16,
-//     },
-//     newExamCardHeader: {
-//       flexDirection: 'row',
-//       justifyContent: 'space-between',
-//       alignItems: 'flex-start',
-//       marginBottom: 8,
-//       gap: 8,
-//     },
-//     newExamCardTitle: {
-//       flex: 1,
-//       fontSize: 14,
-//       fontWeight: '600',
-//       color: colors.text,
-//       lineHeight: 20,
-//     },
-//     newExamBadge: {
-//       paddingHorizontal: 6,
-//       paddingVertical: 4,
-//       borderRadius: 12,
-//       minWidth: 60,
-//       alignItems: 'center',
-//     },
-//     newExamBadgeAvailable: {
-//       backgroundColor: colors.primary + '20',
-//     },
-//     newExamBadgeCompleted: {
-//       backgroundColor: colors.textSecondary + '20',
-//     },
-//     newExamBadgeUpcoming: {
-//       backgroundColor: '#f59e0b' + '20',
-//     },
-//     newExamBadgePaused: {
-//       backgroundColor: colors.primary + '20',
-//     },
-//     newExamBadgeExpired: {
-//       backgroundColor: '#6b7280' + '20',
-//     },
-//     newExamBadgeText: {
-//       fontSize: 10,
-//       fontWeight: '600',
-//     },
-//     newExamCategory: {
-//       fontSize: 12,
-//       color: colors.textSecondary,
-//       marginBottom: 12,
-//     },
-//     newExamDetailsContainer: {
-//       borderTopWidth: 1,
-//       borderTopColor: colors.border,
-//       paddingTop: 12,
-//       gap: 8,
-//     },
-//     newExamDetailRow: {
-//       flexDirection: 'row',
-//       alignItems: 'center',
-//       gap: 6,
-//     },
-//     newExamDetailText: {
-//       fontSize: 11,
-//       color: colors.textSecondary,
-//       fontWeight: '500',
-//     },
-//     examCard: {
-//       flexDirection: 'row',
-//       justifyContent: 'space-between',
-//       alignItems: 'center',
-//       backgroundColor: colors.surface,
-//       borderRadius: 18,
-//       padding: 18,
-//       marginHorizontal: 20,
-//       marginBottom: 12,
-//       borderWidth: 1,
-//       borderColor: colors.border,
-//     },
-//     examCardLeft: {
-//       flexDirection: 'row',
-//       alignItems: 'center',
-//       flex: 1,
-//     },
-//     examIconContainer: {
-//       width: 48,
-//       height: 48,
-//       borderRadius: 24,
-//       justifyContent: 'center',
-//       alignItems: 'center',
-//       marginRight: 14,
-//     },
-//     examIconAvailable: {
-//       backgroundColor: colors.primary,
-//     },
-//     examIconCompleted: {
-//       backgroundColor: '#3B82F6', // Blue for completed
-//     },
-//     examInfo: {
-//       flex: 1,
-//     },
-//     examTitle: {
-//       fontSize: 16,
-//       fontWeight: '700',
-//       color: colors.text,
-//       marginBottom: 4,
-//     },
-//     examMetaRow: {
-//       flexDirection: 'row',
-//       justifyContent: 'space-between',
-//       alignItems: 'center',
-//     },
-//     examMeta: {
-//       fontSize: 13,
-//       color: colors.textSecondary,
-//     },
-//     examScore: {
-//       fontSize: 13,
-//       color: colors.primary,
-//       fontWeight: '600',
-//     },
-//     examCardRight: {
-//       flexDirection: 'row',
-//       alignItems: 'center',
-//     },
-//     statusBadgeAvailable: {
-//       backgroundColor: colors.primary + '20',
-//       paddingHorizontal: 14,
-//       paddingVertical: 6,
-//       borderRadius: 16,
-//       marginRight: 8,
-//     },
-//     statusTextAvailable: {
-//       fontSize: 12,
-//       fontWeight: '700',
-//       color: colors.primary,
-//     },
-//   });
+function SeriesCard({ series, onPress, colors }) {
+  const paid = series.accessType === 'paid' || series.isPremium || series.price > 0;
+  const price = !paid
+    ? 'Free'
+    : `₹${series.discountPrice && series.discountPrice < series.price ? series.discountPrice : series.price}`;
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.85}
+      style={[
+        tw`p-4 rounded-3xl`,
+        {
+          width: SERIES_CARD_WIDTH,
+          marginRight: SERIES_CARD_GAP,
+          backgroundColor: colors.card,
+          borderWidth: 1,
+          borderColor: colors.border,
+        },
+      ]}
+    >
+      <View style={tw`flex-row justify-between items-center`}>
+        <View style={[tw`px-2 py-1 rounded-md`, { backgroundColor: colors.surfaceMuted }]}>
+          <Text style={[tw`text-[10px] font-bold uppercase`, { color: colors.text }]}>
+            {series.seriesType || 'mock'} series
+          </Text>
+        </View>
+        <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>
+          {series.totalTests || 0} {series.totalTests === 1 ? 'test' : 'tests'}
+        </Text>
+      </View>
+      <Text style={[tw`text-base font-extrabold mt-3`, { color: colors.text }]} numberOfLines={2}>
+        {series.title}
+      </Text>
+      <View style={tw`flex-row justify-between items-center mt-4`}>
+        <Text style={[tw`text-xl font-extrabold`, { color: colors.text }]}>{price}</Text>
+        <View style={[tw`px-4 py-2.5 rounded-xl`, { backgroundColor: colors.hero }]}>
+          <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>
+            {series.isEnrolled ? 'Continue' : 'Enroll'}
+          </Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+}

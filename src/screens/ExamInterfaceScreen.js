@@ -14,6 +14,7 @@ import {
 import tw from 'twrnc';
 import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
 import { examStorage } from '../utils/storage';
@@ -45,6 +46,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
   const [syncStatus, setSyncStatus] = useState('synced');
   const [isPaused, setIsPaused] = useState(false);
   const [displayLanguage, setDisplayLanguage] = useState('English');
+  const { user } = useAuth();
   const [currentQuestionTimeSpent, setCurrentQuestionTimeSpent] = useState(0);
   const [totalTimeSpent, setTotalTimeSpent] = useState(0);
   const [sections, setSections] = useState([]);
@@ -314,7 +316,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
       }
 
       if (currentExam.language === 'Both') {
-        setDisplayLanguage('English');
+        setDisplayLanguage(user?.preferredLanguage === 'Hindi' ? 'Hindi' : 'English');
       } else {
         setDisplayLanguage(currentExam.language || 'English');
       }
