@@ -119,7 +119,7 @@ export default function ProfileScreen({ navigation }) {
   return (
     <ScreenWrapper>
       <ScrollView
-        style={[tw`flex-1`, { backgroundColor: colors.background }]}
+        style={[tw`flex-1`, { backgroundColor: colors.surface }]}
         contentContainerStyle={tw`pb-10`}
         showsVerticalScrollIndicator={false}
       >
@@ -152,7 +152,7 @@ export default function ProfileScreen({ navigation }) {
             <View
               style={[
                 tw`absolute -bottom-0.5 -right-0.5 w-8 h-8 rounded-full items-center justify-center border-2`,
-                { backgroundColor: colors.hero, borderColor: colors.background },
+                { backgroundColor: colors.hero, borderColor: colors.card },
               ]}
             >
               <Ionicons name="pencil" size={14} color={colors.heroText} />

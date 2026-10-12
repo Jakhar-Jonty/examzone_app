@@ -169,7 +169,7 @@ const makeStyles = (colors) =>
       right: 0,
       padding: 12,
       paddingBottom: 16,
-      backgroundColor: colors.background,
+      backgroundColor: colors.card,
       borderTopWidth: 1,
       borderTopColor: colors.border,
     },

@@ -317,7 +317,7 @@ const makeStyles = (colors) =>
       padding: 16,
       borderTopWidth: 1,
       borderTopColor: colors.border,
-      backgroundColor: colors.background,
+      backgroundColor: colors.card,
     },
     cta: {
       backgroundColor: colors.hero,

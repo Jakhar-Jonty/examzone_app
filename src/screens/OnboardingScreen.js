@@ -58,7 +58,7 @@ export default function OnboardingScreen({ route }) {
         </View>
 
         {/* White card */}
-        <View style={[tw`flex-1 rounded-t-3xl px-6 pt-8 pb-10`, { backgroundColor: colors.background }]}>
+        <View style={[tw`flex-1 rounded-t-3xl px-6 pt-8 pb-10`, { backgroundColor: colors.card }]}>
           {/* Features */}
           <Text style={[tw`text-xs font-bold uppercase tracking-widest mb-3`, { color: colors.textSecondary }]}>
             What's waiting for you

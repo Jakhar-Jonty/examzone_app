@@ -72,7 +72,7 @@ export default function CategoriesScreen({ navigation }) {
   if (loading && categories.length === 0) {
     return (
       <ScreenWrapper>
-        <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
+        <View style={[tw`flex-1`, { backgroundColor: colors.surface }]}>
           <Header navigation={navigation} colors={colors} />
           <View style={tw`flex-1 items-center justify-center`}>
             <ActivityIndicator size="large" color={colors.text} />
@@ -85,7 +85,7 @@ export default function CategoriesScreen({ navigation }) {
   // ═══════════════════════════════════════════════════════
   return (
     <ScreenWrapper>
-      <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
+      <View style={[tw`flex-1`, { backgroundColor: colors.surface }]}>
         <Header navigation={navigation} colors={colors} />
 
         <ScrollView
@@ -152,7 +152,7 @@ export default function CategoriesScreen({ navigation }) {
                       source={{ uri: category.logo }}
                       style={[
                         tw`w-13 h-13 rounded-2xl mr-3.5`,
-                        { backgroundColor: colors.background },
+                        { backgroundColor: colors.card },
                       ]}
                       resizeMode="cover"
                     />

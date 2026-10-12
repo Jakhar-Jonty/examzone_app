@@ -33,7 +33,7 @@ export default function ScreenWrapper({
         <View
             style={[
                 styles.container,
-                { backgroundColor: backgroundColor || colors.background },
+                { backgroundColor: backgroundColor || colors.surface },
                 padding,
                 style,
             ]}

@@ -491,7 +491,7 @@ export default function PyqScreen({ navigation }) {
 
 const createStyles = (colors) =>
   StyleSheet.create({
-    container: { flex: 1, backgroundColor: colors.background },
+    container: { flex: 1, backgroundColor: colors.surface },
     header: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -627,7 +627,7 @@ const createStyles = (colors) =>
       paddingHorizontal: 8,
       paddingVertical: 6,
       borderRadius: 6,
-      backgroundColor: colors.background,
+      backgroundColor: colors.surfaceMuted,
       marginBottom: 4,
     },
     optRowCorrect: { backgroundColor: colors.tones.green.bg, borderWidth: 1, borderColor: colors.tones.green.fg },

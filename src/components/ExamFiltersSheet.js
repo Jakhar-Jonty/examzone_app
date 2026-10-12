@@ -115,7 +115,7 @@ export default function ExamFiltersSheet({
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={tw`flex-1 justify-end bg-black/45`} onPress={onClose}>
         <Pressable
-          style={[tw`rounded-t-3xl max-h-[85%]`, { backgroundColor: colors.background }]}
+          style={[tw`rounded-t-3xl max-h-[85%]`, { backgroundColor: colors.card }]}
           onPress={(e) => e.stopPropagation()}
         >
           <View style={tw`items-center pt-3 pb-2`}>
@@ -217,7 +217,7 @@ export default function ExamFiltersSheet({
           <View
             style={[
               tw`flex-row gap-3 px-5 py-4 border-t`,
-              { borderColor: colors.border, backgroundColor: colors.background },
+              { borderColor: colors.border, backgroundColor: colors.card },
             ]}
           >
             <TouchableOpacity

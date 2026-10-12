@@ -178,7 +178,7 @@ export default function ForgotPasswordScreen({ navigation }) {
 
 const createStyles = (colors) =>
   StyleSheet.create({
-    container: { flex: 1, backgroundColor: colors.background },
+    container: { flex: 1, backgroundColor: colors.surface },
     scroll: { padding: 24, paddingTop: 56 },
     back: { marginBottom: 16 },
     backText: { color: colors.text, fontWeight: '600', fontSize: 15 },

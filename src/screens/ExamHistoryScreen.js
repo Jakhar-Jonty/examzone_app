@@ -203,7 +203,7 @@ export default function ExamHistoryScreen({ navigation }) {
   // ═══════════════════════════════════════════════════════
   return (
     <ScreenWrapper>
-      <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
+      <View style={[tw`flex-1`, { backgroundColor: colors.surface }]}>
         {/* ─── Header ─────────────────────────────────── */}
         <View
           style={[
@@ -378,7 +378,7 @@ export default function ExamHistoryScreen({ navigation }) {
                             tw`px-4 py-2.5 rounded-full border`,
                             isActive
                               ? { backgroundColor: colors.hero, borderColor: colors.hero }
-                              : { backgroundColor: colors.background, borderColor: colors.border },
+                              : { backgroundColor: colors.card, borderColor: colors.border },
                           ]}
                           onPress={() => setFilters((f) => ({ ...f, sortBy: key }))}
                           activeOpacity={0.7}
@@ -415,7 +415,7 @@ export default function ExamHistoryScreen({ navigation }) {
                             tw`flex-1 py-2.5 rounded-xl items-center border`,
                             isActive
                               ? { backgroundColor: colors.hero, borderColor: colors.hero }
-                              : { backgroundColor: colors.background, borderColor: colors.border },
+                              : { backgroundColor: colors.card, borderColor: colors.border },
                           ]}
                           onPress={() => setFilters((f) => ({ ...f, sortOrder: key }))}
                           activeOpacity={0.7}

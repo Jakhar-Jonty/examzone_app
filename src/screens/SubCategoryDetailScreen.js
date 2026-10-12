@@ -191,7 +191,7 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
   if (loading && !subCategory) {
     return (
       <ScreenWrapper>
-        <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
+        <View style={[tw`flex-1`, { backgroundColor: colors.surface }]}>
           <Header title="Subcategory" navigation={navigation} colors={colors} />
           <View style={tw`flex-1 px-5 pt-4`}>
             <ExamCardSkeletonList count={4} colors={colors} />
@@ -205,7 +205,7 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
   if (error || !subCategory) {
     return (
       <ScreenWrapper>
-        <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
+        <View style={[tw`flex-1`, { backgroundColor: colors.surface }]}>
           <Header title="Subcategory" navigation={navigation} colors={colors} />
           <View style={tw`flex-1 items-center justify-center px-10`}>
             <Ionicons name="layers-outline" size={48} color={colors.textSecondary} />
@@ -234,7 +234,7 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
   // ═══════════════════════════════════════════════════════
   return (
     <ScreenWrapper>
-      <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
+      <View style={[tw`flex-1`, { backgroundColor: colors.surface }]}>
         <Header
           title={subCategory.displayName || subCategory.name}
           navigation={navigation}

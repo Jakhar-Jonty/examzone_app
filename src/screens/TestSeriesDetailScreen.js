@@ -279,7 +279,7 @@ const makeStyles = (colors) =>
       paddingBottom: 24,
       borderTopWidth: 1,
       borderTopColor: colors.border,
-      backgroundColor: colors.background,
+      backgroundColor: colors.card,
     },
     cta: {
       backgroundColor: colors.hero,

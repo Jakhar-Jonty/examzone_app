@@ -173,7 +173,7 @@ export default function OmrEntryScreen({ route, navigation }) {
 
   return (
     <ScreenWrapper>
-      <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
+      <View style={[tw`flex-1`, { backgroundColor: colors.surface }]}>
         <View
           style={[
             tw`flex-row items-center px-4 py-3 border-b`,

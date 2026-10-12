@@ -86,7 +86,7 @@ function ChipSelect({ options, selected, onSelect, multi = false, colors }) {
               tw`flex-row items-center px-3.5 py-2 rounded-full border`,
               isActive
                 ? { backgroundColor: colors.hero, borderColor: colors.hero }
-                : { backgroundColor: colors.background, borderColor: colors.border },
+                : { backgroundColor: colors.card, borderColor: colors.border },
             ]}
             onPress={() => onSelect(key)}
             activeOpacity={0.7}
@@ -316,7 +316,7 @@ export default function EditProfileScreen({ navigation }) {
       <TextInput
         style={[
           tw`rounded-xl px-3.5 py-3 text-sm border`,
-          { backgroundColor: colors.background, borderColor: colors.border, color: colors.text },
+          { backgroundColor: colors.card, borderColor: colors.border, color: colors.text },
         ]}
         placeholderTextColor={colors.textSecondary}
         {...props}
@@ -327,7 +327,7 @@ export default function EditProfileScreen({ navigation }) {
   // ═══════════════════════════════════════════════════════
   return (
     <ScreenWrapper>
-      <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
+      <View style={[tw`flex-1`, { backgroundColor: colors.surface }]}>
         {/* ─── Header ─────────────────────────────────── */}
         <View
           style={[
@@ -392,7 +392,7 @@ export default function EditProfileScreen({ navigation }) {
                 <View
                   style={[
                     tw`absolute -bottom-0.5 -right-0.5 w-8 h-8 rounded-full items-center justify-center border-2`,
-                    { backgroundColor: colors.hero, borderColor: colors.background },
+                    { backgroundColor: colors.hero, borderColor: colors.card },
                   ]}
                 >
                   <Ionicons name="camera" size={14} color={colors.heroText} />
@@ -437,7 +437,7 @@ export default function EditProfileScreen({ navigation }) {
                 <View
                   style={[
                     tw`rounded-xl px-3.5 py-3 border opacity-60`,
-                    { backgroundColor: colors.background, borderColor: colors.border },
+                    { backgroundColor: colors.card, borderColor: colors.border },
                   ]}
                 >
                   <Text style={[tw`text-sm`, { color: colors.text }]}>{phoneNumber}</Text>
@@ -466,7 +466,7 @@ export default function EditProfileScreen({ navigation }) {
                   style={[
                     tw`rounded-xl px-3.5 py-3 text-sm border min-h-[80px]`,
                     {
-                      backgroundColor: colors.background,
+                      backgroundColor: colors.card,
                       borderColor: colors.border,
                       color: colors.text,
                       textAlignVertical: 'top',
@@ -522,7 +522,7 @@ export default function EditProfileScreen({ navigation }) {
                 <TouchableOpacity
                   style={[
                     tw`rounded-xl px-3.5 py-3 border flex-row items-center justify-between`,
-                    { backgroundColor: colors.background, borderColor: colors.border },
+                    { backgroundColor: colors.card, borderColor: colors.border },
                   ]}
                   onPress={() => setShowStateDropdown(!showStateDropdown)}
                   activeOpacity={0.7}

@@ -184,7 +184,7 @@ export default function CategoryDetailScreen({ route, navigation }) {
   if (loading && !category) {
     return (
       <ScreenWrapper>
-        <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
+        <View style={[tw`flex-1`, { backgroundColor: colors.surface }]}>
           <Header title="Category" navigation={navigation} colors={colors} />
           <View style={tw`flex-1 px-5 pt-4`}>
             <ExamCardSkeletonList count={4} colors={colors} />
@@ -198,7 +198,7 @@ export default function CategoryDetailScreen({ route, navigation }) {
   if (error || !category) {
     return (
       <ScreenWrapper>
-        <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
+        <View style={[tw`flex-1`, { backgroundColor: colors.surface }]}>
           <Header title="Category" navigation={navigation} colors={colors} />
           <View style={tw`flex-1 items-center justify-center px-10`}>
             <Ionicons name="folder-open-outline" size={48} color={colors.textSecondary} />
@@ -252,7 +252,7 @@ export default function CategoryDetailScreen({ route, navigation }) {
   // ═══════════════════════════════════════════════════════
   return (
     <ScreenWrapper>
-      <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
+      <View style={[tw`flex-1`, { backgroundColor: colors.surface }]}>
         <Header
           title={category.displayName || category.name}
           navigation={navigation}

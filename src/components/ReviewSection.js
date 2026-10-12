@@ -283,7 +283,7 @@ const makeStyles = (colors) =>
     reviewTitle: { fontSize: 13, fontWeight: '600', color: colors.text, marginBottom: 2 },
     reviewBody: { fontSize: 13, color: colors.textSecondary, lineHeight: 18 },
     modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-    modalCard: { backgroundColor: colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 32 },
+    modalCard: { backgroundColor: colors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 32 },
     modalHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
     modalTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
     starPicker: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginBottom: 20 },

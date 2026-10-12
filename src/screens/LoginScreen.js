@@ -284,7 +284,7 @@ export default function LoginScreen({ navigation }) {
 
 const createStyles = (colors) =>
   StyleSheet.create({
-    container: { flex: 1, backgroundColor: colors.background },
+    container: { flex: 1, backgroundColor: colors.surface },
     scrollContent: { flexGrow: 1, justifyContent: 'center', padding: 24 },
     content: { width: '100%', maxWidth: 420, alignSelf: 'center' },
     header: { alignItems: 'center', marginBottom: 20 },

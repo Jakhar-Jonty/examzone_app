@@ -508,7 +508,7 @@ const makeStyles = (colors) => ({
     paddingBottom: 10,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
-    backgroundColor: colors.background,
+    backgroundColor: colors.surface,
   },
   topBarCenter: { flex: 1, marginHorizontal: 12 },
   topTitle: { fontSize: 17, fontWeight: '800', color: colors.text },
@@ -570,7 +570,7 @@ const makeStyles = (colors) => ({
     paddingTop: 10,
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    backgroundColor: colors.background,
+    backgroundColor: colors.card,
   },
   navRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
   navBtn: {
@@ -593,7 +593,7 @@ const makeStyles = (colors) => ({
   finishBtnText: { color: colors.heroText, fontWeight: '800', fontSize: 16 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   modalSheet: {
-    backgroundColor: colors.background,
+    backgroundColor: colors.card,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: '70%',

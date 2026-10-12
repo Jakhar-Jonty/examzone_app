@@ -109,7 +109,7 @@ export default function WordOfDayDetailScreen({ route, navigation }) {
   if (loading) {
     return (
       <ScreenWrapper>
-        <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
+        <View style={[tw`flex-1`, { backgroundColor: colors.surface }]}>
           <ScreenHeader title="Word of the Day" navigation={navigation} colors={colors} />
           <View style={tw`flex-1 items-center justify-center`}>
             <ActivityIndicator size="large" color={colors.text} />
@@ -124,7 +124,7 @@ export default function WordOfDayDetailScreen({ route, navigation }) {
   if (error || !word?.word) {
     return (
       <ScreenWrapper>
-        <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
+        <View style={[tw`flex-1`, { backgroundColor: colors.surface }]}>
           <ScreenHeader title="Word of the Day" navigation={navigation} colors={colors} />
           <View style={tw`flex-1 items-center justify-center px-10`}>
             <View
@@ -154,7 +154,7 @@ export default function WordOfDayDetailScreen({ route, navigation }) {
   // ═══════════════════════════════════════════════════════
   return (
     <ScreenWrapper>
-      <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
+      <View style={[tw`flex-1`, { backgroundColor: colors.surface }]}>
         <ScreenHeader
           title="Word of the Day"
           navigation={navigation}

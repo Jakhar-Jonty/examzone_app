@@ -44,7 +44,7 @@ export default function AppNavigator() {
       <Stack.Navigator
         screenOptions={{
           headerShown: false,
-          contentStyle: { backgroundColor: colors.background },
+          contentStyle: { backgroundColor: colors.surface },
         }}
       >
         {!isAuthenticated ? (
@@ -130,7 +130,7 @@ export default function AppNavigator() {
 //       <Stack.Navigator
 //         screenOptions={{
 //           headerShown: false,
-//           contentStyle: { backgroundColor: colors.background },
+//           contentStyle: { backgroundColor: colors.surface },
 //         }}
 //       >
 //         {!isAuthenticated ? (
