@@ -1,126 +1,82 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Platform, TextInput, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import tw from 'twrnc';
 import { Ionicons } from '@expo/vector-icons';
 import { getExamStatus } from '../utils/helpers';
-import {
-  formatAttemptCount,
-  formatExamBreadcrumb,
-  shortLanguageLabel,
-  difficultyColor,
-} from '../utils/examDisplay';
+import { formatAttemptCount, formatExamBreadcrumb, shortLanguageLabel } from '../utils/examDisplay';
 import { EXAM_SORT_OPTIONS } from '../utils/examSort';
 import { useAuth } from '../context/AuthContext';
 
-const cardShadow = Platform.select({
-  ios: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07,
-    shadowRadius: 8,
-  },
-  android: { elevation: 3 },
-  default: {},
-});
+// Badge tone → theme tone pair.
+const badgeTone = (tone, colors) =>
+  ({
+    free: colors.tones.green,
+    pro: colors.tones.purple,
+    done: colors.tones.green,
+    paused: colors.tones.orange,
+    continue: colors.tones.orange,
+    recommended: colors.tones.purple,
+    new: colors.tones.blue,
+  })[tone] || { fg: colors.textSecondary, bg: colors.surfaceMuted };
 
-function Badge({ label, tone = 'neutral', colors }) {
-  const tones = {
-    free: { bg: '#ecfdf5', text: '#059669', border: '#a7f3d0' },
-    pro: { bg: '#fffbeb', text: '#d97706', border: '#fde68a' },
-    done: { bg: '#ecfdf5', text: '#059669', border: '#a7f3d0' },
-    paused: { bg: '#fffbeb', text: '#d97706', border: '#fde68a' },
-    recommended: { bg: '#f5f3ff', text: '#7c3aed', border: '#ddd6fe' },
-    new: { bg: '#eff6ff', text: '#2563eb', border: '#bfdbfe' },
-    continue: { bg: '#fffbeb', text: '#d97706', border: '#fde68a' },
-    neutral: { bg: colors.surface, text: colors.textSecondary, border: colors.border },
-  };
-  const t = tones[tone] || tones.neutral;
+const difficultyTone = (level, colors) =>
+  ({ Easy: colors.tones.green, Medium: colors.tones.orange, Hard: colors.tones.red })[level] || null;
+
+function Badge({ label, tone, colors }) {
+  const t = badgeTone(tone, colors);
   return (
-    <View style={[tw`px-2 py-0.5 rounded-md border`, { backgroundColor: t.bg, borderColor: t.border }]}>
-      <Text style={[tw`text-[10px] font-bold`, { color: t.text }]}>
-        {label}
-      </Text>
+    <View style={[tw`px-2 py-1 rounded-md`, { backgroundColor: t.bg }]}>
+      <Text style={[tw`text-[10px] font-bold`, { color: t.fg }]}>{label.toUpperCase()}</Text>
     </View>
   );
 }
 
-function SpecMetric({ icon, value, label, colors }) {
+function Spec({ value, label, colors }) {
   return (
-    <View
-      style={[
-        tw`flex-1 items-center py-2 rounded-xl border`,
-        { backgroundColor: colors.background, borderColor: colors.border },
-      ]}
-    >
-      <Ionicons name={icon} size={14} color={colors.primary} style={tw`mb-0.5`} />
-      <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>{value}</Text>
-      <Text style={[tw`text-[10px]`, { color: colors.textSecondary }]}>{label}</Text>
+    <View style={[tw`flex-1 py-2.5 px-3 rounded-2xl`, { backgroundColor: colors.surfaceMuted }]}>
+      <Text style={[tw`text-base font-extrabold`, { color: colors.text }]}>{value}</Text>
+      <Text style={[tw`text-[11px]`, { color: colors.textSecondary }]}>{label}</Text>
     </View>
   );
 }
 
-function MetaChip({ icon, label, color, colors }) {
+function Meta({ icon, label, color, colors }) {
   if (!label) return null;
   return (
-    <View
-      style={[
-        tw`flex-row items-center gap-1 px-2 py-1 rounded-full`,
-        { backgroundColor: (color || colors.textSecondary) + '14' },
-      ]}
-    >
-      {icon ? (
-        <Ionicons name={icon} size={11} color={color || colors.textSecondary} />
-      ) : null}
-      <Text style={[tw`text-[10px] font-semibold`, { color: color || colors.textSecondary }]}>
-        {label}
-      </Text>
+    <View style={tw`flex-row items-center mr-3 mb-1`}>
+      <Ionicons name={icon} size={12} color={color || colors.textSecondary} />
+      <Text style={[tw`text-[11px] font-semibold ml-1`, { color: color || colors.textSecondary }]}>{label}</Text>
     </View>
   );
 }
 
-function ActionButton({ label, onPress, colors, variant = 'primary', flex }) {
-  const isPrimary = variant === 'primary';
-  const isResume = variant === 'resume';
-  const accent = isResume ? '#f59e0b' : colors.primary;
-
+function ActionButton({ label, icon, onPress, colors, variant = 'primary' }) {
+  const style =
+    variant === 'primary'
+      ? { bg: colors.hero, fg: colors.heroText }
+      : variant === 'resume'
+        ? { bg: colors.tones.orange.bg, fg: colors.tones.orange.fg }
+        : { bg: colors.card, fg: colors.text, border: colors.border };
   return (
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.85}
       style={[
-        flex ? tw`flex-1` : tw`w-full`,
-        tw`py-2.5 rounded-xl items-center justify-center flex-row gap-1.5`,
-        isPrimary || isResume
-          ? { backgroundColor: accent }
-          : { backgroundColor: colors.card, borderWidth: 1.5, borderColor: accent },
+        tw`flex-1 h-11 rounded-2xl items-center justify-center flex-row`,
+        { backgroundColor: style.bg },
+        style.border && { borderWidth: 1, borderColor: style.border },
       ]}
     >
-      {isPrimary && label === 'Start' && (
-        <Ionicons name="play" size={14} color="#fff" />
-      )}
-      <Text
-        style={[
-          tw`text-xs font-bold`,
-          { color: isPrimary || isResume ? '#fff' : accent },
-        ]}
-      >
-        {label}
-      </Text>
+      {icon ? <Ionicons name={icon} size={15} color={style.fg} /> : null}
+      <Text style={[tw`text-sm font-bold`, icon && tw`ml-1.5`, { color: style.fg }]}>{label}</Text>
     </TouchableOpacity>
   );
 }
 
 /**
- * Exam list card — structured hierarchy with spec grid + footer actions.
+ * Exam list card: title + badges, breadcrumb, specs, your score, meta, actions.
  */
-export default function ExamCard({
-  exam,
-  navigation,
-  colors,
-  showBreadcrumb = true,
-  compact = false,
-  highlightTag,
-}) {
+export default function ExamCard({ exam, navigation, colors, showBreadcrumb = true, compact = false, highlightTag }) {
   const { isPremium: isPremiumUser } = useAuth();
   if (!exam) return null;
 
@@ -129,206 +85,164 @@ export default function ExamCard({
   const stats = exam.attemptStats;
   const qCount = exam.totalQuestions || exam.questions || 0;
   const attempted = !!(exam.isAttempted || exam.attemptId);
-  const cardBg = colors.card || '#FFFFFF';
   const breadcrumb = formatExamBreadcrumb(exam);
+  const diffTone = difficultyTone(exam.difficultyLevel, colors);
+  const langLabel = shortLanguageLabel(exam.language);
+  const attemptLabel = formatAttemptCount(stats?.totalAttempts);
 
   const openDetail = () => navigation.navigate('ExamDetail', { examId: exam._id });
-
   const startExam = () => {
     if (locked) {
-      navigation.navigate('Paywall', {
-        reason: 'This exam is Premium. Upgrade to unlock it.',
-      });
+      navigation.navigate('Paywall', { reason: 'This exam is Premium. Upgrade to unlock it.' });
       return;
     }
     openDetail();
   };
 
-  const renderFooter = () => {
-    if (attempted && exam.attemptId) {
-      return (
-        <View style={[tw`flex-row gap-2 pt-3 mt-3 border-t`, { borderColor: colors.border }]}>
-          <ActionButton
-            label="View Result"
-            onPress={() => navigation.navigate('Result', { attemptId: exam.attemptId })}
-            colors={colors}
-            variant="primary"
-            flex
-          />
-          {status === 'available' && (
-            <ActionButton label="Re-attempt" onPress={startExam} colors={colors} variant="outline" flex />
-          )}
-        </View>
-      );
-    }
-
+  const footer = (() => {
     if (exam.isPaused) {
       return (
-        <View style={[tw`pt-3 mt-3 border-t`, { borderColor: colors.border }]}>
-          <ActionButton label="Resume Exam" onPress={openDetail} colors={colors} variant="resume" />
-        </View>
+        <>
+          <ActionButton label="Resume" icon="play" onPress={openDetail} colors={colors} variant="resume" />
+          {attempted && exam.attemptId && (
+            <>
+              <View style={tw`w-2`} />
+              <ActionButton
+                label="View result"
+                onPress={() => navigation.navigate('Result', { attemptId: exam.attemptId })}
+                colors={colors}
+                variant="outline"
+              />
+            </>
+          )}
+        </>
       );
     }
-
+    if (attempted && exam.attemptId) {
+      return (
+        <>
+          <ActionButton
+            label="View result"
+            onPress={() => navigation.navigate('Result', { attemptId: exam.attemptId })}
+            colors={colors}
+          />
+          {status === 'available' && (
+            <>
+              <View style={tw`w-2`} />
+              <ActionButton label="Re-attempt" onPress={startExam} colors={colors} variant="outline" />
+            </>
+          )}
+        </>
+      );
+    }
     if (status === 'available') {
       return (
-        <View style={[tw`pt-3 mt-3 border-t`, { borderColor: colors.border }]}>
-          <ActionButton
-            label={locked ? 'Unlock with Pro' : 'Start Exam'}
-            onPress={startExam}
-            colors={colors}
-            variant={locked ? 'outline' : 'primary'}
-          />
-        </View>
+        <ActionButton
+          label={locked ? 'Unlock with Pro' : 'Start test'}
+          icon={locked ? 'lock-closed' : 'play'}
+          onPress={startExam}
+          colors={colors}
+          variant={locked ? 'outline' : 'primary'}
+        />
       );
     }
-
     return (
-      <View style={[tw`pt-3 mt-3 border-t items-center`, { borderColor: colors.border }]}>
-        <Text style={[tw`text-xs font-semibold`, { color: colors.textSecondary }]}>
-          {status === 'upcoming' ? 'Starts soon' : 'No longer available'}
-        </Text>
-      </View>
+      <Text style={[tw`flex-1 text-xs font-semibold text-center py-2`, { color: colors.textSecondary }]}>
+        {status === 'upcoming' ? 'Opens soon' : 'No longer available'}
+      </Text>
     );
-  };
+  })();
 
-  const diffColor = difficultyColor(exam.difficultyLevel);
-  const langLabel = shortLanguageLabel(exam.language);
-  const attemptLabel = formatAttemptCount(stats?.totalAttempts);
+  const scorePct = exam.lastPercentage != null ? Math.round(exam.lastPercentage) : null;
+  const scoreTone =
+    scorePct == null ? null : scorePct >= 80 ? colors.tones.green : scorePct >= 60 ? colors.tones.orange : colors.tones.red;
 
   return (
     <TouchableOpacity
       onPress={openDetail}
       activeOpacity={0.92}
       style={[
-        tw`rounded-2xl border`,
+        tw`rounded-3xl`,
         compact ? tw`mb-0` : null,
-        cardShadow,
-        { backgroundColor: cardBg, borderColor: colors.border },
+        { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
       ]}
     >
-      <View style={tw`px-4 pt-3.5 pb-3.5`}>
-        {/* Title + status chips (same row) */}
-        <View style={tw`flex-row items-start gap-2`}>
-          <Text
-            style={[
-              tw`flex-1 min-w-0`,
-              compact ? tw`text-sm font-bold leading-5` : tw`text-base font-bold leading-snug`,
-              { color: colors.text },
-            ]}
-            numberOfLines={2}
-          >
-            {exam.title}
-          </Text>
-          <View style={tw`items-end gap-1 flex-shrink-0 max-w-[42%]`}>
-            <View style={tw`flex-row flex-wrap justify-end gap-1`}>
-              <Badge
-                label={exam.isPremium ? 'Pro' : 'Free'}
-                tone={exam.isPremium ? 'pro' : 'free'}
-                colors={colors}
-              />
-              {attempted && <Badge label="Attempted" tone="done" colors={colors} />}
-              {exam.isPaused && <Badge label="Paused" tone="paused" colors={colors} />}
+      <View style={tw`p-4`}>
+        <View style={tw`flex-row items-start`}>
+          <View style={tw`flex-1 pr-2`}>
+            <Text
+              style={[compact ? tw`text-sm` : tw`text-base`, tw`font-extrabold leading-snug`, { color: colors.text }]}
+              numberOfLines={2}
+            >
+              {exam.title}
+            </Text>
+            {showBreadcrumb && breadcrumb ? (
+              <Text style={[tw`text-[11px] mt-1`, { color: colors.textSecondary }]} numberOfLines={1}>
+                {breadcrumb}
+              </Text>
+            ) : null}
+          </View>
+          <View style={tw`items-end`}>
+            <View style={tw`flex-row`}>
+              {exam.isPaused && (
+                <View style={tw`mr-1`}>
+                  <Badge label="Paused" tone="paused" colors={colors} />
+                </View>
+              )}
+              <Badge label={exam.isPremium ? 'Pro' : 'Free'} tone={exam.isPremium ? 'pro' : 'free'} colors={colors} />
             </View>
-            {highlightTag && (
-              <Badge
-                label={
-                  highlightTag === 'recommended'
-                    ? 'Recommended'
-                    : highlightTag === 'new'
-                      ? 'New'
-                      : 'Continue'
-                }
-                tone={highlightTag}
-                colors={colors}
-              />
+            {/* "Continue" adds nothing next to the Paused badge, so only New / For you show. */}
+            {(highlightTag === 'new' || highlightTag === 'recommended') && (
+              <View style={tw`mt-1`}>
+                <Badge
+                  label={highlightTag === 'recommended' ? 'For you' : 'New'}
+                  tone={highlightTag}
+                  colors={colors}
+                />
+              </View>
             )}
           </View>
         </View>
 
-        {showBreadcrumb && breadcrumb ? (
-          <View style={tw`flex-row items-center gap-1 mt-1`}>
-            <Ionicons name="folder-open-outline" size={12} color={colors.textSecondary} />
-            <Text
-              style={[tw`text-[11px] flex-1`, { color: colors.textSecondary }]}
-              numberOfLines={1}
-              ellipsizeMode="tail"
-            >
-              {breadcrumb}
-            </Text>
-          </View>
-        ) : null}
-
-        {/* Spec grid */}
         <View style={tw`flex-row gap-2 mt-3`}>
-          {qCount > 0 && (
-            <SpecMetric icon="help-circle-outline" value={qCount} label="Questions" colors={colors} />
-          )}
-          <SpecMetric icon="time-outline" value={exam.duration} label="Minutes" colors={colors} />
-          <SpecMetric icon="ribbon-outline" value={exam.totalMarks} label="Marks" colors={colors} />
+          {qCount > 0 && <Spec value={qCount} label="Questions" colors={colors} />}
+          <Spec value={exam.duration} label="Minutes" colors={colors} />
+          <Spec value={exam.totalMarks} label="Marks" colors={colors} />
         </View>
 
-        {/* Your score highlight */}
         {attempted && exam.lastScore != null && exam.totalMarks != null && (
-          <View
-            style={[
-              tw`flex-row items-center justify-between mt-3 px-3 py-2 rounded-xl`,
-              { backgroundColor: colors.primary + '12' },
-            ]}
-          >
-            <View style={tw`flex-row items-center gap-2`}>
-              <Ionicons name="trophy-outline" size={16} color={colors.primary} />
-              <Text style={[tw`text-xs font-semibold`, { color: colors.text }]}>
-                Your score
-              </Text>
-            </View>
-            <Text style={[tw`text-sm font-bold`, { color: colors.primary }]}>
+          <View style={[tw`flex-row items-center justify-between mt-2 px-3 py-2.5 rounded-2xl`, { backgroundColor: scoreTone?.bg || colors.surfaceMuted }]}>
+            <Text style={[tw`text-xs font-semibold`, { color: colors.text }]}>Your score</Text>
+            <Text style={[tw`text-sm font-extrabold`, { color: scoreTone?.fg || colors.text }]}>
               {exam.lastScore}/{exam.totalMarks}
-              {exam.lastPercentage != null
-                ? `  ·  ${Math.round(exam.lastPercentage)}%`
-                : ''}
+              {scorePct != null ? `  ·  ${scorePct}%` : ''}
             </Text>
           </View>
         )}
 
-        {/* Social proof + meta */}
-        {(attemptLabel || exam.averageRating > 0 || langLabel || stats?.topScore != null || exam.difficultyLevel) && (
-          <View style={tw`flex-row flex-wrap gap-1.5 mt-3`}>
+        {(exam.difficultyLevel || exam.averageRating > 0 || attemptLabel || langLabel || stats?.topScore != null) && (
+          <View style={tw`flex-row flex-wrap mt-3`}>
             {exam.difficultyLevel && (
-              <MetaChip
-                icon="pulse"
-                label={exam.difficultyLevel}
-                color={diffColor}
-                colors={colors}
-              />
+              <Meta icon="speedometer-outline" label={exam.difficultyLevel} color={diffTone?.fg} colors={colors} />
             )}
             {exam.averageRating > 0 && (
-              <MetaChip
-                icon="star"
-                label={Number(exam.averageRating).toFixed(1)}
-                color="#d97706"
-                colors={colors}
-              />
+              <Meta icon="star" label={Number(exam.averageRating).toFixed(1)} color={colors.tones.orange.fg} colors={colors} />
             )}
             {attemptLabel && (
-              <MetaChip
+              <Meta
                 icon="people-outline"
-                label={`${attemptLabel} attempts`}
+                label={`${attemptLabel} ${stats?.totalAttempts === 1 ? 'attempt' : 'attempts'}`}
                 colors={colors}
               />
             )}
-            {langLabel && <MetaChip icon="language-outline" label={langLabel} colors={colors} />}
+            {langLabel && <Meta icon="language-outline" label={langLabel} colors={colors} />}
             {stats?.topScore != null && exam.totalMarks && (
-              <MetaChip
-                icon="trending-up-outline"
-                label={`Top ${stats.topScore}/${exam.totalMarks}`}
-                colors={colors}
-              />
+              <Meta icon="trending-up-outline" label={`Top ${stats.topScore}/${exam.totalMarks}`} colors={colors} />
             )}
           </View>
         )}
 
-        {renderFooter()}
+        <View style={tw`flex-row mt-3`}>{footer}</View>
       </View>
     </TouchableOpacity>
   );
@@ -336,38 +250,22 @@ export default function ExamCard({
 
 export function ExamFilterChips({ value, onChange, colors, counts }) {
   const chips = [
-    { key: 'all', label: `All${counts?.all != null ? ` (${counts.all})` : ''}` },
-    { key: 'available', label: `Available${counts?.available != null ? ` (${counts.available})` : ''}` },
-    { key: 'attempted', label: `Attempted${counts?.attempted != null ? ` (${counts.attempted})` : ''}` },
+    { key: 'all', label: `All${counts?.all != null ? ` ${counts.all}` : ''}` },
+    { key: 'available', label: `Available${counts?.available != null ? ` ${counts.available}` : ''}` },
+    { key: 'attempted', label: `Attempted${counts?.attempted != null ? ` ${counts.attempted}` : ''}` },
   ];
-
   return (
-    <View
-      style={[
-        tw`flex-row rounded-lg p-1 mb-3`,
-        { backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border },
-      ]}
-    >
+    <View style={[tw`flex-row rounded-2xl p-1 mb-3`, { backgroundColor: colors.surfaceMuted }]}>
       {chips.map(({ key, label }) => {
         const active = value === key;
         return (
           <TouchableOpacity
             key={key}
-            style={[
-              tw`flex-1 py-2 rounded-md items-center`,
-              active && { backgroundColor: colors.card },
-            ]}
+            style={[tw`flex-1 py-2 rounded-xl items-center`, active && { backgroundColor: colors.card }]}
             onPress={() => onChange(key)}
             activeOpacity={0.8}
           >
-            <Text
-              style={[
-                tw`text-[11px] font-semibold`,
-                { color: active ? colors.primary : colors.textSecondary },
-              ]}
-            >
-              {label}
-            </Text>
+            <Text style={[tw`text-xs font-bold`, { color: active ? colors.text : colors.textSecondary }]}>{label}</Text>
           </TouchableOpacity>
         );
       })}
@@ -390,29 +288,22 @@ export function examFilterCounts(exams) {
   const list = exams || [];
   return {
     all: list.length,
-    available: list.filter((e) => getExamStatus(e) === 'available' && !e.isAttempted && !e.isPaused)
-      .length,
+    available: list.filter((e) => getExamStatus(e) === 'available' && !e.isAttempted && !e.isPaused).length,
     attempted: list.filter((e) => e.isAttempted || e.attemptId || e.isPaused).length,
   };
 }
 
-export function ExamSearchBar({
-  value,
-  onChangeText,
-  colors,
-  placeholder = 'Search exams...',
-  rightAccessory,
-}) {
+export function ExamSearchBar({ value, onChangeText, colors, placeholder = 'Search exams...', rightAccessory }) {
   const field = (
     <View
       style={[
-        tw`flex-1 flex-row items-center rounded-xl px-3 py-2.5 border gap-2`,
-        { backgroundColor: colors.surface, borderColor: colors.border },
+        tw`flex-1 flex-row items-center rounded-2xl px-3.5 h-12`,
+        { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
       ]}
     >
       <Ionicons name="search" size={18} color={colors.textSecondary} />
       <TextInput
-        style={[tw`flex-1 text-sm`, { color: colors.text }]}
+        style={[tw`flex-1 text-sm ml-2`, { color: colors.text }]}
         placeholder={placeholder}
         placeholderTextColor={colors.textSecondary}
         value={value}
@@ -420,7 +311,7 @@ export function ExamSearchBar({
         returnKeyType="search"
       />
       {value?.length > 0 && (
-        <TouchableOpacity onPress={() => onChangeText('')} activeOpacity={0.7}>
+        <TouchableOpacity onPress={() => onChangeText('')} activeOpacity={0.7} accessibilityLabel="Clear search">
           <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
         </TouchableOpacity>
       )}
@@ -435,39 +326,27 @@ export function ExamSearchBar({
       </View>
     );
   }
-
   return <View style={tw`mb-3`}>{field}</View>;
 }
 
 export function ExamSortChips({ value, onChange, colors }) {
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={tw`gap-2 mb-3 pr-1`}
-    >
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={tw`gap-2 mb-3 pr-1`}>
       {EXAM_SORT_OPTIONS.map(({ key, label }) => {
         const active = value === key;
         return (
           <TouchableOpacity
             key={key}
             style={[
-              tw`px-3 py-1.5 rounded-full border`,
+              tw`px-3.5 py-2 rounded-full`,
               active
-                ? { backgroundColor: colors.primary + '18', borderColor: colors.primary }
-                : { backgroundColor: colors.surface, borderColor: colors.border },
+                ? { backgroundColor: colors.hero }
+                : { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
             ]}
             onPress={() => onChange(key)}
             activeOpacity={0.75}
           >
-            <Text
-              style={[
-                tw`text-[11px] font-semibold`,
-                { color: active ? colors.primary : colors.textSecondary },
-              ]}
-            >
-              {label}
-            </Text>
+            <Text style={[tw`text-xs font-bold`, { color: active ? colors.heroText : colors.textSecondary }]}>{label}</Text>
           </TouchableOpacity>
         );
       })}

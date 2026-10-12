@@ -11,7 +11,7 @@ export function ExamHighlightSection({
   exams,
   navigation,
   colors,
-  accentColor,
+  tone,
   highlightTag,
 }) {
   if (!exams?.length) return null;
@@ -21,14 +21,14 @@ export function ExamHighlightSection({
       <View style={tw`flex-row items-start gap-2 mb-3`}>
         <View
           style={[
-            tw`w-6 h-6 rounded-full items-center justify-center mt-0.5`,
-            { backgroundColor: (accentColor || colors.primary) + '18' },
+            tw`w-7 h-7 rounded-lg items-center justify-center mt-0.5`,
+            { backgroundColor: (tone || colors.tones.green).bg },
           ]}
         >
-          <Ionicons name={icon} size={13} color={accentColor || colors.primary} />
+          <Ionicons name={icon} size={14} color={(tone || colors.tones.green).fg} />
         </View>
         <View style={tw`flex-1`}>
-          <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>{title}</Text>
+          <Text style={[tw`text-base font-extrabold`, { color: colors.text }]}>{title}</Text>
           {subtitle ? (
             <Text style={[tw`text-[11px] mt-0.5`, { color: colors.textSecondary }]}>
               {subtitle}
@@ -70,7 +70,7 @@ export function ExamHighlightsBlock({ highlights, navigation, colors }) {
           exams={pausedExams}
           navigation={navigation}
           colors={colors}
-          accentColor="#f59e0b"
+          tone={colors.tones.orange}
           highlightTag="continue"
         />
       )}
@@ -82,6 +82,7 @@ export function ExamHighlightsBlock({ highlights, navigation, colors }) {
           exams={newExams}
           navigation={navigation}
           colors={colors}
+          tone={colors.tones.blue}
           highlightTag="new"
         />
       )}
@@ -93,7 +94,7 @@ export function ExamHighlightsBlock({ highlights, navigation, colors }) {
           exams={recommendedExams}
           navigation={navigation}
           colors={colors}
-          accentColor="#8b5cf6"
+          tone={colors.tones.purple}
           highlightTag="recommended"
         />
       )}

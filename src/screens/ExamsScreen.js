@@ -368,20 +368,20 @@ export default function ExamsScreen({ navigation }) {
         {error && (
             <View
               style={[
-              tw`flex-row items-center p-3 rounded-xl mb-4 border`,
-              { backgroundColor: '#fef2f2', borderColor: '#fecaca' },
+              tw`flex-row items-center p-3 rounded-2xl mb-4`,
+              { backgroundColor: colors.tones.red.bg },
             ]}
           >
-            <Ionicons name="alert-circle" size={20} color="#ef4444" style={tw`mr-2`} />
-            <Text style={tw`flex-1 text-sm text-red-600`}>{error}</Text>
+            <Ionicons name="alert-circle" size={20} color={colors.tones.red.fg} style={tw`mr-2`} />
+            <Text style={[tw`flex-1 text-sm`, { color: colors.tones.red.fg }]}>{error}</Text>
             <TouchableOpacity onPress={() => fetchExams(1, false)} activeOpacity={0.7}>
-              <Text style={[tw`text-sm font-semibold`, { color: colors.primary }]}>Retry</Text>
+              <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>Retry</Text>
             </TouchableOpacity>
               </View>
             )}
 
         <View style={tw`flex-row items-center justify-between mb-3 mt-1`}>
-          <Text style={[tw`text-base font-bold`, { color: colors.text }]}>All exams</Text>
+          <Text style={[tw`text-lg font-extrabold`, { color: colors.text }]}>All exams</Text>
           {pagination.totalExams > 0 && (
             <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>
               {pagination.totalExams} total
@@ -402,12 +402,12 @@ export default function ExamsScreen({ navigation }) {
 
   return (
     <>
-    <ScreenWrapper>
-      <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
-          <View style={[tw`px-5 pt-5 pb-3 border-b`, { borderColor: colors.border }]}>
+    <ScreenWrapper backgroundColor={colors.surface}>
+      <View style={[tw`flex-1`, { backgroundColor: colors.surface }]}>
+          <View style={tw`px-5 pt-3 pb-2`}>
             <View style={tw`flex-row items-start justify-between`}>
               <View style={tw`flex-1`}>
-                <Text style={[tw`text-2xl font-bold mb-0.5`, { color: colors.text }]}>
+                <Text style={[tw`text-2xl font-extrabold mb-0.5`, { color: colors.text }]}>
                   Exams
                 </Text>
           <Text style={[tw`text-sm`, { color: colors.textSecondary }]}>
@@ -416,13 +416,13 @@ export default function ExamsScreen({ navigation }) {
               </View>
               <TouchableOpacity
                 onPress={() => navigation.navigate('ExamHistory')}
-                style={tw`flex-row items-center gap-1 pt-1`}
+                style={[tw`flex-row items-center px-3 py-2 rounded-full mt-1`, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}
                 activeOpacity={0.7}
               >
-                <Text style={[tw`text-xs font-semibold`, { color: colors.primary }]}>
+                <Ionicons name="time-outline" size={14} color={colors.text} />
+                <Text style={[tw`text-xs font-bold ml-1`, { color: colors.text }]}>
                   History
                 </Text>
-                <Ionicons name="chevron-forward" size={14} color={colors.primary} />
               </TouchableOpacity>
             </View>
         </View>
@@ -430,8 +430,8 @@ export default function ExamsScreen({ navigation }) {
           {/* Sticky search + quick filters */}
         <View
           style={[
-              tw`px-5 pt-3 pb-2 border-b`,
-              { backgroundColor: colors.background, borderColor: colors.border },
+              tw`px-5 pt-2 pb-1`,
+              { backgroundColor: colors.surface },
             ]}
           >
             <ExamSearchBar
@@ -442,22 +442,22 @@ export default function ExamsScreen({ navigation }) {
               rightAccessory={
           <TouchableOpacity
             style={[
-              tw`w-11 h-11 rounded-xl items-center justify-center border relative`,
-              { backgroundColor: colors.surface, borderColor: colors.border },
+              tw`w-12 h-12 rounded-2xl items-center justify-center relative`,
+              { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
             ]}
                   onPress={() => setShowFiltersSheet(true)}
                   activeOpacity={0.75}
                   accessibilityLabel="Filters and sort"
           >
-                  <Ionicons name="options-outline" size={20} color={colors.primary} />
+                  <Ionicons name="options-outline" size={20} color={colors.text} />
                   {sheetFiltersCount > 0 && (
               <View
                 style={[
                         tw`absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full items-center justify-center px-1`,
-                  { backgroundColor: colors.primary },
+                  { backgroundColor: colors.hero },
                 ]}
               >
-                      <Text style={tw`text-white text-[9px] font-bold`}>
+                      <Text style={[tw`text-[9px] font-bold`, { color: colors.heroText }]}>
                         {sheetFiltersCount}
                       </Text>
               </View>
@@ -477,18 +477,18 @@ export default function ExamsScreen({ navigation }) {
                   <TouchableOpacity
                     key={key || 'all-types'}
                     style={[
-                      tw`px-3 py-1.5 rounded-full border`,
+                      tw`px-3.5 py-2 rounded-full`,
                       active
-                        ? { backgroundColor: colors.primary + '18', borderColor: colors.primary }
-                        : { backgroundColor: colors.surface, borderColor: colors.border },
+                        ? { backgroundColor: colors.hero }
+                        : { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
                     ]}
                     onPress={() => setExamTypeFilter(key)}
                     activeOpacity={0.75}
                   >
                     <Text
                       style={[
-                        tw`text-[11px] font-semibold`,
-                        { color: active ? colors.primary : colors.textSecondary },
+                        tw`text-xs font-bold`,
+                        { color: active ? colors.heroText : colors.textSecondary },
                       ]}
                     >
                       {label}
@@ -534,7 +534,7 @@ export default function ExamsScreen({ navigation }) {
               <RefreshControl
                 refreshing={refreshing}
                 onRefresh={onRefresh}
-                tintColor={colors.primary}
+                tintColor={colors.text}
               />
             }
             onEndReached={loadMore}
@@ -569,11 +569,11 @@ export default function ExamsScreen({ navigation }) {
                   </Text>
                   {(searchQuery || activeFiltersCount > 0) && (
                     <TouchableOpacity
-                      style={[tw`py-3 px-6 rounded-xl`, { backgroundColor: colors.primary }]}
+                      style={[tw`py-3 px-6 rounded-2xl`, { backgroundColor: colors.hero }]}
                       onPress={clearFilters}
                       activeOpacity={0.7}
                     >
-                        <Text style={tw`text-sm font-bold text-white`}>Clear filters</Text>
+                        <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>Clear filters</Text>
                     </TouchableOpacity>
                   )}
                 </View>

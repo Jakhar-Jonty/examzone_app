@@ -39,16 +39,16 @@ function OptionPill({ label, active, onPress, colors }) {
       onPress={onPress}
       activeOpacity={0.75}
       style={[
-        tw`px-3.5 py-2 rounded-full border mr-2 mb-2`,
+        tw`px-3.5 py-2 rounded-full mr-2 mb-2`,
         active
-          ? { backgroundColor: colors.primary + '18', borderColor: colors.primary }
-          : { backgroundColor: colors.surface, borderColor: colors.border },
+          ? { backgroundColor: colors.hero }
+          : { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
       ]}
     >
       <Text
         style={[
-          tw`text-xs font-semibold`,
-          { color: active ? colors.primary : colors.text },
+          tw`text-xs font-bold`,
+          { color: active ? colors.heroText : colors.text },
         ]}
       >
         {label}
@@ -233,11 +233,11 @@ export default function ExamFiltersSheet({
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[tw`flex-1 py-3.5 rounded-xl items-center`, { backgroundColor: colors.primary }]}
+              style={[tw`flex-1 py-3.5 rounded-2xl items-center`, { backgroundColor: colors.hero }]}
               onPress={handleApply}
               activeOpacity={0.85}
             >
-              <Text style={tw`text-sm font-bold text-white`}>Apply</Text>
+              <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>Apply</Text>
             </TouchableOpacity>
           </View>
         </Pressable>
@@ -261,12 +261,13 @@ export function ActiveFilterPills({ items, onRemove, onClearAll, colors }) {
           onPress={() => onRemove(key)}
           activeOpacity={0.75}
           style={[
-            tw`flex-row items-center px-3 py-1.5 rounded-full border gap-1`,
-            { backgroundColor: colors.primary + '12', borderColor: colors.primary + '40' },
+            tw`flex-row items-center px-3 py-1.5 rounded-full gap-1`,
+            { backgroundColor: colors.surfaceMuted },
           ]}
+          accessibilityLabel={`Remove filter ${label}`}
         >
-          <Text style={[tw`text-[11px] font-semibold`, { color: colors.primary }]}>{label}</Text>
-          <Ionicons name="close" size={14} color={colors.primary} />
+          <Text style={[tw`text-[11px] font-bold`, { color: colors.text }]}>{label}</Text>
+          <Ionicons name="close" size={14} color={colors.text} />
         </TouchableOpacity>
       ))}
       {items.length > 1 && (
