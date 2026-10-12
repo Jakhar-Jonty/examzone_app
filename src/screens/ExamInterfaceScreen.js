@@ -10,6 +10,7 @@ import {
   AppState,
   PanResponder,
   BackHandler,
+  Image,
 } from 'react-native';
 import tw from 'twrnc';
 import ScreenWrapper from '../components/ScreenWrapper';
@@ -1093,13 +1094,13 @@ export default function ExamInterfaceScreen({ route, navigation }) {
   const getPaletteColor = (status) => {
     switch (status) {
       case 'answered':
-        return { bg: 'bg-green-500', text: 'text-white' };
+        return { bg: colors.tones.green.bg, fg: colors.tones.green.fg };
       case 'marked':
-        return { bg: 'bg-purple-500', text: 'text-white' };
+        return { bg: colors.tones.purple.bg, fg: colors.tones.purple.fg };
       case 'marked-answered':
-        return { bg: 'bg-purple-500 border-2 border-green-400', text: 'text-white' };
+        return { bg: colors.tones.purple.bg, fg: colors.tones.purple.fg, ring: colors.tones.green.fg };
       default:
-        return { bg: isDark ? 'bg-gray-700' : 'bg-gray-200', text: isDark ? 'text-gray-300' : 'text-gray-600' };
+        return { bg: colors.surfaceMuted, fg: colors.textSecondary };
     }
   };
 
@@ -1123,9 +1124,9 @@ export default function ExamInterfaceScreen({ route, navigation }) {
   // ─── Loading / Submitting ─────────────────────────────
   if (!currentQuestion || submitting) {
     return (
-      <ScreenWrapper>
+      <ScreenWrapper backgroundColor={colors.surface}>
         <View style={tw`flex-1 justify-center items-center`}>
-          <ActivityIndicator size="large" color={colors.primary} />
+          <ActivityIndicator size="large" color={colors.text} />
           <Text style={[tw`mt-4 text-base`, { color: colors.textSecondary }]}>
             {submitting ? 'Submitting exam...' : 'Loading question...'}
           </Text>
@@ -1138,34 +1139,37 @@ export default function ExamInterfaceScreen({ route, navigation }) {
   // ─── RENDER ────────────────────────────────────────────
   // ═══════════════════════════════════════════════════════
   return (
-    <ScreenWrapper>
-      <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
+    <ScreenWrapper backgroundColor={colors.surface}>
+      <View style={[tw`flex-1`, { backgroundColor: colors.surface }]}>
 
         {/* ─── Top Header ────────────────────────────────── */}
-        <View
-          style={[
-            tw`flex-row items-center px-3 py-2 border-b`,
-            { backgroundColor: colors.surface, borderColor: colors.border,},
-          ]}
-        >
+        <View style={tw`flex-row items-center px-4 pt-1 pb-2`}>
           <TouchableOpacity
-            style={tw`p-2`}
+            style={[tw`w-10 h-10 rounded-full items-center justify-center`, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}
             onPress={handlePause}
             activeOpacity={0.7}
+            accessibilityLabel="Pause exam"
           >
-            <Ionicons name="pause-circle" size={30} color={colors.text} />
+            <Ionicons name="pause" size={18} color={colors.text} />
           </TouchableOpacity>
 
-          <View style={tw`flex-row items-center ml-2`}>
+          <View
+            style={[
+              tw`flex-row items-center ml-2 px-3 h-10 rounded-full`,
+              timeRemaining !== null && timeRemaining < 300
+                ? { backgroundColor: colors.tones.red.bg }
+                : { backgroundColor: colors.hero },
+            ]}
+          >
             <Ionicons
               name="time-outline"
-              size={18}
-              color={timeRemaining !== null && timeRemaining < 300 ? '#ef4444' : colors.text}
+              size={16}
+              color={timeRemaining !== null && timeRemaining < 300 ? colors.tones.red.fg : colors.heroText}
             />
             <Text
               style={[
-                tw`ml-1 text-base font-bold`,
-                { color: timeRemaining !== null && timeRemaining < 300 ? '#ef4444' : colors.text },
+                tw`ml-1.5 text-base font-extrabold`,
+                { color: timeRemaining !== null && timeRemaining < 300 ? colors.tones.red.fg : colors.heroText, fontVariant: ['tabular-nums'] },
               ]}
             >
               {timeRemaining !== null ? formatTime(timeRemaining) : '--:--'}
@@ -1177,16 +1181,16 @@ export default function ExamInterfaceScreen({ route, navigation }) {
             sections.length > 0 &&
             currentSectionIndex !== null &&
             sectionTimers[currentSectionIndex] !== undefined && (
-              <View style={tw`flex-row items-center ml-3 px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-800`}>
+              <View style={[tw`flex-row items-center ml-2 px-2.5 h-8 rounded-full`, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}>
                 <Ionicons
-                  name="time"
-                  size={14}
-                  color={sectionTimers[currentSectionIndex] < 60 ? '#ef4444' : colors.textSecondary}
+                  name="hourglass-outline"
+                  size={13}
+                  color={sectionTimers[currentSectionIndex] < 60 ? colors.tones.red.fg : colors.textSecondary}
                 />
                 <Text
                   style={[
-                    tw`ml-1 text-xs font-semibold`,
-                    { color: sectionTimers[currentSectionIndex] < 60 ? '#ef4444' : colors.textSecondary },
+                    tw`ml-1 text-xs font-bold`,
+                    { color: sectionTimers[currentSectionIndex] < 60 ? colors.tones.red.fg : colors.textSecondary },
                   ]}
                 >
                   {formatTime(sectionTimers[currentSectionIndex])}
@@ -1195,42 +1199,48 @@ export default function ExamInterfaceScreen({ route, navigation }) {
             )}
 
           <View style={tw`flex-1 mx-3`}>
-            <Text style={[tw`text-sm font-semibold`, { color: colors.text }]} numberOfLines={1}>
+            <Text style={[tw`text-sm font-bold`, { color: colors.text }]} numberOfLines={1}>
               {exam?.title}
             </Text>
           </View>
 
           {exam?.language === 'Both' && (
             <TouchableOpacity
-              style={[tw`px-2 py-1 rounded-md mr-1`, { backgroundColor: colors.primary + '20' }]}
+              style={[tw`px-2.5 h-8 rounded-full items-center justify-center mr-2`, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}
               onPress={() => setDisplayLanguage(displayLanguage === 'English' ? 'Hindi' : 'English')}
               activeOpacity={0.7}
+              accessibilityLabel={`Showing ${displayLanguage}. Tap to switch language.`}
             >
-              <Text style={[tw`text-sm font-bold`, { color: colors.primary }]}>
-                {displayLanguage === 'English' ? 'E' : 'अ'}
+              <Text style={[tw`text-xs font-bold`, { color: colors.text }]}>
+                {displayLanguage === 'English' ? 'EN' : 'हिन्दी'}
               </Text>
             </TouchableOpacity>
           )}
 
           {appSwitchCount > 0 && (
             <View style={tw`flex-row items-center mr-1`}>
-              <Ionicons name="warning" size={16} color="#f59e0b" />
-              <Text style={tw`text-xs font-bold text-yellow-500 ml-0.5`}>{appSwitchCount}</Text>
+              <Ionicons name="warning" size={16} color={colors.tones.orange.fg} />
+              <Text style={[tw`text-xs font-bold ml-0.5`, { color: colors.tones.orange.fg }]}>{appSwitchCount}</Text>
             </View>
           )}
 
-          <TouchableOpacity style={tw`p-2`} onPress={() => setShowMenu(true)} activeOpacity={0.7}>
-            <Ionicons name="menu" size={30} color={colors.text} />
+          <TouchableOpacity
+            style={[tw`w-10 h-10 rounded-full items-center justify-center`, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}
+            onPress={() => setShowMenu(true)}
+            activeOpacity={0.7}
+            accessibilityLabel="Exam menu"
+          >
+            <Ionicons name="ellipsis-horizontal" size={18} color={colors.text} />
           </TouchableOpacity>
         </View>
 
         {/* ─── Section Tabs ──────────────────────────────── */}
         {sections.length > 0 && (
-          <View style={[tw`border-b`, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={tw`px-2 py-1.5`}
+              contentContainerStyle={tw`px-4 pb-2`}
             >
               {sections.map((section, index) => {
                 const isActive = currentSectionIndex === index;
@@ -1240,14 +1250,14 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                   <TouchableOpacity
                     key={index}
                     style={[
-                      tw`px-4 py-2 mr-2 rounded-full border`,
+                      tw`px-3.5 py-2 mr-2 rounded-full`,
                       isActive
-                        ? { backgroundColor: colors.primary, borderColor: colors.primary }
+                        ? { backgroundColor: colors.hero }
                         : isLocked
-                        ? tw`bg-red-100 border-red-300 dark:bg-red-900 dark:border-red-700`
+                        ? { backgroundColor: colors.tones.red.bg }
                         : isCompleted
-                        ? tw`bg-gray-200 border-gray-300 dark:bg-gray-700 dark:border-gray-600`
-                        : { backgroundColor: 'transparent', borderColor: colors.border },
+                        ? { backgroundColor: colors.surfaceMuted }
+                        : { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
                     ]}
                     onPress={() => {
                       const fqi = questions.findIndex((q) =>
@@ -1277,12 +1287,12 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                   >
                     <Text
                       style={[
-                        tw`text-xs font-semibold`,
-                        { color: isActive ? '#fff' : isLocked ? '#ef4444' : colors.text },
+                        tw`text-xs font-bold`,
+                        { color: isActive ? colors.heroText : isLocked ? colors.tones.red.fg : colors.text },
                       ]}
                     >
                       {section.name}
-                      {isLocked ? ' 🔒' : isCompleted ? ' ✓' : ''}
+                      {isLocked ? ' · locked' : isCompleted ? ' ✓' : ''}
                     </Text>
                   </TouchableOpacity>
                 );
@@ -1292,88 +1302,91 @@ export default function ExamInterfaceScreen({ route, navigation }) {
         )}
 
         {/* ─── Progress Indicators ───────────────────────── */}
-        <View
-          style={[
-            tw`flex-row items-center justify-between px-4 py-2 border-b`,
-            { backgroundColor: colors.surface, borderColor: colors.border },
-          ]}
-        >
-          <View style={tw`flex-row items-center`}>
-            <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>Answered: </Text>
-            <View style={[tw`px-2 py-0.5 rounded-full`, { backgroundColor: colors.primary + '20' }]}>
-              <Text style={[tw`text-xs font-bold`, { color: colors.primary }]}>
-                {answeredCount}/{totalQuestions}
-              </Text>
-            </View>
-          </View>
-          {markedCount > 0 && (
-            <View style={tw`flex-row items-center`}>
-              <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>Marked: </Text>
-              <View style={tw`px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900`}>
-                <Text style={tw`text-xs font-bold text-purple-600 dark:text-purple-400`}>
-                  {markedCount}
-                </Text>
-              </View>
-            </View>
-          )}
-          <TouchableOpacity
-            style={[tw`px-3 py-1 rounded-full`, { backgroundColor: colors.primary + '15' }]}
-            onPress={() => setShowQuestionPalette(true)}
-            activeOpacity={0.7}
-          >
-            <Text style={[tw`text-xs font-semibold`, { color: colors.primary }]}>
-              Q {questionNumber}/{totalQuestions}
+        <View style={tw`px-4 pb-1`}>
+          <View style={tw`flex-row items-center justify-between`}>
+            <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>
+              <Text style={[tw`font-bold`, { color: colors.text }]}>{answeredCount}</Text> of {totalQuestions} answered
+              {markedCount > 0 ? (
+                <Text style={{ color: colors.tones.purple.fg }}>{`  ·  ${markedCount} marked`}</Text>
+              ) : null}
             </Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[tw`flex-row items-center px-3 py-1.5 rounded-full`, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}
+              onPress={() => setShowQuestionPalette(true)}
+              activeOpacity={0.7}
+              accessibilityLabel="Open question palette"
+            >
+              <Ionicons name="grid-outline" size={13} color={colors.text} />
+              <Text style={[tw`text-xs font-bold ml-1.5`, { color: colors.text }]}>
+                {questionNumber}/{totalQuestions}
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <View style={[tw`h-1 rounded-full overflow-hidden mt-2`, { backgroundColor: colors.surfaceMuted }]}>
+            <View
+              style={[
+                tw`h-full rounded-full`,
+                { width: `${totalQuestions ? (answeredCount / totalQuestions) * 100 : 0}%`, backgroundColor: colors.primary },
+              ]}
+            />
+          </View>
         </View>
 
         {/* ─── Question Card (scrollable area) ───────────── */}
         <ScrollView
           style={tw`flex-1`}
-          contentContainerStyle={tw`p-4 pb-6`}
+          contentContainerStyle={tw`px-4 pt-3 pb-6`}
           showsVerticalScrollIndicator={false}
         >
           <View
-            style={[tw`rounded-2xl p-4 shadow-sm`, { backgroundColor: colors.card }]}
+            style={[tw`rounded-3xl p-4`, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}
             {...panResponder.panHandlers}
           >
             {/* Question Header */}
             <View style={tw`flex-row items-center justify-between mb-3`}>
-              <View
-                style={[
-                  tw`w-9 h-9 rounded-full items-center justify-center`,
-                  { backgroundColor: colors.primary },
-                ]}
-              >
-                <Text style={tw`text-white text-sm font-bold`}>{currentQuestionInSection}</Text>
+              <View style={tw`flex-row items-center`}>
+                <View style={[tw`h-9 px-3 rounded-full items-center justify-center`, { backgroundColor: colors.hero }]}>
+                  <Text style={[tw`text-sm font-extrabold`, { color: colors.heroText }]}>Q{currentQuestionInSection}</Text>
+                </View>
+                {currentSection?.name ? (
+                  <Text style={[tw`text-xs ml-2`, { color: colors.textSecondary }]} numberOfLines={1}>
+                    {currentSection.name}
+                  </Text>
+                ) : null}
               </View>
 
-              <View style={tw`flex-row items-center gap-2`}>
-                <TouchableOpacity style={tw`p-1.5`} onPress={() => {}} activeOpacity={0.7}>
-                  <Ionicons name="flag-outline" size={20} color={colors.textSecondary} />
-                </TouchableOpacity>
-                <TouchableOpacity style={tw`p-1.5`} onPress={handleMarkForReview} activeOpacity={0.7}>
-                  <Ionicons
-                    name={isMarked ? 'bookmark' : 'bookmark-outline'}
-                    size={20}
-                    color={isMarked ? colors.primary : colors.textSecondary}
-                  />
-                </TouchableOpacity>
-                <TouchableOpacity style={tw`p-1.5`} onPress={() => {}} activeOpacity={0.7}>
-                  <Ionicons name="star-outline" size={20} color={colors.textSecondary} />
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity
+                style={[
+                  tw`flex-row items-center px-3 py-1.5 rounded-full`,
+                  { backgroundColor: isMarked ? colors.tones.purple.bg : colors.surfaceMuted },
+                ]}
+                onPress={handleMarkForReview}
+                activeOpacity={0.7}
+                accessibilityLabel={isMarked ? 'Unmark for review' : 'Mark for review'}
+              >
+                <Ionicons
+                  name={isMarked ? 'bookmark' : 'bookmark-outline'}
+                  size={14}
+                  color={isMarked ? colors.tones.purple.fg : colors.textSecondary}
+                />
+                <Text style={[tw`text-xs font-bold ml-1`, { color: isMarked ? colors.tones.purple.fg : colors.textSecondary }]}>
+                  {isMarked ? 'Marked' : 'Mark'}
+                </Text>
+              </TouchableOpacity>
             </View>
 
             {/* Question Image */}
-            {currentQuestion.questionImage && (
-              <View style={[tw`w-full h-40 rounded-xl mb-3 items-center justify-center`, { backgroundColor: colors.surface }]}>
-                <Text style={[tw`text-sm`, { color: colors.textSecondary }]}>[Question Image]</Text>
-              </View>
-            )}
+            {currentQuestion.questionImage ? (
+              <Image
+                source={{ uri: currentQuestion.questionImage }}
+                style={[tw`w-full h-48 rounded-2xl mb-3`, { backgroundColor: colors.surfaceMuted }]}
+                resizeMode="contain"
+                accessibilityLabel="Question image"
+              />
+            ) : null}
 
             {/* Question Text */}
-            <Text style={[tw`text-base leading-6 mb-4`, { color: colors.text }]}>
+            <Text style={[tw`text-base leading-7 mb-4`, { color: colors.text }]}>
               {getLocalizedQuestionText(currentQuestion, displayLanguage)}
             </Text>
 
@@ -1385,36 +1398,34 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                   <TouchableOpacity
                     key={index}
                     style={[
-                      tw`flex-row items-center p-3.5 rounded-xl border`,
+                      tw`flex-row items-center p-3 rounded-2xl`,
                       isSelected
-                        ? { backgroundColor: colors.primary + '15', borderColor: colors.primary }
-                        : { backgroundColor: colors.surface, borderColor: colors.border },
+                        ? { backgroundColor: colors.surfaceMuted, borderWidth: 1.5, borderColor: colors.hero }
+                        : { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
                     ]}
                     onPress={() => handleAnswerSelect(option.optionLabel)}
                     activeOpacity={0.7}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: isSelected }}
                   >
                     <View
                       style={[
-                        tw`w-5 h-5 rounded-full border-2 items-center justify-center mr-3`,
-                        isSelected
-                          ? { borderColor: colors.primary }
-                          : { borderColor: colors.border },
+                        tw`w-8 h-8 rounded-full items-center justify-center mr-3`,
+                        isSelected ? { backgroundColor: colors.hero } : { backgroundColor: colors.surfaceMuted },
                       ]}
                     >
-                      {isSelected && (
-                        <View
-                          style={[tw`w-2.5 h-2.5 rounded-full`, { backgroundColor: colors.primary }]}
-                        />
-                      )}
+                      <Text style={[tw`text-xs font-extrabold`, { color: isSelected ? colors.heroText : colors.textSecondary }]}>
+                        {option.optionLabel}
+                      </Text>
                     </View>
                     <Text
                       style={[
-                        tw`flex-1 text-sm`,
-                        { color: isSelected ? colors.primary : colors.text },
-                        isSelected && tw`font-semibold`,
+                        tw`flex-1 text-sm leading-5`,
+                        { color: colors.text },
+                        isSelected && tw`font-bold`,
                       ]}
                     >
-                      {option.optionLabel}. {option.optionText}
+                      {option.optionText}
                     </Text>
                   </TouchableOpacity>
                 );
@@ -1426,65 +1437,71 @@ export default function ExamInterfaceScreen({ route, navigation }) {
         {/* ─── Bottom Navigation ─────────────────────────── */}
         <View
           style={[
-            tw`flex-row items-center px-3 py-2 border-t`,
-            { backgroundColor: colors.surface, borderColor: colors.border, paddingBottom: insets.bottom + 4 },
+            tw`flex-row items-center px-3 pt-2.5 border-t`,
+            { backgroundColor: colors.card, borderColor: colors.border, paddingBottom: insets.bottom + 6 },
           ]}
         >
           <TouchableOpacity
             style={[
-              tw`flex-row items-center justify-center px-3 py-2.5 rounded-xl mr-1.5`,
-              { backgroundColor: colors.background, opacity: currentQuestionIndex === 0 ? 0.4 : 1 },
+              tw`w-11 h-11 items-center justify-center rounded-2xl mr-1.5`,
+              { backgroundColor: colors.surfaceMuted, opacity: currentQuestionIndex === 0 ? 0.4 : 1 },
             ]}
             onPress={handlePrevious}
             disabled={currentQuestionIndex === 0}
             activeOpacity={0.7}
+            accessibilityLabel="Previous question"
           >
-            <Text style={[tw`text-xs font-semibold`, { color: colors.text }]}>Previous</Text>
+            <Ionicons name="chevron-back" size={20} color={colors.text} />
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[tw`flex-row items-center justify-center px-3 py-2.5 rounded-xl mr-1.5`, { backgroundColor: colors.background }]}
+            style={[tw`flex-row items-center justify-center px-3 h-11 rounded-2xl mr-1.5`, { backgroundColor: colors.surfaceMuted }]}
             onPress={handleClearResponse}
             activeOpacity={0.7}
           >
             <Ionicons name="close-circle-outline" size={16} color={colors.text} style={tw`mr-1`} />
-            <Text style={[tw`text-xs font-semibold`, { color: colors.text }]}>Clear</Text>
+            <Text style={[tw`text-xs font-bold`, { color: colors.text }]}>Clear</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[tw`flex-row items-center justify-center px-3 py-2.5 rounded-xl mr-1.5`, { backgroundColor: colors.background }]}
+            style={[
+              tw`flex-row items-center justify-center px-3 h-11 rounded-2xl mr-1.5`,
+              { backgroundColor: isMarked ? colors.tones.purple.bg : colors.surfaceMuted },
+            ]}
             onPress={handleMarkForReview}
             activeOpacity={0.7}
           >
             <Ionicons
               name={isMarked ? 'bookmark' : 'bookmark-outline'}
               size={16}
-              color={isMarked ? colors.primary : colors.text}
+              color={isMarked ? colors.tones.purple.fg : colors.text}
               style={tw`mr-1`}
             />
-            <Text style={[tw`text-xs font-semibold`, { color: isMarked ? colors.primary : colors.text }]}>
+            <Text style={[tw`text-xs font-bold`, { color: isMarked ? colors.tones.purple.fg : colors.text }]}>
               Review
             </Text>
           </TouchableOpacity>
 
           {currentQuestionIndex < questions.length - 1 ? (
             <TouchableOpacity
-              style={[tw`flex-1 flex-row items-center justify-center px-3 py-2.5 rounded-xl`, { backgroundColor: colors.primary }]}
+              style={[tw`flex-1 flex-row items-center justify-center px-3 h-11 rounded-2xl`, { backgroundColor: colors.hero }]}
               onPress={() => {
                 saveAnswers();
                 handleNext();
               }}
               activeOpacity={0.7}
             >
-              <Text style={tw`text-xs font-bold text-white`}>Save & Next</Text>
+              <Text style={[tw`text-sm font-bold mr-1`, { color: colors.heroText }]}>Save & Next</Text>
+              <Ionicons name="chevron-forward" size={16} color={colors.heroText} />
             </TouchableOpacity>
           ) : (
             <TouchableOpacity
-              style={[tw`flex-1 flex-row items-center justify-center px-3 py-2.5 rounded-xl`, { backgroundColor: colors.primary }]}
+              style={[tw`flex-1 flex-row items-center justify-center px-3 h-11 rounded-2xl`, { backgroundColor: colors.hero }]}
               onPress={handleSubmit}
               activeOpacity={0.7}
             >
-              <Text style={tw`text-xs font-bold text-white`}>Submit</Text>
+              <Ionicons name="checkmark-circle" size={16} color={colors.heroText} style={tw`mr-1.5`} />
+              <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>Submit</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -1498,7 +1515,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
           <View style={tw`flex-1 justify-end bg-black/50`}>
             <View style={[tw`rounded-t-3xl p-5 max-h-[80%]`, { backgroundColor: colors.card }]}>
               <View style={tw`flex-row items-center justify-between mb-4`}>
-                <Text style={[tw`text-lg font-bold`, { color: colors.text }]}>Question Palette</Text>
+                <Text style={[tw`text-lg font-extrabold`, { color: colors.text }]}>All questions</Text>
                 <TouchableOpacity onPress={() => setShowQuestionPalette(false)} activeOpacity={0.7}>
                   <Ionicons name="close" size={30} color={colors.text} />
                 </TouchableOpacity>
@@ -1513,13 +1530,16 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                     <TouchableOpacity
                       key={index}
                       style={[
-                        tw`w-11 h-11 rounded-xl items-center justify-center ${pc.bg}`,
-                        isCurrent && tw`border-2 border-blue-500`,
+                        tw`w-11 h-11 rounded-xl items-center justify-center`,
+                        { backgroundColor: pc.bg },
+                        pc.ring && { borderWidth: 2, borderColor: pc.ring },
+                        isCurrent && { borderWidth: 2, borderColor: colors.hero },
                       ]}
                       onPress={() => handleQuestionSelect(index)}
                       activeOpacity={0.7}
+                      accessibilityLabel={`Question ${index + 1}, ${status.replace('-', ' and ')}`}
                     >
-                      <Text style={tw`text-sm font-bold ${pc.text}`}>{index + 1}</Text>
+                      <Text style={[tw`text-sm font-bold`, { color: pc.fg }]}>{index + 1}</Text>
                     </TouchableOpacity>
                   );
                 })}
@@ -1528,16 +1548,19 @@ export default function ExamInterfaceScreen({ route, navigation }) {
               {/* Legend */}
               <View style={[tw`flex-row flex-wrap gap-3 pt-3 border-t`, { borderColor: colors.border }]}>
                 {[
-                  { label: 'Unanswered', cls: isDark ? 'bg-gray-700' : 'bg-gray-200' },
-                  { label: 'Answered', cls: 'bg-green-500' },
-                  { label: 'Marked', cls: 'bg-purple-500' },
-                  { label: 'Marked & Answered', cls: 'bg-purple-500 border-2 border-green-400' },
-                ].map(({ label, cls }) => (
+                  { label: 'Not answered', status: 'unanswered' },
+                  { label: 'Answered', status: 'answered' },
+                  { label: 'Marked', status: 'marked' },
+                  { label: 'Marked & answered', status: 'marked-answered' },
+                ].map(({ label, status }) => {
+                  const pc = getPaletteColor(status);
+                  return (
                   <View key={label} style={tw`flex-row items-center`}>
-                    <View style={tw`w-4 h-4 rounded ${cls} mr-1.5`} />
+                    <View style={[tw`w-4 h-4 rounded mr-1.5`, { backgroundColor: pc.bg }, pc.ring && { borderWidth: 2, borderColor: pc.ring }]} />
                     <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>{label}</Text>
                   </View>
-                ))}
+                  );
+                })}
               </View>
             </View>
           </View>
@@ -1552,8 +1575,8 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                 You have answered {answeredCount} out of {totalQuestions} questions.
               </Text>
               {answeredCount < totalQuestions && (
-                <Text style={tw`text-sm text-red-500 mb-3`}>
-                  ⚠️ You have {totalQuestions - answeredCount} unanswered questions.
+                <Text style={[tw`text-sm font-semibold mb-3`, { color: colors.tones.red.fg }]}>
+                  {totalQuestions - answeredCount} question{totalQuestions - answeredCount === 1 ? ' is' : 's are'} still unanswered.
                 </Text>
               )}
               <Text style={[tw`text-sm mb-5`, { color: colors.textSecondary }]}>
@@ -1568,11 +1591,11 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                   <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[tw`flex-1 py-3 rounded-xl items-center`, { backgroundColor: colors.primary }]}
+                  style={[tw`flex-1 py-3 rounded-xl items-center`, { backgroundColor: colors.hero }]}
                   onPress={confirmSubmit}
                   activeOpacity={0.7}
                 >
-                  <Text style={tw`text-sm font-bold text-white`}>Submit</Text>
+                  <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>Submit</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -1597,15 +1620,15 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                   <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[tw`flex-1 py-3 rounded-xl items-center`, { backgroundColor: '#f59e0b' }]}
+                  style={[tw`flex-1 py-3 rounded-xl items-center`, { backgroundColor: colors.tones.orange.bg }]}
                   onPress={confirmPause}
                   activeOpacity={0.7}
                   disabled={pausing}
                 >
                   {pausing ? (
-                    <ActivityIndicator size="small" color="#fff" />
+                    <ActivityIndicator size="small" color={colors.tones.orange.fg} />
                   ) : (
-                    <Text style={tw`text-sm font-bold text-white`}>Pause</Text>
+                    <Text style={[tw`text-sm font-bold`, { color: colors.tones.orange.fg }]}>Pause</Text>
                   )}
                 </TouchableOpacity>
               </View>
@@ -1636,8 +1659,8 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                   onPress={action}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name={icon} size={20} color={colors.primary} />
-                  <Text style={[tw`ml-3 text-sm font-medium`, { color: colors.text }]}>{label}</Text>
+                  <Ionicons name={icon} size={20} color={colors.text} />
+                  <Text style={[tw`ml-3 text-sm font-semibold`, { color: colors.text }]}>{label}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -1657,12 +1680,12 @@ export default function ExamInterfaceScreen({ route, navigation }) {
 
               <ScrollView style={tw`flex-1 px-5`} showsVerticalScrollIndicator>
                 {/* Summary Stats */}
-                <View style={[tw`flex-row rounded-xl p-3 mb-4`, { backgroundColor: colors.surface }]}>
+                <View style={[tw`flex-row rounded-2xl p-3 mb-4`, { backgroundColor: colors.surfaceMuted }]}>
                   {[
                     { value: questions.length, label: 'Total', color: colors.text },
-                    { value: answeredCount, label: 'Attempted', color: '#10b981' },
-                    { value: totalQuestions - answeredCount, label: 'Unattempted', color: '#f59e0b' },
-                    { value: markedCount, label: 'Marked', color: '#8b5cf6' },
+                    { value: answeredCount, label: 'Attempted', color: colors.tones.green.fg },
+                    { value: totalQuestions - answeredCount, label: 'Unattempted', color: colors.tones.orange.fg },
+                    { value: markedCount, label: 'Marked', color: colors.tones.purple.fg },
                   ].map(({ value, label, color }) => (
                     <View key={label} style={tw`flex-1 items-center`}>
                       <Text style={[tw`text-xl font-bold`, { color }]}>{value}</Text>
@@ -1684,12 +1707,12 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                     <TouchableOpacity
                       key={index}
                       style={[
-                        tw`p-3 rounded-xl mb-2 border`,
+                        tw`p-3 rounded-2xl mb-2 border`,
                         isSelected
-                          ? { borderColor: '#10b981', backgroundColor: '#10b98110' }
+                          ? { borderColor: colors.tones.green.fg, backgroundColor: colors.tones.green.bg }
                           : isMarked
-                          ? { borderColor: '#8b5cf6', backgroundColor: '#8b5cf610' }
-                          : { borderColor: colors.border, backgroundColor: colors.surface },
+                          ? { borderColor: colors.tones.purple.fg, backgroundColor: colors.tones.purple.bg }
+                          : { borderColor: colors.border, backgroundColor: colors.card },
                       ]}
                       onPress={() => {
                         setCurrentQuestionIndex(index);
@@ -1701,8 +1724,8 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                         <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>Q{index + 1}</Text>
                         <View style={tw`flex-row gap-1.5`}>
                           {isMarked && (
-                            <View style={tw`px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900`}>
-                              <Text style={tw`text-[10px] font-semibold text-purple-600 dark:text-purple-400`}>
+                            <View style={[tw`px-2 py-0.5 rounded-full`, { backgroundColor: colors.tones.purple.bg }]}>
+                              <Text style={[tw`text-[10px] font-semibold`, { color: colors.tones.purple.fg }]}>
                                 Marked
                               </Text>
                             </View>
@@ -1710,17 +1733,13 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                           <View
                             style={[
                               tw`px-2 py-0.5 rounded-full`,
-                              isSelected
-                                ? tw`bg-green-100 dark:bg-green-900`
-                                : tw`bg-gray-100 dark:bg-gray-800`,
+                              { backgroundColor: isSelected ? colors.tones.green.bg : colors.surfaceMuted },
                             ]}
                           >
                             <Text
                               style={[
                                 tw`text-[10px] font-semibold`,
-                                isSelected
-                                  ? tw`text-green-600 dark:text-green-400`
-                                  : tw`text-gray-500 dark:text-gray-400`,
+                                { color: isSelected ? colors.tones.green.fg : colors.textSecondary },
                               ]}
                             >
                               {isSelected ? 'Attempted' : 'Unattempted'}
@@ -1732,9 +1751,9 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                         {qText}
                       </Text>
                       {isSelected && (
-                        <View style={[tw`mt-2 p-2 rounded-lg`, { backgroundColor: colors.background }]}>
+                        <View style={[tw`mt-2 p-2 rounded-lg`, { backgroundColor: colors.surfaceMuted }]}>
                           <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>Your Answer:</Text>
-                          <Text style={[tw`text-sm font-semibold mt-0.5`, { color: colors.primary }]}>
+                          <Text style={[tw`text-sm font-bold mt-0.5`, { color: colors.text }]}>
                             {answer.selectedAnswer}
                             {opts.find((o) => (o.optionLabel || o.option) === answer.selectedAnswer) && (
                               <Text style={[tw`font-normal`, { color: colors.text }]}>
@@ -1762,14 +1781,14 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                   <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>Close</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[tw`flex-1 py-3 rounded-xl items-center`, { backgroundColor: colors.primary }]}
+                  style={[tw`flex-1 py-3 rounded-xl items-center`, { backgroundColor: colors.hero }]}
                   onPress={() => {
                     setShowPreviewDialog(false);
                     setShowSubmitDialog(true);
                   }}
                   activeOpacity={0.7}
                 >
-                  <Text style={tw`text-sm font-bold text-white`}>Proceed to Submit</Text>
+                  <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>Proceed to submit</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -1782,7 +1801,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
             <View style={[tw`w-full rounded-2xl p-6`, { backgroundColor: colors.card }]}>
               <View style={tw`flex-row items-center justify-between mb-3`}>
                 <View style={tw`flex-row items-center gap-2`}>
-                  <Ionicons name="information-circle" size={30} color={colors.primary} />
+                  <Ionicons name="information-circle" size={26} color={colors.text} />
                   <Text style={[tw`text-lg font-bold`, { color: colors.text }]}>Gestures & Shortcuts</Text>
                 </View>
                 <TouchableOpacity onPress={() => setShowShortcutsDialog(false)} activeOpacity={0.7}>
@@ -1806,8 +1825,8 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                   { icon: 'pause', title: 'Pause Exam', desc: 'Pause and resume later' },
                 ].map(({ icon, title, desc }) => (
                   <View key={title} style={[tw`flex-row items-center py-3 border-b`, { borderColor: colors.border }]}>
-                    <View style={[tw`w-9 h-9 rounded-full items-center justify-center mr-3`, { backgroundColor: colors.primary + '15' }]}>
-                      <Ionicons name={icon} size={18} color={colors.primary} />
+                    <View style={[tw`w-9 h-9 rounded-full items-center justify-center mr-3`, { backgroundColor: colors.surfaceMuted }]}>
+                      <Ionicons name={icon} size={18} color={colors.text} />
                     </View>
                     <View style={tw`flex-1`}>
                       <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>{title}</Text>
@@ -1818,11 +1837,11 @@ export default function ExamInterfaceScreen({ route, navigation }) {
               </ScrollView>
 
               <TouchableOpacity
-                style={[tw`mt-4 py-3 rounded-xl items-center`, { backgroundColor: colors.primary }]}
+                style={[tw`mt-4 py-3 rounded-xl items-center`, { backgroundColor: colors.hero }]}
                 onPress={() => setShowShortcutsDialog(false)}
                 activeOpacity={0.7}
               >
-                <Text style={tw`text-sm font-bold text-white`}>Got it</Text>
+                <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>Got it</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1833,24 +1852,24 @@ export default function ExamInterfaceScreen({ route, navigation }) {
           <View style={tw`flex-1 justify-center items-center bg-black/50 px-6`}>
             <View style={[tw`w-full rounded-2xl p-6`, { backgroundColor: colors.card }]}>
               <View style={tw`flex-row items-center gap-2 mb-3`}>
-                <Ionicons name="warning" size={30} color="#f59e0b" />
-                <Text style={tw`text-lg font-bold text-yellow-500`}>App Switch Detected</Text>
+                <Ionicons name="warning" size={26} color={colors.tones.orange.fg} />
+                <Text style={[tw`text-lg font-bold`, { color: colors.text }]}>You left the exam</Text>
               </View>
               <Text style={[tw`text-sm leading-5 mb-5`, { color: colors.textSecondary }]}>
                 {appSwitchCount >= 2
-                  ? `⚠️ Multiple app switches detected!\n\nSwitches: ${appSwitchCount}\n${
+                  ? `You've switched away ${appSwitchCount} times.\n\n${
                       appSwitchCount >= 3
                         ? 'Your exam has been auto-paused!'
                         : 'One more will auto-pause your exam!'
                     }`
-                  : `An app switch has been detected.\n\nSwitches: ${appSwitchCount}\n\nPlease stay in the exam app.`}
+                  : `You switched to another app.\n\nPlease stay in the exam until you submit.`}
               </Text>
               <TouchableOpacity
-                style={[tw`py-3 rounded-xl items-center`, { backgroundColor: '#f59e0b' }]}
+                style={[tw`py-3 rounded-xl items-center`, { backgroundColor: colors.hero }]}
                 onPress={() => setShowAppSwitchWarning(false)}
                 activeOpacity={0.7}
               >
-                <Text style={tw`text-sm font-bold text-white`}>I Understand</Text>
+                <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>I understand</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1861,7 +1880,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
           <View style={tw`flex-1 justify-center items-center bg-black/50 px-6`}>
             <View style={[tw`w-full rounded-2xl p-6`, { backgroundColor: colors.card }]}>
               <View style={tw`flex-row items-center gap-2 mb-3`}>
-                <Ionicons name="exit-outline" size={30} color={colors.primary} />
+                <Ionicons name="exit-outline" size={26} color={colors.text} />
                 <Text style={[tw`text-lg font-bold`, { color: colors.text }]}>Leave Exam?</Text>
               </View>
               <Text style={[tw`text-sm leading-5 mb-5`, { color: colors.textSecondary }]}>
@@ -1881,7 +1900,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
 
               <View style={tw`flex-row gap-3`}>
                 <TouchableOpacity
-                  style={tw`flex-1 flex-row items-center justify-center py-3 rounded-xl bg-yellow-500`}
+                  style={[tw`flex-1 flex-row items-center justify-center py-3 rounded-xl`, { backgroundColor: colors.tones.orange.bg }]}
                   onPress={() => {
                     setShowBackNavigationDialog(false);
                     setShowPauseDialog(true);
@@ -1889,12 +1908,12 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                   activeOpacity={0.7}
                   disabled={pausing || submitting}
                 >
-                  <Ionicons name="pause" size={16} color="#fff" style={tw`mr-1.5`} />
-                  <Text style={tw`text-sm font-bold text-white`}>Pause</Text>
+                  <Ionicons name="pause" size={16} color={colors.tones.orange.fg} style={tw`mr-1.5`} />
+                  <Text style={[tw`text-sm font-bold`, { color: colors.tones.orange.fg }]}>Pause</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={tw`flex-1 flex-row items-center justify-center py-3 rounded-xl bg-red-500`}
+                  style={[tw`flex-1 flex-row items-center justify-center py-3 rounded-xl`, { backgroundColor: colors.hero }]}
                   onPress={() => {
                     setShowBackNavigationDialog(false);
                     setShowSubmitDialog(true);
@@ -1902,8 +1921,8 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                   activeOpacity={0.7}
                   disabled={pausing || submitting}
                 >
-                  <Ionicons name="checkmark-circle" size={16} color="#fff" style={tw`mr-1.5`} />
-                  <Text style={tw`text-sm font-bold text-white`}>Submit</Text>
+                  <Ionicons name="checkmark-circle" size={16} color={colors.heroText} style={tw`mr-1.5`} />
+                  <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>Submit</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -1916,8 +1935,8 @@ export default function ExamInterfaceScreen({ route, navigation }) {
             <View style={[tw`w-full rounded-2xl p-6`, { backgroundColor: colors.card }]}>
               <View style={tw`flex-row items-center justify-between mb-3`}>
                 <View style={tw`flex-row items-center gap-2`}>
-                  <Ionicons name="warning" size={30} color="#f59e0b" />
-                  <Text style={[tw`text-lg font-bold`, { color: colors.text }]}>Leave Section?</Text>
+                  <Ionicons name="warning" size={26} color={colors.tones.orange.fg} />
+                  <Text style={[tw`text-lg font-bold`, { color: colors.text }]}>Leave section?</Text>
                 </View>
                 <TouchableOpacity onPress={() => setShowSectionChangeDialog(false)} activeOpacity={0.7}>
                   <Ionicons name="close" size={30} color={colors.text} />
@@ -1954,7 +1973,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                   <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[tw`flex-1 py-3 rounded-xl items-center`, { backgroundColor: colors.primary }]}
+                  style={[tw`flex-1 py-3 rounded-xl items-center`, { backgroundColor: colors.hero }]}
                   onPress={() => {
                     if (pendingSectionIndex !== null) {
                       const ts = sections[pendingSectionIndex];
@@ -1985,7 +2004,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                   }}
                   activeOpacity={0.7}
                 >
-                  <Text style={tw`text-sm font-bold text-white`}>Continue</Text>
+                  <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>Continue</Text>
                 </TouchableOpacity>
               </View>
             </View>
