@@ -1,4 +1,5 @@
 import React from 'react';
+import { View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -28,33 +29,42 @@ export default function TabNavigator() {
   const insets = useSafeAreaInsets();
 
   const defaultTabBarStyle = {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.card,
     borderTopColor: colors.border,
     borderTopWidth: 1,
-    paddingBottom: Math.max(insets.bottom, 5),
-    paddingTop: 5,
-    height: 60 + Math.max(insets.bottom - 5, 0),
+    paddingBottom: Math.max(insets.bottom, 8),
+    paddingTop: 8,
+    height: 68 + Math.max(insets.bottom - 8, 0),
   };
 
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: colors.primary,
+        tabBarActiveTintColor: colors.text,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarStyle: defaultTabBarStyle,
         tabBarLabelStyle: {
           fontSize: 11,
-          fontWeight: '600',
+          fontWeight: '700',
+          marginTop: 2,
         },
-        tabBarIcon: ({ color, size, focused }) => {
+        // Active tab: icon sits on a soft pill; inactive: plain outline icon.
+        tabBarIcon: ({ color, focused }) => {
           const icons = TAB_ICONS[route.name];
           return (
-            <Ionicons
-              name={focused ? icons.active : icons.inactive}
-              size={size}
-              color={color}
-            />
+            <View
+              style={{
+                width: 56,
+                height: 30,
+                borderRadius: 15,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: focused ? colors.surfaceMuted : 'transparent',
+              }}
+            >
+              <Ionicons name={focused ? icons.active : icons.inactive} size={21} color={color} />
+            </View>
           );
         },
       })}
