@@ -357,7 +357,7 @@ export default function ResultScreen({ route, navigation }) {
           {wrongCount > 0 && (
             <TouchableOpacity
               style={[tw`flex-1 flex-row items-center justify-center h-12 rounded-2xl`, { backgroundColor: colors.tones.red.bg }]}
-              onPress={() => navigation.navigate('MainTabs', { screen: 'StudyTab', params: { screen: 'WrongBook' } })}
+              onPress={() => navigation.navigate('MainTabs', { screen: 'StudyTab', params: { screen: 'WrongBook', initial: false } })}
               activeOpacity={0.85}
             >
               <Ionicons name="close-circle-outline" size={17} color={colors.tones.red.fg} />

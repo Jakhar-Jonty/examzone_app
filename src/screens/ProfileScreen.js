@@ -89,7 +89,7 @@ export default function ProfileScreen({ navigation }) {
           icon: 'book-outline',
           label: 'Wrong Book',
           onPress: () =>
-            navigation.navigate('StudyTab', { screen: 'WrongBook' }),
+            navigation.navigate('StudyTab', { screen: 'WrongBook', initial: false }),
         },
         {
           icon: 'bookmark-outline',
@@ -104,13 +104,13 @@ export default function ProfileScreen({ navigation }) {
           icon: 'flash-outline',
           label: 'Practice Sessions',
           onPress: () =>
-            navigation.navigate('StudyTab', { screen: 'PracticeSessions' }),
+            navigation.navigate('StudyTab', { screen: 'PracticeSessions', initial: false }),
         },
         {
           icon: 'calendar-outline',
           label: 'Study Plans',
           onPress: () =>
-            navigation.navigate('StudyTab', { screen: 'StudyPlans' }),
+            navigation.navigate('StudyTab', { screen: 'StudyPlans', initial: false }),
         },
       ],
     },

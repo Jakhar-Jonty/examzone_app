@@ -16,6 +16,7 @@ export async function startTopicPractice({ subject, topic, questionCount = 15, n
     params: {
       screen: 'PracticeInterface',
       params: { sessionId: session._id },
+      initial: false,
     },
   });
 

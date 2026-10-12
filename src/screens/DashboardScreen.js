@@ -221,6 +221,7 @@ export default function DashboardScreen({ navigation }) {
     navigation.navigate('StudyTab', {
       screen: 'PracticeInterface',
       params: { sessionId: session._id, sessionType: session.sessionType },
+      initial: false,
     });
 
   const resumeExam = async () => {
@@ -249,7 +250,7 @@ export default function DashboardScreen({ navigation }) {
       setBusy('quiz');
       if (dailyQuizDone) {
         const detail = await practiceSessionService.get(dailyQuiz.sessionId);
-        navigation.navigate('StudyTab', { screen: 'PracticeResult', params: { session: detail.session } });
+        navigation.navigate('StudyTab', { screen: 'PracticeResult', params: { session: detail.session }, initial: false });
         return;
       }
       const { session } = await practiceSessionService.create({
@@ -590,11 +591,11 @@ export default function DashboardScreen({ navigation }) {
             <QuickTile icon="play-circle-outline" tone={colors.tones.green} label="Mock test" subtitle="Full exam"
               colors={colors} onPress={() => navigation.navigate('ExamsTab')} />
             <QuickTile icon="flash-outline" tone={colors.tones.orange} label="Practice" subtitle="Quick drill"
-              colors={colors} onPress={() => navigation.navigate('StudyTab', { screen: 'PracticeSessions' })} />
+              colors={colors} onPress={() => navigation.navigate('StudyTab', { screen: 'PracticeSessions', initial: false })} />
             <QuickTile icon="book-outline" tone={colors.tones.blue} label="PYQ" subtitle="Past papers"
-              colors={colors} onPress={() => navigation.navigate('StudyTab', { screen: 'Pyq' })} />
+              colors={colors} onPress={() => navigation.navigate('StudyTab', { screen: 'Pyq', initial: false })} />
             <QuickTile icon="close-circle-outline" tone={colors.tones.red} label="Wrong Book" subtitle="Fix mistakes"
-              colors={colors} onPress={() => navigation.navigate('StudyTab', { screen: 'WrongBook' })} />
+              colors={colors} onPress={() => navigation.navigate('StudyTab', { screen: 'WrongBook', initial: false })} />
           </View>
 
           {/* ─── Live tests ───────────────────────────── */}
@@ -622,7 +623,7 @@ export default function DashboardScreen({ navigation }) {
             const { completed, total, pct } = computePlanProgress(studyPlan);
             return (
               <TouchableOpacity
-                onPress={() => navigation.navigate('StudyTab', { screen: 'StudyPlans' })}
+                onPress={() => navigation.navigate('StudyTab', { screen: 'StudyPlans', initial: false })}
                 activeOpacity={0.85}
                 style={[tw`p-4 rounded-3xl mb-6`, card]}
               >
@@ -722,7 +723,7 @@ export default function DashboardScreen({ navigation }) {
                     series={s}
                     colors={colors}
                     onPress={() =>
-                      navigation.navigate('SeriesTab', { screen: 'TestSeriesDetail', params: { id: s._id } })
+                      navigation.navigate('SeriesTab', { screen: 'TestSeriesDetail', params: { id: s._id }, initial: false })
                     }
                   />
                 ))}
