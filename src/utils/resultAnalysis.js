@@ -74,10 +74,18 @@ export const calculateSubjectTopicAnalysis = (result) => {
   const subjectStats = {};
   const topicStats = {};
 
+  // A question's maximum is what the exam awards for it (custom marks map, else
+  // total marks spread evenly), not the question bank's default `marks`.
+  const questionMarks = result.exam?.questionMarks || {};
+  const evenShare = result.exam?.totalMarks && result.answers.length
+    ? result.exam.totalMarks / result.answers.length
+    : null;
+
   result.answers.forEach((answer) => {
     const subject = fieldFromAnswer(answer, 'subject') || 'Unknown';
     const topic = fieldFromAnswer(answer, 'topic') || 'Unknown';
-    const marks = answer.question?.marks || 1;
+    const marks = questionMarks[getQuestionId(answer.question)] || evenShare || answer.question?.marks || 1;
+    // Includes negative marks for wrong answers.
     const obtained = answer.marksObtained ?? answer.netMarks ?? (answer.isCorrect ? marks : 0);
 
     if (!subjectStats[subject]) {
@@ -92,9 +100,9 @@ export const calculateSubjectTopicAnalysis = (result) => {
     }
     subjectStats[subject].total++;
     subjectStats[subject].totalMarks += marks;
+    subjectStats[subject].obtainedMarks += obtained;
     if (answer.isCorrect) {
       subjectStats[subject].correct++;
-      subjectStats[subject].obtainedMarks += obtained;
     } else if (answer.selectedAnswer) {
       subjectStats[subject].wrong++;
     } else {
@@ -113,9 +121,9 @@ export const calculateSubjectTopicAnalysis = (result) => {
     }
     topicStats[topic].total++;
     topicStats[topic].totalMarks += marks;
+    topicStats[topic].obtainedMarks += obtained;
     if (answer.isCorrect) {
       topicStats[topic].correct++;
-      topicStats[topic].obtainedMarks += obtained;
     } else if (answer.selectedAnswer) {
       topicStats[topic].wrong++;
     } else {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,13 +11,14 @@ import {
   Image,
 } from 'react-native';
 import tw from 'twrnc';
+import { Ionicons } from '@expo/vector-icons';
 import ScreenWrapper from '../components/ScreenWrapper';
 import RewardCelebration from '../components/RewardCelebration';
+import ReviewSection from '../components/ReviewSection';
 import { useTheme } from '../context/ThemeContext';
-import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { formatDate } from '../utils/helpers';
-import ReviewSection from '../components/ReviewSection';
 import {
   getLocalizedQuestionText,
   getLocalizedQuestionOptions,
@@ -35,7 +36,7 @@ import {
 import { buildAirCopyFromPeerStats } from '../utils/airCopy';
 import { startTopicPractice } from '../utils/startTopicPractice';
 
-// ─── Helpers (outside component) ─────────────────────────
+// ─── Helpers ─────────────────────────────────────────────
 const formatTime = (seconds) => {
   if (!seconds) return '0s';
   const m = Math.floor(seconds / 60);
@@ -45,260 +46,26 @@ const formatTime = (seconds) => {
   return `${m}m ${s}s`;
 };
 
-const getScoreColor = (pct) => {
-  if (pct >= 80) return '#10b981';
-  if (pct >= 60) return '#f59e0b';
-  return '#ef4444';
+// Green ≥ 80, orange ≥ 60, red below — returns a { fg, bg } tone from the theme.
+const scoreTone = (value, colors) => {
+  if (value >= 80) return colors.tones.green;
+  if (value >= 60) return colors.tones.orange;
+  return colors.tones.red;
 };
 
-const getScoreEmoji = (pct) => {
-  if (pct >= 90) return '🏆';
-  if (pct >= 80) return '🌟';
-  if (pct >= 60) return '👍';
-  if (pct >= 40) return '💪';
-  return '📚';
+const getScoreMessage = (value) => {
+  if (value >= 90) return 'Outstanding';
+  if (value >= 80) return 'Excellent';
+  if (value >= 60) return 'Good job';
+  if (value >= 40) return 'Keep practising';
+  return 'Needs improvement';
 };
 
-const getScoreMessage = (pct) => {
-  if (pct >= 90) return 'Outstanding!';
-  if (pct >= 80) return 'Excellent!';
-  if (pct >= 60) return 'Good Job!';
-  if (pct >= 40) return 'Keep Practicing';
-  return 'Needs Improvement';
-};
-
-const pct = (part, total) => (total > 0 ? ((part / total) * 100).toFixed(1) : '0.0');
-
-// ─── Sub-components ──────────────────────────────────────
-
-
-function BreakdownRow({ icon, label, count, total, color, colors }) {
-  const percentage = total > 0 ? (count / total) * 100 : 0;
-  return (
-    <View style={tw`mb-3`}>
-      <View style={tw`flex-row items-center justify-between mb-1.5`}>
-        <View style={tw`flex-row items-center gap-2`}>
-          <Ionicons name={icon} size={16} color={color} />
-          <Text style={[tw`text-sm font-medium`, { color: colors.text }]}>{label}</Text>
-        </View>
-        <Text style={[tw`text-sm font-semibold`, { color }]}>
-          {count} ({percentage.toFixed(1)}%)
-        </Text>
-      </View>
-      <View style={[tw`h-2 rounded-full overflow-hidden`, { backgroundColor: colors.border }]}>
-        <View
-          style={[tw`h-full rounded-full`, { width: `${percentage}%`, backgroundColor: color }]}
-        />
-      </View>
-    </View>
-  );
-}
-
-function QuestionCard({ answer, index, colors, displayLanguage, isSaved, onToggleSave }) {
-  const [expanded, setExpanded] = useState(false);
-  const question = answer.question;
-  if (!question) return null;
-
-  const questionText = getLocalizedQuestionText(question, displayLanguage);
-  const questionOptions = getLocalizedQuestionOptions(question, displayLanguage);
-  const explanation = getLocalizedExplanation(question, displayLanguage);
-  const questionId = question._id?.toString?.() || question._id;
-
-  const isCorrect = answer.isCorrect;
-  const isUnattempted = !answer.selectedAnswer;
-  const userAnswer = answer.selectedAnswer;
-  const correctAnswer = question.correctAnswer;
-
-  const borderColor = isUnattempted
-    ? colors.textSecondary
-    : isCorrect
-    ? '#10b981'
-    : '#ef4444';
-
-  const statusIcon = isUnattempted
-    ? 'remove-circle'
-    : isCorrect
-    ? 'checkmark-circle'
-    : 'close-circle';
-
-  const statusColor = isUnattempted ? colors.textSecondary : isCorrect ? '#10b981' : '#ef4444';
-
-  return (
-    <TouchableOpacity
-      style={[
-        tw`rounded-2xl overflow-hidden border-l-4 mb-3`,
-        {
-          backgroundColor: colors.surface,
-          borderLeftColor: borderColor,
-          borderWidth: 1,
-          borderColor: colors.border,
-        },
-      ]}
-      onPress={() => setExpanded(!expanded)}
-      activeOpacity={0.7}
-    >
-      {/* Collapsed Header */}
-      <View style={tw`flex-row items-center p-3.5`}>
-        <View
-          style={[
-            tw`w-8 h-8 rounded-full items-center justify-center mr-3`,
-            { backgroundColor: statusColor + '12' },
-          ]}
-        >
-          <Text style={[tw`text-xs font-bold`, { color: statusColor }]}>{index + 1}</Text>
-        </View>
-
-        <View style={tw`flex-1 mr-2`}>
-          <Text style={[tw`text-sm leading-5`, { color: colors.text }]} numberOfLines={expanded ? 0 : 1}>
-            {questionText}
-          </Text>
-          {answer.timeSpent > 0 && (
-            <View style={tw`flex-row items-center gap-1 mt-1`}>
-              <Ionicons name="time-outline" size={12} color={colors.textSecondary} />
-              <Text style={[tw`text-[10px]`, { color: colors.textSecondary }]}>
-                {formatTime(answer.timeSpent)}
-              </Text>
-            </View>
-          )}
-        </View>
-
-        <View style={tw`flex-row items-center gap-1.5`}>
-          {questionId && onToggleSave && (
-            <TouchableOpacity
-              onPress={(e) => {
-                e?.stopPropagation?.();
-                onToggleSave(questionId);
-              }}
-              hitSlop={8}
-              style={tw`p-1`}
-            >
-              <Ionicons
-                name={isSaved ? 'bookmark' : 'bookmark-outline'}
-                size={18}
-                color={isSaved ? colors.primary : colors.textSecondary}
-              />
-            </TouchableOpacity>
-          )}
-          <Ionicons name={statusIcon} size={18} color={statusColor} />
-          <Ionicons
-            name={expanded ? 'chevron-up' : 'chevron-down'}
-            size={16}
-            color={colors.textSecondary}
-          />
-        </View>
-      </View>
-
-      {/* Expanded Content */}
-      {expanded && (
-        <View style={[tw`px-3.5 pb-3.5 pt-0`, { borderTopWidth: 1, borderTopColor: colors.border }]}>
-          {question.questionImage ? (
-            <Image
-              source={{ uri: question.questionImage }}
-              style={[tw`w-full h-40 rounded-xl mt-3 mb-2`, { backgroundColor: colors.border }]}
-              resizeMode="contain"
-            />
-          ) : null}
-          {/* Full Question */}
-          <Text style={[tw`text-sm leading-5 mt-3 mb-3`, { color: colors.text }]}>
-            {questionText}
-          </Text>
-
-          {/* Options */}
-          <View style={tw`gap-2 mb-3`}>
-            {questionOptions?.map((option, i) => {
-              const isCorrectOpt = option.optionLabel === correctAnswer;
-              const isUserOpt = option.optionLabel === userAnswer;
-
-              let bgColor = colors.background;
-              let bdrColor = colors.border;
-              let txtWeight = 'font-normal';
-
-              if (isCorrectOpt) {
-                bgColor = '#10b98115';
-                bdrColor = '#10b981';
-                txtWeight = 'font-semibold';
-              } else if (isUserOpt && !isCorrect) {
-                bgColor = '#ef444415';
-                bdrColor = '#ef4444';
-                txtWeight = 'font-semibold';
-              }
-
-              return (
-                <View
-                  key={i}
-                  style={[
-                    tw`flex-row items-center p-2.5 rounded-xl border`,
-                    { backgroundColor: bgColor, borderColor: bdrColor },
-                  ]}
-                >
-                  <Text style={[tw`text-xs font-bold min-w-[20px]`, { color: colors.text }]}>
-                    {option.optionLabel}.
-                  </Text>
-                  <Text style={[tw`flex-1 text-sm ${txtWeight}`, { color: colors.text }]}>
-                    {option.optionText}
-                  </Text>
-                  {isCorrectOpt && <Ionicons name="checkmark" size={14} color="#10b981" />}
-                  {isUserOpt && !isCorrect && <Ionicons name="close" size={14} color="#ef4444" />}
-                </View>
-              );
-            })}
-          </View>
-
-          {/* Answer Summary */}
-          <View style={[tw`flex-row gap-3 mb-3`]}>
-            <View style={[tw`flex-1 p-2.5 rounded-xl`, { backgroundColor: colors.background }]}>
-              <Text style={[tw`text-[10px] mb-0.5`, { color: colors.textSecondary }]}>
-                Your Answer
-              </Text>
-              <Text
-                style={[
-                  tw`text-sm font-bold`,
-                  { color: isUnattempted ? colors.textSecondary : isCorrect ? '#10b981' : '#ef4444' },
-                ]}
-              >
-                {userAnswer || 'Skipped'}
-              </Text>
-            </View>
-            <View style={[tw`flex-1 p-2.5 rounded-xl`, { backgroundColor: colors.background }]}>
-              <Text style={[tw`text-[10px] mb-0.5`, { color: colors.textSecondary }]}>
-                Correct Answer
-              </Text>
-              <Text style={tw`text-sm font-bold text-green-500`}>{correctAnswer}</Text>
-            </View>
-            <View style={[tw`flex-1 p-2.5 rounded-xl`, { backgroundColor: colors.background }]}>
-              <Text style={[tw`text-[10px] mb-0.5`, { color: colors.textSecondary }]}>Marks</Text>
-              <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>
-                {answer.marksObtained || 0}/{question.marks || 1}
-              </Text>
-            </View>
-          </View>
-
-          {/* Explanation */}
-          {explanation && (
-            <View
-              style={[
-                tw`p-3 rounded-xl border-l-4`,
-                { backgroundColor: colors.primary + '08', borderLeftColor: colors.primary },
-              ]}
-            >
-              <Text style={[tw`text-xs font-bold mb-1`, { color: colors.primary }]}>
-                Explanation
-              </Text>
-              <Text style={[tw`text-xs leading-4`, { color: colors.text }]}>
-                {explanation}
-              </Text>
-            </View>
-          )}
-        </View>
-      )}
-    </TouchableOpacity>
-  );
-}
-
-// ─── Main Component ──────────────────────────────────────
+// ─── Main screen ─────────────────────────────────────────
 export default function ResultScreen({ route, navigation }) {
   const { attemptId, rewards } = route.params;
   const { colors } = useTheme();
+  const { user } = useAuth();
 
   // Show the celebration once when arriving fresh from a submit (rewards passed).
   const [showCelebration, setShowCelebration] = useState(!!rewards);
@@ -321,9 +88,9 @@ export default function ResultScreen({ route, navigation }) {
 
   useEffect(() => {
     if (result?.exam?.language) {
-      setDisplayLanguage(resolveDisplayLanguage(result.exam.language, null));
+      setDisplayLanguage(resolveDisplayLanguage(result.exam.language, user?.preferredLanguage));
     }
-  }, [result?.exam?.language]);
+  }, [result?.exam?.language, user?.preferredLanguage]);
 
   useEffect(() => {
     fetchResult();
@@ -343,13 +110,7 @@ export default function ResultScreen({ route, navigation }) {
           const examRes = await api.get(`/exams/${resultData.exam._id}`);
           if (examRes.data.attemptStatus) setAttemptStatus(examRes.data.attemptStatus);
           if (examRes.data.exam) {
-            resultData = {
-              ...resultData,
-              exam: {
-                ...resultData.exam,
-                ...examRes.data.exam,
-              },
-            };
+            resultData = { ...resultData, exam: { ...resultData.exam, ...examRes.data.exam } };
           }
         } catch {}
       }
@@ -366,7 +127,7 @@ export default function ResultScreen({ route, navigation }) {
           setSavedQuestions(new Set(Object.keys(map).filter((id) => map[id])));
         } catch {}
       }
-    } catch (err) {
+    } catch {
       setError('Failed to load result. Pull down to retry.');
     } finally {
       setLoading(false);
@@ -407,7 +168,6 @@ export default function ResultScreen({ route, navigation }) {
     try {
       setStarting(true);
       const response = await api.post(`/exams/${result.exam._id}/start`);
-      // ExamInterface is now at root level
       navigation.replace('ExamInterface', {
         examId: result.exam._id,
         attemptId: response.data.attempt._id,
@@ -425,86 +185,14 @@ export default function ResultScreen({ route, navigation }) {
     if (!result) return;
     try {
       const air = buildAirCopyFromPeerStats(peerStats);
-      await Share.share({
-        message: air
-          ? `${air.full}\n\nI scored ${result.percentage?.toFixed(1)}% (${result.totalScore}/${result.exam?.totalMarks}) on "${result.exam?.title}"! ${getScoreEmoji(result.percentage || 0)}`
-          : `I scored ${result.percentage?.toFixed(1)}% (${result.totalScore}/${result.exam?.totalMarks}) on "${result.exam?.title}"! ${getScoreEmoji(result.percentage || 0)}`,
-      });
+      const line = `I scored ${result.percentage?.toFixed(1)}% (${result.totalScore}/${result.exam?.totalMarks}) on "${result.exam?.title}" on ExamZone!`;
+      await Share.share({ message: air ? `${air.full}\n\n${line}` : line });
     } catch {}
   };
 
   const handleGoHome = () => {
-    navigation.navigate('MainTabs', {
-      screen: 'HomeTab',
-      params: { screen: 'Dashboard' },
-    });
+    navigation.navigate('MainTabs', { screen: 'HomeTab', params: { screen: 'Dashboard' } });
   };
-
-  // ─── Computed ──────────────────────────────────────────
-  const percentage = result?.percentage || 0;
-  const scoreColor = getScoreColor(percentage);
-  const totalAnswers = result?.answers?.length || 0;
-  const correctCount = result?.answers?.filter((a) => a.isCorrect).length || 0;
-  const wrongCount = result?.answers?.filter((a) => !a.isCorrect && a.selectedAnswer).length || 0;
-  const skippedCount = result?.answers?.filter((a) => !a.selectedAnswer).length || 0;
-
-  const sectionAnalysis = result ? calculateSectionAnalysis(result) : null;
-  const subjectTopicAnalysis = result ? calculateSubjectTopicAnalysis(result) : { subjects: {}, topics: {} };
-  const difficultyAnalysis = result ? calculateDifficultyAnalysis(result) : {};
-  const timeAnalysis = result ? calculateTimeAnalysis(result) : null;
-
-  const filteredAnswers =
-    result?.answers?.filter((a) => {
-      if (sectionFilter !== 'all' && sectionAnalysis) {
-        const section = sectionAnalysis[Number(sectionFilter)];
-        if (!answerInSection(a, section)) return false;
-      }
-      if (questionFilter === 'correct') return a.isCorrect;
-      if (questionFilter === 'wrong') return !a.isCorrect && a.selectedAnswer;
-      if (questionFilter === 'skipped') return !a.selectedAnswer;
-      return true;
-    }) || [];
-
-  // ─── Loading State ─────────────────────────────────────
-  if (loading && !result) {
-    return (
-      <ScreenWrapper>
-        <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
-          <Header title="Result" navigation={navigation} colors={colors} />
-          <View style={tw`flex-1 items-center justify-center`}>
-            <ActivityIndicator size="large" color={colors.primary} />
-          </View>
-        </View>
-      </ScreenWrapper>
-    );
-  }
-
-  // ─── Error / Empty State ───────────────────────────────
-  if (error || !result) {
-    return (
-      <ScreenWrapper>
-        <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
-          <Header title="Result" navigation={navigation} colors={colors} />
-          <View style={tw`flex-1 items-center justify-center px-10`}>
-            <Ionicons name="alert-circle-outline" size={48} color={colors.textSecondary} />
-            <Text style={[tw`text-base font-semibold mt-3 mb-1`, { color: colors.text }]}>
-              {error || 'Result not found'}
-            </Text>
-            <TouchableOpacity
-              style={[tw`mt-4 px-5 py-2.5 rounded-xl`, { backgroundColor: colors.primary }]}
-              onPress={fetchResult}
-              activeOpacity={0.7}
-            >
-              <Text style={tw`text-sm font-semibold text-white`}>Retry</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </ScreenWrapper>
-    );
-  }
-
-  const showLanguageToggle = supportsLanguageSwitch(result?.exam, result?.answers);
-  const airCopy = buildAirCopyFromPeerStats(peerStats);
 
   const handleStartPracticeTopic = async (topic, subject) => {
     if (startingPracticeTopic) return;
@@ -518,2030 +206,803 @@ export default function ResultScreen({ route, navigation }) {
     }
   };
 
-  // ═══════════════════════════════════════════════════════
-  return (
-    <ScreenWrapper>
-      <RewardCelebration
-        rewards={rewards}
-        visible={showCelebration}
-        onClose={() => setShowCelebration(false)}
-      />
-      <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
-        <Header
-          title={result.exam?.title || 'Result'}
-          navigation={navigation}
-          colors={colors}
-          onShare={handleShare}
-          displayLanguage={displayLanguage}
-          onToggleLanguage={
-            showLanguageToggle
-              ? () => setDisplayLanguage((lang) => (lang === 'English' ? 'Hindi' : 'English'))
-              : null
-          }
-        />
+  // ─── Computed ──────────────────────────────────────────
+  const percentage = result?.percentage || 0;
+  const totalAnswers = result?.answers?.length || 0;
+  const correctCount = result?.answers?.filter((a) => a.isCorrect).length || 0;
+  const wrongCount = result?.answers?.filter((a) => !a.isCorrect && a.selectedAnswer).length || 0;
+  const skippedCount = result?.answers?.filter((a) => !a.selectedAnswer).length || 0;
 
-        <ScrollView
-          style={tw`flex-1`}
-          contentContainerStyle={tw`pb-10`}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
-          }
-          showsVerticalScrollIndicator={false}
-        >
-          {/* ─── Score Hero ───────────────────────────── */}
-          <View style={tw`items-center py-6 px-5`}>
-            {airCopy && (
-              <View
-                style={[
-                  tw`w-full rounded-2xl px-4 py-3 mb-4 border items-center`,
-                  { backgroundColor: colors.primary + '10', borderColor: colors.primary + '40' },
-                ]}
+  const sectionAnalysis = result ? calculateSectionAnalysis(result) : null;
+  const subjectTopicAnalysis = result ? calculateSubjectTopicAnalysis(result) : { subjects: {}, topics: {} };
+  const difficultyAnalysis = result ? calculateDifficultyAnalysis(result) : {};
+  const timeAnalysis = result ? calculateTimeAnalysis(result) : null;
+  const subjectEntries = Object.entries(subjectTopicAnalysis.subjects).filter(([s]) => s !== 'Unknown');
+  const topicEntries = Object.entries(subjectTopicAnalysis.topics).filter(([t]) => t !== 'Unknown');
+
+  const filteredAnswers =
+    result?.answers?.filter((a) => {
+      if (sectionFilter !== 'all' && sectionAnalysis) {
+        const section = sectionAnalysis[Number(sectionFilter)];
+        if (!answerInSection(a, section)) return false;
+      }
+      if (questionFilter === 'correct') return a.isCorrect;
+      if (questionFilter === 'wrong') return !a.isCorrect && a.selectedAnswer;
+      if (questionFilter === 'skipped') return !a.selectedAnswer;
+      return true;
+    }) || [];
+
+  const card = { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border };
+
+  // ─── Loading / error ───────────────────────────────────
+  if ((loading && !result) || error || !result) {
+    return (
+      <ScreenWrapper backgroundColor={colors.surface}>
+        <Header title="Result" navigation={navigation} colors={colors} />
+        <View style={tw`flex-1 items-center justify-center px-10`}>
+          {loading && !error ? (
+            <ActivityIndicator size="large" color={colors.text} />
+          ) : (
+            <>
+              <Ionicons name="alert-circle-outline" size={44} color={colors.textSecondary} />
+              <Text style={[tw`text-base font-bold mt-3 text-center`, { color: colors.text }]}>
+                {error || 'Result not found'}
+              </Text>
+              <TouchableOpacity
+                style={[tw`mt-5 px-5 py-3 rounded-2xl`, { backgroundColor: colors.hero }]}
+                onPress={fetchResult}
+                activeOpacity={0.8}
               >
-                <Text style={[tw`text-[10px] font-bold uppercase tracking-wider mb-1`, { color: colors.primary }]}>
-                  All India Rank
-                </Text>
-                <Text style={[tw`text-lg font-bold text-center`, { color: colors.text }]}>
-                  {airCopy.headline}
-                </Text>
-                <Text style={[tw`text-sm font-semibold mt-0.5`, { color: colors.primary }]}>
-                  {airCopy.subline}
-                </Text>
-              </View>
-            )}
-            <Text style={tw`text-4xl mb-1`}>{getScoreEmoji(percentage)}</Text>
-            <Text style={[tw`text-base font-semibold mb-4`, { color: scoreColor }]}>
-              {getScoreMessage(percentage)}
-            </Text>
+                <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>Retry</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+      </ScreenWrapper>
+    );
+  }
 
-            {/* Score Ring */}
+  const showLanguageToggle = supportsLanguageSwitch(result?.exam, result?.answers);
+  const airCopy = buildAirCopyFromPeerStats(peerStats);
+
+  return (
+    <ScreenWrapper backgroundColor={colors.surface}>
+      <RewardCelebration rewards={rewards} visible={showCelebration} onClose={() => setShowCelebration(false)} />
+      <Header title={result.exam?.title || 'Result'} navigation={navigation} colors={colors} onShare={handleShare} />
+
+      <ScrollView
+        style={tw`flex-1`}
+        contentContainerStyle={tw`px-5 pt-4 pb-12`}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.text} />}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ─── Score hero ─────────────────────────────── */}
+        <View style={[tw`p-5 rounded-3xl mb-4`, { backgroundColor: colors.hero }]}>
+          <Text style={[tw`text-[11px] font-bold tracking-widest`, { color: colors.heroMuted }]}>
+            {getScoreMessage(percentage).toUpperCase()}
+          </Text>
+          <View style={tw`flex-row items-end justify-between mt-1`}>
+            <Text style={[tw`text-5xl font-extrabold`, { color: colors.heroText }]}>
+              {percentage.toFixed(0)}
+              <Text style={[tw`text-2xl`, { color: colors.heroTextSecondary }]}>%</Text>
+            </Text>
+            <View style={tw`items-end pb-1.5`}>
+              <Text style={[tw`text-lg font-bold`, { color: colors.heroText }]}>
+                {result.totalScore}/{result.exam?.totalMarks || 0}
+              </Text>
+              <Text style={[tw`text-xs`, { color: colors.heroMuted }]}>marks</Text>
+            </View>
+          </View>
+          <View style={[tw`h-1.5 rounded-full overflow-hidden mt-3`, { backgroundColor: colors.heroTrack }]}>
             <View
               style={[
-                tw`w-28 h-28 rounded-full items-center justify-center mb-4`,
-                {
-                  borderWidth: 6,
-                  borderColor: scoreColor + '30',
-                },
+                tw`h-full rounded-full`,
+                { width: `${Math.max(2, Math.min(100, percentage))}%`, backgroundColor: colors.heroAccent },
               ]}
-            >
-              {/* Foreground — simulated with a colored border segment */}
-              <View
-                style={[
-                  tw`absolute w-28 h-28 rounded-full`,
-                  {
-                    borderWidth: 6,
-                    borderColor: 'transparent',
-                    borderTopColor: scoreColor,
-                    borderRightColor: percentage > 25 ? scoreColor : 'transparent',
-                    borderBottomColor: percentage > 50 ? scoreColor : 'transparent',
-                    borderLeftColor: percentage > 75 ? scoreColor : 'transparent',
-                  },
-                ]}
-              />
-              <Text style={[tw`text-3xl font-bold`, { color: scoreColor }]}>
-                {percentage.toFixed(0)}
-                <Text style={[tw`text-lg`, { color: scoreColor }]}>%</Text>
-              </Text>
-            </View>
-
-            {/* Score / Marks */}
-            <Text style={[tw`text-lg font-bold`, { color: colors.text }]}>
-              {result.totalScore} / {result.exam?.totalMarks || 0}
-            </Text>
-            <Text style={[tw`text-xs mt-0.5`, { color: colors.textSecondary }]}>
-              Attempt #{result.attemptNumber || 1}
-              {result.timeTaken > 0 && ` • ${formatTime(result.timeTaken)}`}
-            </Text>
+            />
           </View>
 
-          {/* ─── Action Buttons ───────────────────────── */}
-          <View style={tw`px-5 gap-2.5 mb-5`}>
-            {attemptStatus?.canReattempt && (
-              <TouchableOpacity
-                style={[
-                  tw`flex-row items-center justify-center py-3.5 rounded-2xl gap-2`,
-                  { backgroundColor: colors.primary },
-                ]}
-                onPress={handleRetryExam}
-                disabled={starting}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="refresh" size={16} color="#fff" />
-                <Text style={tw`text-sm font-bold text-white`}>
-                  {starting ? 'Starting...' : 'Retry Exam'}
-                </Text>
-              </TouchableOpacity>
-            )}
-            <TouchableOpacity
-              style={[
-                tw`flex-row items-center justify-center py-3.5 rounded-2xl gap-2 border`,
-                { borderColor: colors.border, backgroundColor: colors.surface },
-              ]}
-              onPress={handleGoHome}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="home-outline" size={16} color={colors.text} />
-              <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>Back to Home</Text>
-            </TouchableOpacity>
-            {wrongCount > 0 && (
-              <TouchableOpacity
-                style={[
-                  tw`flex-row items-center justify-center py-3.5 rounded-2xl gap-2 border`,
-                  { borderColor: '#ef444440', backgroundColor: '#ef444410' },
-                ]}
-                onPress={() =>
-                  navigation.navigate('MainTabs', {
-                    screen: 'StudyTab',
-                    params: { screen: 'WrongBook' },
-                  })
-                }
-                activeOpacity={0.8}
-              >
-                <Ionicons name="book-outline" size={16} color="#ef4444" />
-                <Text style={[tw`text-sm font-semibold`, { color: '#ef4444' }]}>
-                  Open Wrong Book ({wrongCount})
-                </Text>
-              </TouchableOpacity>
-            )}
-            {attemptStatus && !attemptStatus.canReattempt && attemptStatus.maxAttempts && (
-              <Text style={[tw`text-xs text-center`, { color: colors.textSecondary }]}>
-                {attemptStatus.attemptCount}/{attemptStatus.maxAttempts} attempts used
-              </Text>
-            )}
-          </View>
-
-          {/* ─── Tab Selector ─────────────────────────── */}
-          <View
-            style={[
-              tw`flex-row mx-5 mb-4`,
-              { borderBottomWidth: 1, borderBottomColor: colors.border },
-            ]}
-          >
-            {[
-              { key: 'overview', label: 'Overview', icon: 'bar-chart-outline' },
-              { key: 'questions', label: `Questions (${totalAnswers})`, icon: 'list-outline' },
-              { key: 'analytics', label: 'Analytics', icon: 'analytics-outline' },
-            ].map((tab) => (
-              <TouchableOpacity
-                key={tab.key}
-                style={[
-                  tw`flex-1 flex-row items-center justify-center gap-1.5 py-3`,
-                  activeTab === tab.key && {
-                    borderBottomWidth: 2,
-                    borderBottomColor: colors.primary,
-                    marginBottom: -1,
-                  },
-                ]}
-                onPress={() => setActiveTab(tab.key)}
-                activeOpacity={0.7}
-              >
-                <Ionicons
-                  name={tab.icon}
-                  size={15}
-                  color={activeTab === tab.key ? colors.primary : colors.textSecondary}
-                />
-                <Text
-                  style={[
-                    tw`text-sm font-semibold`,
-                    { color: activeTab === tab.key ? colors.primary : colors.textSecondary },
-                  ]}
-                >
-                  {tab.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* ─── Overview Tab ─────────────────────────── */}
-          {activeTab === 'overview' && (
-            <View style={tw`px-5 gap-3`}>
-              {/* Breakdown */}
-              <View
-                style={[
-                  tw`rounded-2xl p-4 border`,
-                  { backgroundColor: colors.surface, borderColor: colors.border },
-                ]}
-              >
-                <Text style={[tw`text-sm font-bold mb-3`, { color: colors.text }]}>
-                  Performance Breakdown
-                </Text>
-                <BreakdownRow
-                  icon="checkmark-circle"
-                  label="Correct"
-                  count={correctCount}
-                  total={totalAnswers}
-                  color="#10b981"
-                  colors={colors}
-                />
-                <BreakdownRow
-                  icon="close-circle"
-                  label="Wrong"
-                  count={wrongCount}
-                  total={totalAnswers}
-                  color="#ef4444"
-                  colors={colors}
-                />
-                <BreakdownRow
-                  icon="remove-circle"
-                  label="Skipped"
-                  count={skippedCount}
-                  total={totalAnswers}
-                  color={colors.textSecondary}
-                  colors={colors}
-                />
+          {airCopy && (
+            <View style={[tw`flex-row items-center p-3 rounded-2xl mt-4`, { backgroundColor: colors.heroRaised }]}>
+              <Ionicons name="trophy" size={20} color={colors.heroAccent} />
+              <View style={tw`ml-3 flex-1`}>
+                <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>{airCopy.headline}</Text>
+                <Text style={[tw`text-xs mt-0.5`, { color: colors.heroTextSecondary }]}>{airCopy.subline}</Text>
               </View>
-
-              {/* Time Analysis */}
-              {result.timeTaken > 0 && (
-                <View
-                  style={[
-                    tw`rounded-2xl p-4 border`,
-                    { backgroundColor: colors.surface, borderColor: colors.border },
-                  ]}
-                >
-                  <Text style={[tw`text-sm font-bold mb-3`, { color: colors.text }]}>
-                    Time Analysis
-                  </Text>
-                  <View style={tw`flex-row`}>
-                    {[
-                      { label: 'Total', value: formatTime(result.timeTaken) },
-                      {
-                        label: 'Avg / Question',
-                        value: formatTime(Math.floor(result.timeTaken / totalAnswers)),
-                      },
-                      {
-                        label: 'Duration',
-                        value: result.exam?.duration ? `${result.exam.duration}m` : '—',
-                      },
-                    ].map(({ label, value }) => (
-                      <View key={label} style={tw`flex-1 items-center`}>
-                        <Text style={[tw`text-[10px] mb-1`, { color: colors.textSecondary }]}>
-                          {label}
-                        </Text>
-                        <Text style={[tw`text-base font-bold`, { color: colors.text }]}>
-                          {value}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-                </View>
-              )}
-
-              {/* Exam Info */}
-              <View
-                style={[
-                  tw`rounded-2xl p-4 border`,
-                  { backgroundColor: colors.surface, borderColor: colors.border },
-                ]}
-              >
-                <Text style={[tw`text-sm font-bold mb-3`, { color: colors.text }]}>
-                  Exam Details
-                </Text>
-                {[
-                  {
-                    icon: 'document-text-outline',
-                    text: `${totalAnswers} Questions`,
-                  },
-                  {
-                    icon: 'trophy-outline',
-                    text: `${result.exam?.totalMarks || 0} Total Marks`,
-                  },
-                  result.exam?.duration && {
-                    icon: 'time-outline',
-                    text: `${result.exam.duration} min duration`,
-                  },
-                  result.exam?.category?.name && {
-                    icon: 'folder-outline',
-                    text: result.exam.category.name,
-                  },
-                  result.exam?.subCategory?.name && {
-                    icon: 'pricetag-outline',
-                    text: result.exam.subCategory.name,
-                  },
-                  result.endTime && {
-                    icon: 'calendar-outline',
-                    text: formatDate(result.endTime),
-                  },
-                ]
-                  .filter(Boolean)
-                  .map(({ icon, text }, i) => (
-                    <View key={i} style={tw`flex-row items-center gap-2.5 py-1.5`}>
-                      <Ionicons name={icon} size={15} color={colors.textSecondary} />
-                      <Text style={[tw`text-sm`, { color: colors.text }]}>{text}</Text>
-                    </View>
-                  ))}
-              </View>
-
-              {/* Reviews */}
-              {result?.exam?._id && (
-                <View style={tw`mt-2`}>
-                  <ReviewSection
-                    targetType="exam"
-                    targetId={result.exam._id}
-                    canReview={true}
-                  />
-                </View>
-              )}
             </View>
           )}
 
-          {/* ─── Questions Tab ─────────────────────────── */}
-          {activeTab === 'questions' && (
-            <View style={tw`px-5`}>
-              {showLanguageToggle && (
-                <View style={[tw`flex-row rounded-xl p-1 mb-3`, { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }]}>
-                  {['English', 'Hindi'].map((lang) => {
-                    const isActive = displayLanguage === lang;
-                    return (
-                      <TouchableOpacity
-                        key={lang}
-                        style={[
-                          tw`flex-1 py-2 rounded-lg items-center`,
-                          isActive && { backgroundColor: colors.primary },
-                        ]}
-                        onPress={() => setDisplayLanguage(lang)}
-                        activeOpacity={0.7}
-                      >
-                        <Text
-                          style={[
-                            tw`text-sm font-semibold`,
-                            { color: isActive ? '#fff' : colors.textSecondary },
-                          ]}
-                        >
-                          {lang === 'Hindi' ? 'हिंदी' : 'English'}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              )}
-
-              {/* Question Filters */}
-              {sectionAnalysis?.length > 0 && (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  style={tw`mb-2`}
-                  contentContainerStyle={tw`gap-2`}
-                >
-                  <TouchableOpacity
-                    style={[
-                      tw`px-3.5 py-2 rounded-full border`,
-                      sectionFilter === 'all'
-                        ? { backgroundColor: colors.primary + '15', borderColor: colors.primary }
-                        : { backgroundColor: colors.surface, borderColor: colors.border },
-                    ]}
-                    onPress={() => setSectionFilter('all')}
-                    activeOpacity={0.7}
-                  >
-                    <Text
-                      style={[
-                        tw`text-xs font-semibold`,
-                        { color: sectionFilter === 'all' ? colors.primary : colors.textSecondary },
-                      ]}
-                    >
-                      All sections
-                    </Text>
-                  </TouchableOpacity>
-                  {sectionAnalysis.map((section) => (
-                    <TouchableOpacity
-                      key={section.index}
-                      style={[
-                        tw`px-3.5 py-2 rounded-full border`,
-                        sectionFilter === String(section.index)
-                          ? { backgroundColor: colors.primary + '15', borderColor: colors.primary }
-                          : { backgroundColor: colors.surface, borderColor: colors.border },
-                      ]}
-                      onPress={() => setSectionFilter(String(section.index))}
-                      activeOpacity={0.7}
-                    >
-                      <Text
-                        style={[
-                          tw`text-xs font-semibold`,
-                          {
-                            color:
-                              sectionFilter === String(section.index)
-                                ? colors.primary
-                                : colors.textSecondary,
-                          },
-                        ]}
-                      >
-                        {section.name || `Section ${section.index + 1}`}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              )}
-
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={tw`mb-3`}
-                contentContainerStyle={tw`gap-2`}
+          <View style={tw`flex-row mt-4`}>
+            {[
+              { label: 'Correct', value: correctCount },
+              { label: 'Wrong', value: wrongCount },
+              { label: 'Skipped', value: skippedCount },
+              { label: 'Time', value: result.timeTaken > 0 ? formatTime(result.timeTaken) : '—' },
+            ].map((s, i) => (
+              <View
+                key={s.label}
+                style={[tw`flex-1`, i > 0 && { borderLeftWidth: 1, borderLeftColor: colors.heroTrack, paddingLeft: 12 }]}
               >
-                {[
-                  { key: 'all', label: `All (${totalAnswers})` },
-                  { key: 'correct', label: `Correct (${correctCount})`, color: '#10b981' },
-                  { key: 'wrong', label: `Wrong (${wrongCount})`, color: '#ef4444' },
-                  { key: 'skipped', label: `Skipped (${skippedCount})`, color: colors.textSecondary },
-                ].map(({ key, label, color }) => {
-                  const isActive = questionFilter === key;
+                <Text style={[tw`text-base font-extrabold`, { color: colors.heroText }]}>{s.value}</Text>
+                <Text style={[tw`text-[11px] mt-0.5`, { color: colors.heroMuted }]}>{s.label}</Text>
+              </View>
+            ))}
+          </View>
+
+          <Text style={[tw`text-[11px] mt-4`, { color: colors.heroMuted }]}>
+            Attempt #{result.attemptNumber || 1}
+            {result.endTime ? ` · ${formatDate(result.endTime)}` : ''}
+          </Text>
+        </View>
+
+        {/* ─── Actions ────────────────────────────────── */}
+        <View style={tw`flex-row gap-2.5 mb-2`}>
+          {attemptStatus?.canReattempt && (
+            <TouchableOpacity
+              style={[tw`flex-1 flex-row items-center justify-center h-12 rounded-2xl`, { backgroundColor: colors.hero }]}
+              onPress={handleRetryExam}
+              disabled={starting}
+              activeOpacity={0.85}
+            >
+              {starting ? (
+                <ActivityIndicator color={colors.heroText} />
+              ) : (
+                <>
+                  <Ionicons name="refresh" size={17} color={colors.heroText} />
+                  <Text style={[tw`text-sm font-bold ml-2`, { color: colors.heroText }]}>Retry exam</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          )}
+          {wrongCount > 0 && (
+            <TouchableOpacity
+              style={[tw`flex-1 flex-row items-center justify-center h-12 rounded-2xl`, { backgroundColor: colors.tones.red.bg }]}
+              onPress={() => navigation.navigate('MainTabs', { screen: 'StudyTab', params: { screen: 'WrongBook' } })}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="close-circle-outline" size={17} color={colors.tones.red.fg} />
+              <Text style={[tw`text-sm font-bold ml-2`, { color: colors.tones.red.fg }]}>Fix {wrongCount} mistakes</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+        <View style={tw`flex-row items-center justify-between mb-5 px-1`}>
+          <TouchableOpacity onPress={handleGoHome} hitSlop={10} style={tw`flex-row items-center`}>
+            <Ionicons name="home-outline" size={15} color={colors.textSecondary} />
+            <Text style={[tw`text-xs font-semibold ml-1.5`, { color: colors.textSecondary }]}>Back to home</Text>
+          </TouchableOpacity>
+          {attemptStatus && !attemptStatus.canReattempt && attemptStatus.maxAttempts ? (
+            <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>
+              {attemptStatus.attemptCount}/{attemptStatus.maxAttempts} attempts used
+            </Text>
+          ) : null}
+        </View>
+
+        {/* ─── Tabs ───────────────────────────────────── */}
+        <View style={[tw`flex-row p-1 rounded-2xl mb-4`, { backgroundColor: colors.surfaceMuted }]}>
+          {[
+            { key: 'overview', label: 'Overview' },
+            { key: 'questions', label: `Questions (${totalAnswers})` },
+            { key: 'analytics', label: 'Analytics' },
+          ].map((tab) => {
+            const on = activeTab === tab.key;
+            return (
+              <TouchableOpacity
+                key={tab.key}
+                style={[tw`flex-1 items-center py-2.5 rounded-xl`, on && { backgroundColor: colors.card }]}
+                onPress={() => setActiveTab(tab.key)}
+                activeOpacity={0.8}
+              >
+                <Text style={[tw`text-xs font-bold`, { color: on ? colors.text : colors.textSecondary }]}>{tab.label}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* ─── Overview ───────────────────────────────── */}
+        {activeTab === 'overview' && (
+          <View style={tw`gap-3`}>
+            <Card title="Answer breakdown" colors={colors}>
+              <BreakdownRow label="Correct" count={correctCount} total={totalAnswers} tone={colors.tones.green} colors={colors} />
+              <BreakdownRow label="Wrong" count={wrongCount} total={totalAnswers} tone={colors.tones.red} colors={colors} />
+              <BreakdownRow
+                label="Skipped"
+                count={skippedCount}
+                total={totalAnswers}
+                tone={{ fg: colors.textSecondary, bg: colors.surfaceMuted }}
+                colors={colors}
+                last
+              />
+            </Card>
+
+            {result.timeTaken > 0 && (
+              <Card title="Time" colors={colors}>
+                <View style={tw`flex-row`}>
+                  {[
+                    { label: 'Total', value: formatTime(result.timeTaken) },
+                    { label: 'Per question', value: formatTime(Math.floor(result.timeTaken / Math.max(1, totalAnswers))) },
+                    { label: 'Allowed', value: result.exam?.duration ? `${result.exam.duration}m` : '—' },
+                  ].map(({ label, value }) => (
+                    <View key={label} style={tw`flex-1`}>
+                      <Text style={[tw`text-base font-extrabold`, { color: colors.text }]}>{value}</Text>
+                      <Text style={[tw`text-xs mt-0.5`, { color: colors.textSecondary }]}>{label}</Text>
+                    </View>
+                  ))}
+                </View>
+              </Card>
+            )}
+
+            <Card title="Exam details" colors={colors}>
+              {[
+                { icon: 'document-text-outline', text: `${totalAnswers} questions` },
+                { icon: 'ribbon-outline', text: `${result.exam?.totalMarks || 0} total marks` },
+                result.exam?.duration && { icon: 'time-outline', text: `${result.exam.duration} min` },
+                result.exam?.category?.name && {
+                  icon: 'folder-outline',
+                  text: [result.exam.category.name, result.exam?.subCategory?.name].filter(Boolean).join(' · '),
+                },
+              ]
+                .filter(Boolean)
+                .map(({ icon, text }) => (
+                  <View key={icon} style={tw`flex-row items-center py-1.5`}>
+                    <Ionicons name={icon} size={16} color={colors.textSecondary} />
+                    <Text style={[tw`text-sm ml-2.5`, { color: colors.text }]}>{text}</Text>
+                  </View>
+                ))}
+            </Card>
+
+            {result?.exam?._id && (
+              <View style={tw`mt-1`}>
+                <ReviewSection targetType="exam" targetId={result.exam._id} canReview />
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* ─── Questions ──────────────────────────────── */}
+        {activeTab === 'questions' && (
+          <View>
+            {showLanguageToggle && (
+              <View style={[tw`flex-row self-start rounded-full p-1 mb-3`, card]}>
+                {['English', 'Hindi'].map((lang) => {
+                  const on = displayLanguage === lang;
                   return (
                     <TouchableOpacity
-                      key={key}
-                      style={[
-                        tw`px-3.5 py-2 rounded-full border`,
-                        isActive
-                          ? { backgroundColor: (color || colors.primary) + '15', borderColor: color || colors.primary }
-                          : { backgroundColor: colors.surface, borderColor: colors.border },
-                      ]}
-                      onPress={() => setQuestionFilter(key)}
-                      activeOpacity={0.7}
+                      key={lang}
+                      style={[tw`px-3.5 py-1.5 rounded-full`, on && { backgroundColor: colors.hero }]}
+                      onPress={() => setDisplayLanguage(lang)}
+                      activeOpacity={0.8}
                     >
-                      <Text
-                        style={[
-                          tw`text-xs font-semibold`,
-                          { color: isActive ? color || colors.primary : colors.textSecondary },
-                        ]}
-                      >
-                        {label}
+                      <Text style={[tw`text-xs font-bold`, { color: on ? colors.heroText : colors.textSecondary }]}>
+                        {lang === 'Hindi' ? 'हिन्दी' : 'EN'}
                       </Text>
                     </TouchableOpacity>
                   );
                 })}
-              </ScrollView>
+              </View>
+            )}
 
-              {/* Question Cards — collapsed by default */}
-              {filteredAnswers.length > 0 ? (
-                filteredAnswers.map((answer) => {
-                  const originalIndex = result.answers.indexOf(answer);
-                  const qid = answer.question?._id?.toString?.() || answer.question?._id;
+            {sectionAnalysis?.length > 0 && (
+              <ChipRow colors={colors}>
+                <Chip label="All sections" on={sectionFilter === 'all'} onPress={() => setSectionFilter('all')} colors={colors} />
+                {sectionAnalysis.map((section) => (
+                  <Chip
+                    key={section.index}
+                    label={section.name || `Section ${section.index + 1}`}
+                    on={sectionFilter === String(section.index)}
+                    onPress={() => setSectionFilter(String(section.index))}
+                    colors={colors}
+                  />
+                ))}
+              </ChipRow>
+            )}
+
+            <ChipRow colors={colors}>
+              {[
+                { key: 'all', label: `All ${totalAnswers}` },
+                { key: 'correct', label: `Correct ${correctCount}` },
+                { key: 'wrong', label: `Wrong ${wrongCount}` },
+                { key: 'skipped', label: `Skipped ${skippedCount}` },
+              ].map(({ key, label }) => (
+                <Chip key={key} label={label} on={questionFilter === key} onPress={() => setQuestionFilter(key)} colors={colors} />
+              ))}
+            </ChipRow>
+
+            {filteredAnswers.length > 0 ? (
+              filteredAnswers.map((answer) => {
+                const originalIndex = result.answers.indexOf(answer);
+                const qid = answer.question?._id?.toString?.() || answer.question?._id;
+                return (
+                  <QuestionCard
+                    key={originalIndex}
+                    answer={answer}
+                    index={originalIndex}
+                    colors={colors}
+                    displayLanguage={displayLanguage}
+                    isSaved={qid ? savedQuestions.has(String(qid)) : false}
+                    onToggleSave={handleToggleSave}
+                  />
+                );
+              })
+            ) : (
+              <Text style={[tw`text-sm text-center py-10`, { color: colors.textSecondary }]}>
+                No questions match this filter
+              </Text>
+            )}
+          </View>
+        )}
+
+        {/* ─── Analytics ──────────────────────────────── */}
+        {activeTab === 'analytics' && (
+          <View style={tw`gap-3`}>
+            {peerStats?.sampleSize > 0 && (
+              <Card
+                title="Compared to other students"
+                subtitle={`Based on ${peerStats.sampleSize} completed attempt${peerStats.sampleSize === 1 ? '' : 's'}`}
+                colors={colors}
+              >
+                <PeerGrid
+                  title="Marks"
+                  colors={colors}
+                  cells={[
+                    { label: 'You', value: peerStats.marks.your, highlight: true },
+                    { label: 'Average', value: peerStats.marks.avg },
+                    { label: 'Highest', value: peerStats.marks.max },
+                    { label: 'Lowest', value: peerStats.marks.min },
+                  ]}
+                  footnote={`Rank #${peerStats.marks.yourRank} of ${peerStats.marks.totalRanked} · better than ${peerStats.marks.betterThanPercent}% of attempts`}
+                />
+                <PeerGrid
+                  title="Percentage"
+                  colors={colors}
+                  cells={[
+                    { label: 'You', value: `${peerStats.percentage.your}%`, highlight: true },
+                    { label: 'Average', value: `${peerStats.percentage.avg}%` },
+                    { label: 'Highest', value: `${peerStats.percentage.max}%` },
+                    { label: 'Lowest', value: `${peerStats.percentage.min}%` },
+                  ]}
+                />
+                <PeerGrid
+                  title="Time taken"
+                  colors={colors}
+                  last
+                  cells={[
+                    { label: 'You', value: peerStats.time.your > 0 ? formatTime(peerStats.time.your) : '—', highlight: true },
+                    { label: 'Average', value: peerStats.time.avg != null ? formatTime(peerStats.time.avg) : '—' },
+                    { label: 'Fastest', value: peerStats.time.min != null ? formatTime(peerStats.time.min) : '—' },
+                    { label: 'Slowest', value: peerStats.time.max != null ? formatTime(peerStats.time.max) : '—' },
+                  ]}
+                  footnote={
+                    peerStats.time.yourRank != null
+                      ? `Speed rank #${peerStats.time.yourRank} of ${peerStats.time.totalRanked}${
+                          peerStats.time.fasterThanPercent != null && peerStats.time.totalRanked > 1
+                            ? ` · faster than ${peerStats.time.fasterThanPercent}% of attempts`
+                            : ''
+                        }`
+                      : null
+                  }
+                />
+              </Card>
+            )}
+
+            {previousAttempts.length > 0 && (
+              <Card title="Your attempts" colors={colors}>
+                <View style={[tw`p-3 rounded-2xl mb-2`, { backgroundColor: colors.hero }]}>
+                  <Text style={[tw`text-[11px] font-bold`, { color: colors.heroMuted }]}>
+                    THIS ATTEMPT · #{result.attemptNumber || 1}
+                  </Text>
+                  <Text style={[tw`text-sm font-bold mt-1`, { color: colors.heroText }]}>
+                    {result.totalScore}/{result.exam?.totalMarks || 0} · {percentage.toFixed(1)}%
+                  </Text>
+                  <Text style={[tw`text-xs mt-0.5`, { color: colors.heroTextSecondary }]}>
+                    {correctCount} correct · {wrongCount} wrong · {skippedCount} skipped
+                    {result.timeTaken > 0 ? ` · ${formatTime(result.timeTaken)}` : ''}
+                  </Text>
+                </View>
+                {previousAttempts.map((prev) => {
+                  const scoreDiff = (result.totalScore || 0) - (prev.totalScore || 0);
+                  const pctDiff = (result.percentage || 0) - (prev.percentage || 0);
+                  const diffTone = scoreDiff > 0 ? colors.tones.green : colors.tones.red;
                   return (
-                    <QuestionCard
-                      key={originalIndex}
-                      answer={answer}
-                      index={originalIndex}
-                      colors={colors}
-                      displayLanguage={displayLanguage}
-                      isSaved={qid ? savedQuestions.has(String(qid)) : false}
-                      onToggleSave={handleToggleSave}
-                    />
-                  );
-                })
-              ) : (
-                <View style={tw`items-center py-10`}>
-                  <Text style={[tw`text-sm`, { color: colors.textSecondary }]}>
-                    No questions match this filter
-                  </Text>
-                </View>
-              )}
-            </View>
-          )}
-
-          {/* ─── Analytics Tab ─────────────────────────── */}
-          {activeTab === 'analytics' && (
-            <View style={tw`px-5 gap-3 pb-6`}>
-              {/* Peer comparison */}
-              {peerStats?.sampleSize > 0 && (
-                <View
-                  style={[
-                    tw`rounded-2xl p-4 border`,
-                    { backgroundColor: colors.surface, borderColor: colors.border },
-                  ]}
-                >
-                  <Text style={[tw`text-sm font-bold mb-1`, { color: colors.text }]}>
-                    Compared to other students
-                  </Text>
-                  <Text style={[tw`text-[10px] mb-3`, { color: colors.textSecondary }]}>
-                    Based on {peerStats.sampleSize} completed attempt
-                    {peerStats.sampleSize === 1 ? '' : 's'}
-                  </Text>
-
-                  <Text style={[tw`text-xs font-semibold mb-2`, { color: colors.text }]}>Marks</Text>
-                  <View style={tw`flex-row flex-wrap mb-2`}>
-                    {[
-                      { label: 'Yours', value: peerStats.marks.your, highlight: true },
-                      { label: 'Avg', value: peerStats.marks.avg },
-                      { label: 'Max', value: peerStats.marks.max },
-                      { label: 'Min', value: peerStats.marks.min },
-                    ].map((cell) => (
-                      <View
-                        key={cell.label}
-                        style={[
-                          tw`w-1/2 p-1`,
-                        ]}
-                      >
-                        <View
-                          style={[
-                            tw`p-2.5 rounded-xl items-center border`,
-                            {
-                              backgroundColor: cell.highlight
-                                ? colors.primary + '12'
-                                : colors.background,
-                              borderColor: cell.highlight ? colors.primary : colors.border,
-                            },
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              tw`text-sm font-bold`,
-                              { color: cell.highlight ? colors.primary : colors.text },
-                            ]}
-                          >
-                            {cell.value}
-                          </Text>
-                          <Text style={[tw`text-[10px] mt-0.5`, { color: colors.textSecondary }]}>
-                            {cell.label}
-                          </Text>
-                        </View>
-                      </View>
-                    ))}
-                  </View>
-                  <Text style={[tw`text-xs mb-1`, { color: colors.text }]}>
-                    Rank by marks: #{peerStats.marks.yourRank} of {peerStats.marks.totalRanked}
-                  </Text>
-                  <Text style={[tw`text-xs mb-4`, { color: '#10b981' }]}>
-                    Better than {peerStats.marks.betterThanPercent}% of attempts
-                  </Text>
-
-                  <Text style={[tw`text-xs font-semibold mb-2`, { color: colors.text }]}>
-                    Percentage
-                  </Text>
-                  <View style={tw`flex-row flex-wrap mb-4`}>
-                    {[
-                      { label: 'Yours', value: `${peerStats.percentage.your}%`, highlight: true },
-                      { label: 'Avg', value: `${peerStats.percentage.avg}%` },
-                      { label: 'Max', value: `${peerStats.percentage.max}%` },
-                      { label: 'Min', value: `${peerStats.percentage.min}%` },
-                    ].map((cell) => (
-                      <View key={cell.label} style={tw`w-1/2 p-1`}>
-                        <View
-                          style={[
-                            tw`p-2.5 rounded-xl items-center border`,
-                            {
-                              backgroundColor: cell.highlight
-                                ? colors.primary + '12'
-                                : colors.background,
-                              borderColor: cell.highlight ? colors.primary : colors.border,
-                            },
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              tw`text-sm font-bold`,
-                              { color: cell.highlight ? colors.primary : colors.text },
-                            ]}
-                          >
-                            {cell.value}
-                          </Text>
-                          <Text style={[tw`text-[10px] mt-0.5`, { color: colors.textSecondary }]}>
-                            {cell.label}
-                          </Text>
-                        </View>
-                      </View>
-                    ))}
-                  </View>
-
-                  <Text style={[tw`text-xs font-semibold mb-2`, { color: colors.text }]}>
-                    Time taken
-                  </Text>
-                  <View style={tw`flex-row flex-wrap mb-2`}>
-                    {[
-                      {
-                        label: 'Yours',
-                        value: peerStats.time.your > 0 ? formatTime(peerStats.time.your) : '—',
-                        highlight: true,
-                      },
-                      {
-                        label: 'Avg',
-                        value: peerStats.time.avg != null ? formatTime(peerStats.time.avg) : '—',
-                      },
-                      {
-                        label: 'Fastest',
-                        value: peerStats.time.min != null ? formatTime(peerStats.time.min) : '—',
-                      },
-                      {
-                        label: 'Slowest',
-                        value: peerStats.time.max != null ? formatTime(peerStats.time.max) : '—',
-                      },
-                    ].map((cell) => (
-                      <View key={cell.label} style={tw`w-1/2 p-1`}>
-                        <View
-                          style={[
-                            tw`p-2.5 rounded-xl items-center border`,
-                            {
-                              backgroundColor: cell.highlight
-                                ? colors.primary + '12'
-                                : colors.background,
-                              borderColor: cell.highlight ? colors.primary : colors.border,
-                            },
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              tw`text-sm font-bold`,
-                              { color: cell.highlight ? colors.primary : colors.text },
-                            ]}
-                          >
-                            {cell.value}
-                          </Text>
-                          <Text style={[tw`text-[10px] mt-0.5`, { color: colors.textSecondary }]}>
-                            {cell.label}
-                          </Text>
-                        </View>
-                      </View>
-                    ))}
-                  </View>
-                  {peerStats.time.yourRank != null && (
-                    <>
-                      <Text style={[tw`text-xs`, { color: colors.text }]}>
-                        Rank by speed: #{peerStats.time.yourRank} of {peerStats.time.totalRanked}{' '}
-                        (1 = fastest)
-                      </Text>
-                      {peerStats.time.fasterThanPercent != null && (
-                        <Text style={[tw`text-xs mt-1`, { color: '#3b82f6' }]}>
-                          Faster than {peerStats.time.fasterThanPercent}% of attempts
+                    <TouchableOpacity
+                      key={prev._id}
+                      style={[tw`flex-row items-center p-3 rounded-2xl mb-2`, { backgroundColor: colors.surfaceMuted }]}
+                      onPress={() => navigation.replace('Result', { attemptId: prev._id })}
+                      activeOpacity={0.8}
+                    >
+                      <View style={tw`flex-1`}>
+                        <Text style={[tw`text-xs font-semibold`, { color: colors.textSecondary }]}>
+                          Attempt #{prev.attemptNumber}{prev.endTime ? ` · ${formatDate(prev.endTime)}` : ''}
                         </Text>
+                        <Text style={[tw`text-sm font-bold mt-0.5`, { color: colors.text }]}>
+                          {prev.totalScore}/{result.exam?.totalMarks || 0} · {(prev.percentage || 0).toFixed(1)}%
+                        </Text>
+                      </View>
+                      {scoreDiff !== 0 && (
+                        <View style={[tw`px-2 py-1 rounded-md`, { backgroundColor: diffTone.bg }]}>
+                          <Text style={[tw`text-[11px] font-bold`, { color: diffTone.fg }]}>
+                            {scoreDiff > 0 ? '+' : ''}{pctDiff.toFixed(1)}% now
+                          </Text>
+                        </View>
                       )}
-                    </>
-                  )}
-                </View>
-              )}
+                    </TouchableOpacity>
+                  );
+                })}
+              </Card>
+            )}
 
-              {/* Attempt comparison */}
-              {previousAttempts.length > 0 && (
-                <View
-                  style={[
-                    tw`rounded-2xl p-4 border`,
-                    { backgroundColor: colors.surface, borderColor: colors.border },
-                  ]}
-                >
-                  <Text style={[tw`text-sm font-bold mb-3`, { color: colors.text }]}>
-                    Attempt Comparison
-                  </Text>
-                  <View
-                    style={[
-                      tw`p-3 rounded-xl mb-3 border`,
-                      { backgroundColor: colors.primary + '10', borderColor: colors.primary },
-                    ]}
-                  >
-                    <Text style={[tw`text-xs font-semibold mb-2`, { color: colors.primary }]}>
-                      Current · Attempt #{result.attemptNumber || 1}
-                    </Text>
-                    <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>
-                      {result.totalScore}/{result.exam?.totalMarks || 0} · {percentage.toFixed(1)}%
-                    </Text>
-                    <Text style={[tw`text-xs mt-1`, { color: colors.textSecondary }]}>
-                      {correctCount} correct · {wrongCount} wrong · {skippedCount} skipped
-                      {result.timeTaken > 0 ? ` · ${formatTime(result.timeTaken)}` : ''}
-                    </Text>
-                  </View>
-                  {previousAttempts.map((prev) => {
-                    const scoreDiff = (result.totalScore || 0) - (prev.totalScore || 0);
-                    const pctDiff = (result.percentage || 0) - (prev.percentage || 0);
-                    return (
-                      <TouchableOpacity
-                        key={prev._id}
-                        style={[
-                          tw`p-3 rounded-xl mb-2 border`,
-                          { backgroundColor: colors.background, borderColor: colors.border },
-                        ]}
-                        onPress={() => navigation.replace('Result', { attemptId: prev._id })}
-                        activeOpacity={0.7}
-                      >
-                        <View style={tw`flex-row items-center justify-between mb-1`}>
-                          <Text style={[tw`text-xs font-semibold`, { color: colors.text }]}>
-                            Attempt #{prev.attemptNumber}
-                          </Text>
-                          <Text style={[tw`text-[10px]`, { color: colors.textSecondary }]}>
-                            {prev.endTime ? formatDate(prev.endTime) : ''}
-                          </Text>
-                        </View>
-                        <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>
-                          {prev.totalScore}/{result.exam?.totalMarks || 0} ·{' '}
-                          {(prev.percentage || 0).toFixed(1)}%
-                        </Text>
-                        {scoreDiff !== 0 && (
-                          <Text
-                            style={[
-                              tw`text-xs mt-1 font-semibold`,
-                              { color: scoreDiff > 0 ? '#10b981' : '#ef4444' },
-                            ]}
-                          >
-                            {scoreDiff > 0 ? '+' : ''}
-                            {scoreDiff} ({pctDiff > 0 ? '+' : ''}
-                            {pctDiff.toFixed(1)}%) vs current
-                          </Text>
-                        )}
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              )}
-
-              {/* Section-wise */}
-              {sectionAnalysis?.length > 0 && (
-                <View
-                  style={[
-                    tw`rounded-2xl p-4 border`,
-                    { backgroundColor: colors.surface, borderColor: colors.border },
-                  ]}
-                >
-                  <Text style={[tw`text-sm font-bold mb-3`, { color: colors.text }]}>
-                    Section-wise Performance
-                  </Text>
-                  {sectionAnalysis.map((section) => (
+            {sectionAnalysis?.length > 0 && (
+              <Card title="By section" colors={colors}>
+                {sectionAnalysis.map((section, i) => {
+                  const tone = scoreTone(section.sectionPercentage, colors);
+                  return (
                     <View
                       key={section.index}
-                      style={[
-                        tw`p-3 rounded-xl mb-2 border`,
-                        { backgroundColor: colors.background, borderColor: colors.border },
-                      ]}
+                      style={[tw`py-2.5`, i < sectionAnalysis.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }]}
                     >
-                      <View style={tw`flex-row justify-between items-start mb-1`}>
-                        <Text style={[tw`text-sm font-semibold flex-1`, { color: colors.text }]}>
+                      <View style={tw`flex-row justify-between items-center`}>
+                        <Text style={[tw`text-sm font-bold flex-1 pr-2`, { color: colors.text }]}>
                           {section.name || `Section ${section.index + 1}`}
                         </Text>
-                        <Text
-                          style={[
-                            tw`text-sm font-bold`,
-                            {
-                              color:
-                                section.sectionPercentage >= 80
-                                  ? '#10b981'
-                                  : section.sectionPercentage >= 60
-                                  ? '#f59e0b'
-                                  : '#ef4444',
-                            },
-                          ]}
-                        >
-                          {section.sectionPercentage.toFixed(1)}%
-                        </Text>
+                        <View style={[tw`px-2 py-1 rounded-md`, { backgroundColor: tone.bg }]}>
+                          <Text style={[tw`text-xs font-bold`, { color: tone.fg }]}>{section.sectionPercentage.toFixed(1)}%</Text>
+                        </View>
                       </View>
-                      <Text style={[tw`text-xs mb-1`, { color: colors.textSecondary }]}>
-                        {section.sectionScore}/{section.sectionTotalMarks} · {section.correct}C ·{' '}
-                        {section.wrong}W · {section.unattempted}S
-                        {section.avgTimePerQuestion > 0
-                          ? ` · avg ${formatTime(Math.round(section.avgTimePerQuestion))}`
-                          : ''}
+                      <Text style={[tw`text-xs mt-1`, { color: colors.textSecondary }]}>
+                        {section.sectionScore}/{section.sectionTotalMarks} marks · {section.correct} correct · {section.wrong} wrong · {section.unattempted} skipped
+                        {section.avgTimePerQuestion > 0 ? ` · ${formatTime(Math.round(section.avgTimePerQuestion))}/q` : ''}
                       </Text>
                       {section.cutoff != null && (
                         <Text
                           style={[
-                            tw`text-[10px] font-semibold`,
-                            { color: section.cutoffMet ? '#10b981' : '#ef4444' },
+                            tw`text-xs font-semibold mt-1`,
+                            { color: section.cutoffMet ? colors.tones.green.fg : colors.tones.red.fg },
                           ]}
                         >
-                          Cutoff {section.cutoff}: {section.cutoffMet ? 'Met' : 'Not met'}
+                          Cutoff {section.cutoff}: {section.cutoffMet ? 'cleared' : 'not cleared'}
                         </Text>
                       )}
                     </View>
+                  );
+                })}
+              </Card>
+            )}
+
+            {subjectEntries.length > 0 && (
+              <Card title="By subject" subtitle="Weakest first" colors={colors}>
+                {subjectEntries
+                  .sort((a, b) => a[1].percentage - b[1].percentage)
+                  .map(([subject, stats]) => (
+                    <ProgressRow
+                      key={subject}
+                      label={subject}
+                      right={`${stats.obtainedMarks.toFixed(1)}/${stats.totalMarks}`}
+                      detail={`${stats.correct} correct · ${stats.wrong} wrong · ${stats.unattempted} skipped · ${stats.accuracy.toFixed(0)}% accuracy`}
+                      value={stats.percentage}
+                      tone={scoreTone(stats.percentage, colors)}
+                      colors={colors}
+                    />
                   ))}
-                </View>
-              )}
+              </Card>
+            )}
 
-              {/* Subject-wise */}
-              {Object.keys(subjectTopicAnalysis.subjects).filter((s) => s !== 'Unknown').length >
-                0 && (
-                <View
-                  style={[
-                    tw`rounded-2xl p-4 border`,
-                    { backgroundColor: colors.surface, borderColor: colors.border },
-                  ]}
-                >
-                  <Text style={[tw`text-sm font-bold mb-3`, { color: colors.text }]}>
-                    Subject-wise Performance
-                  </Text>
-                  {Object.entries(subjectTopicAnalysis.subjects)
-                    .filter(([s]) => s !== 'Unknown')
-                    .sort((a, b) => a[1].percentage - b[1].percentage)
-                    .map(([subject, stats]) => (
-                      <View key={subject} style={tw`mb-3`}>
-                        <View style={tw`flex-row justify-between mb-1`}>
-                          <Text style={[tw`text-sm font-semibold flex-1`, { color: colors.text }]}>
-                            {subject}
-                          </Text>
-                          <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>
-                            {stats.obtainedMarks.toFixed(1)}/{stats.totalMarks}
-                          </Text>
-                        </View>
-                        <Text style={[tw`text-[10px] mb-1.5`, { color: colors.textSecondary }]}>
-                          {stats.correct}C · {stats.wrong}W · {stats.unattempted}S · Acc{' '}
-                          {stats.accuracy.toFixed(1)}%
-                        </Text>
-                        <View
-                          style={[
-                            tw`h-2 rounded-full overflow-hidden`,
-                            { backgroundColor: colors.border },
-                          ]}
+            {topicEntries.length > 0 && (
+              <Card title="By topic" subtitle="Weakest first — practise the red ones" colors={colors}>
+                {topicEntries
+                  .sort((a, b) => a[1].percentage - b[1].percentage)
+                  .map(([topic, stats]) => (
+                    <View key={topic} style={tw`mb-3`}>
+                      <ProgressRow
+                        label={topic}
+                        right={`${stats.percentage.toFixed(0)}%`}
+                        detail={`${stats.correct}/${stats.total} correct · ${stats.accuracy.toFixed(0)}% accuracy`}
+                        value={stats.percentage}
+                        tone={scoreTone(stats.percentage, colors)}
+                        colors={colors}
+                        noMargin
+                      />
+                      {stats.accuracy < 60 && stats.total >= 3 && (
+                        <TouchableOpacity
+                          onPress={() => handleStartPracticeTopic(topic)}
+                          disabled={startingPracticeTopic === topic}
+                          style={[tw`self-start flex-row items-center px-3 py-1.5 rounded-lg mt-2`, { backgroundColor: colors.tones.orange.bg }]}
+                          activeOpacity={0.8}
                         >
-                          <View
-                            style={[
-                              tw`h-full rounded-full`,
-                              {
-                                width: `${Math.min(100, stats.percentage)}%`,
-                                backgroundColor:
-                                  stats.percentage >= 80
-                                    ? '#10b981'
-                                    : stats.percentage >= 60
-                                    ? '#f59e0b'
-                                    : '#ef4444',
-                              },
-                            ]}
-                          />
-                        </View>
-                      </View>
-                    ))}
-                </View>
-              )}
-
-              {/* Topic-wise */}
-              {Object.keys(subjectTopicAnalysis.topics).filter((t) => t !== 'Unknown').length >
-                0 && (
-                <View
-                  style={[
-                    tw`rounded-2xl p-4 border`,
-                    { backgroundColor: colors.surface, borderColor: colors.border },
-                  ]}
-                >
-                  <Text style={[tw`text-sm font-bold mb-3`, { color: colors.text }]}>
-                    Topic-wise Performance
-                  </Text>
-                  {Object.entries(subjectTopicAnalysis.topics)
-                    .filter(([t]) => t !== 'Unknown')
-                    .sort((a, b) => a[1].percentage - b[1].percentage)
-                    .map(([topic, stats]) => (
-                      <View key={topic} style={tw`mb-3`}>
-                        <View style={tw`flex-row justify-between mb-1`}>
-                          <Text style={[tw`text-sm font-semibold flex-1`, { color: colors.text }]}>
-                            {topic}
+                          <Ionicons name="flash" size={12} color={colors.tones.orange.fg} />
+                          <Text style={[tw`text-[11px] font-bold ml-1`, { color: colors.tones.orange.fg }]}>
+                            {startingPracticeTopic === topic ? 'Starting…' : 'Practise 15 questions'}
                           </Text>
-                          <Text style={[tw`text-xs font-bold`, { color: colors.text }]}>
-                            {stats.percentage.toFixed(1)}%
-                          </Text>
-                        </View>
-                        <Text style={[tw`text-[10px] mb-2`, { color: colors.textSecondary }]}>
-                          {stats.correct}/{stats.total} correct · Acc {stats.accuracy.toFixed(1)}%
-                        </Text>
-                        {stats.accuracy < 60 && stats.total >= 3 && (
-                          <TouchableOpacity
-                            onPress={() => handleStartPracticeTopic(topic)}
-                            disabled={startingPracticeTopic === topic}
-                            style={[
-                              tw`self-start flex-row items-center gap-1.5 px-3 py-1.5 rounded-lg`,
-                              { backgroundColor: colors.primary + '15' },
-                            ]}
-                            activeOpacity={0.7}
-                          >
-                            <Ionicons name="flash" size={12} color={colors.primary} />
-                            <Text style={[tw`text-[11px] font-bold`, { color: colors.primary }]}>
-                              {startingPracticeTopic === topic ? 'Starting…' : 'Start 15 Qs'}
-                            </Text>
-                          </TouchableOpacity>
-                        )}
-                      </View>
-                    ))}
-                </View>
-              )}
-
-              {/* Difficulty-wise */}
-              {Object.keys(difficultyAnalysis).length > 0 && (
-                <View
-                  style={[
-                    tw`rounded-2xl p-4 border`,
-                    { backgroundColor: colors.surface, borderColor: colors.border },
-                  ]}
-                >
-                  <Text style={[tw`text-sm font-bold mb-3`, { color: colors.text }]}>
-                    Difficulty-wise Performance
-                  </Text>
-                  {['Easy', 'Medium', 'Hard']
-                    .filter((d) => difficultyAnalysis[d])
-                    .concat(
-                      Object.keys(difficultyAnalysis).filter(
-                        (d) => !['Easy', 'Medium', 'Hard'].includes(d)
-                      )
-                    )
-                    .map((diff) => {
-                      const stats = difficultyAnalysis[diff];
-                      return (
-                        <View key={diff} style={tw`mb-3`}>
-                          <View style={tw`flex-row justify-between mb-1`}>
-                            <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>
-                              {diff}
-                            </Text>
-                            <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>
-                              {stats.accuracy.toFixed(1)}% acc
-                            </Text>
-                          </View>
-                          <Text style={[tw`text-[10px] mb-1.5`, { color: colors.textSecondary }]}>
-                            {stats.correct}C · {stats.wrong}W · {stats.unattempted}S · {stats.total}{' '}
-                            total
-                          </Text>
-                          <View
-                            style={[
-                              tw`h-2 rounded-full overflow-hidden`,
-                              { backgroundColor: colors.border },
-                            ]}
-                          >
-                            <View
-                              style={[
-                                tw`h-full rounded-full`,
-                                {
-                                  width: `${Math.min(100, stats.accuracy)}%`,
-                                  backgroundColor: colors.primary,
-                                },
-                              ]}
-                            />
-                          </View>
-                        </View>
-                      );
-                    })}
-                </View>
-              )}
-
-              {/* Time by difficulty */}
-              {timeAnalysis && Object.keys(timeAnalysis.timeByDifficulty || {}).length > 0 && (
-                <View
-                  style={[
-                    tw`rounded-2xl p-4 border`,
-                    { backgroundColor: colors.surface, borderColor: colors.border },
-                  ]}
-                >
-                  <Text style={[tw`text-sm font-bold mb-3`, { color: colors.text }]}>
-                    Time by Difficulty
-                  </Text>
-                  {Object.entries(timeAnalysis.timeByDifficulty).map(([diff, stats]) => (
-                    <View
-                      key={diff}
-                      style={[
-                        tw`flex-row justify-between items-center py-2`,
-                        { borderBottomWidth: 1, borderBottomColor: colors.border },
-                      ]}
-                    >
-                      <View style={tw`flex-1`}>
-                        <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>
-                          {diff}
-                        </Text>
-                        <Text style={[tw`text-[10px]`, { color: colors.textSecondary }]}>
-                          {stats.count} Q · {stats.correct}C / {stats.wrong}W
-                        </Text>
-                      </View>
-                      <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>
-                        avg {formatTime(Math.round(stats.avgTime))}
-                      </Text>
+                        </TouchableOpacity>
+                      )}
                     </View>
                   ))}
-                  {result.exam?.duration > 0 && timeAnalysis.totalTime > 0 && (
-                    <Text style={[tw`text-xs mt-3`, { color: colors.textSecondary }]}>
-                      Used {formatTime(timeAnalysis.totalTime)} of {result.exam.duration}m (
-                      {(
-                        (timeAnalysis.totalTime / (result.exam.duration * 60)) *
-                        100
-                      ).toFixed(0)}
-                      % of duration)
-                    </Text>
-                  )}
+              </Card>
+            )}
+
+            {Object.keys(difficultyAnalysis).length > 0 && (
+              <Card title="By difficulty" colors={colors}>
+                {['Easy', 'Medium', 'Hard']
+                  .filter((d) => difficultyAnalysis[d])
+                  .concat(Object.keys(difficultyAnalysis).filter((d) => !['Easy', 'Medium', 'Hard'].includes(d)))
+                  .map((diff) => {
+                    const stats = difficultyAnalysis[diff];
+                    const avgTime = timeAnalysis?.timeByDifficulty?.[diff]?.avgTime;
+                    return (
+                      <ProgressRow
+                        key={diff}
+                        label={diff}
+                        right={`${stats.accuracy.toFixed(0)}% accuracy`}
+                        detail={`${stats.correct} correct · ${stats.wrong} wrong · ${stats.unattempted} skipped${
+                          avgTime ? ` · ${formatTime(Math.round(avgTime))}/q` : ''
+                        }`}
+                        value={stats.accuracy}
+                        tone={scoreTone(stats.accuracy, colors)}
+                        colors={colors}
+                      />
+                    );
+                  })}
+                {result.exam?.duration > 0 && timeAnalysis?.totalTime > 0 && (
+                  <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>
+                    Used {formatTime(timeAnalysis.totalTime)} of {result.exam.duration}m (
+                    {((timeAnalysis.totalTime / (result.exam.duration * 60)) * 100).toFixed(0)}%)
+                  </Text>
+                )}
+              </Card>
+            )}
+
+            {!peerStats?.sampleSize &&
+              !sectionAnalysis?.length &&
+              subjectEntries.length === 0 &&
+              Object.keys(difficultyAnalysis).length === 0 &&
+              previousAttempts.length === 0 && (
+                <View style={tw`items-center py-10 px-6`}>
+                  <Ionicons name="analytics-outline" size={36} color={colors.textSecondary} />
+                  <Text style={[tw`text-sm mt-3 text-center`, { color: colors.textSecondary }]}>
+                    Detailed analytics appear when questions have subject, topic or difficulty tags.
+                  </Text>
                 </View>
               )}
-
-              {!peerStats?.sampleSize &&
-                !sectionAnalysis?.length &&
-                Object.keys(subjectTopicAnalysis.subjects).filter((s) => s !== 'Unknown').length ===
-                  0 &&
-                Object.keys(difficultyAnalysis).length === 0 &&
-                previousAttempts.length === 0 && (
-                  <View style={tw`items-center py-10`}>
-                    <Ionicons name="analytics-outline" size={36} color={colors.textSecondary} />
-                    <Text style={[tw`text-sm mt-3 text-center`, { color: colors.textSecondary }]}>
-                      Detailed analytics appear when questions have subject, topic, or difficulty
-                      tags.
-                    </Text>
-                  </View>
-                )}
-            </View>
-          )}
-        </ScrollView>
-      </View>
+          </View>
+        )}
+      </ScrollView>
     </ScreenWrapper>
   );
 }
 
-// ─── Header Component ────────────────────────────────────
-function Header({ title, navigation, colors, onShare, displayLanguage, onToggleLanguage }) {
+// ─── Building blocks ─────────────────────────────────────
+
+function Header({ title, navigation, colors, onShare }) {
   return (
-    <View
-      style={[
-        tw`flex-row items-center justify-between px-4 pt-4 pb-3 border-b`,
-        { borderColor: colors.border },
-      ]}
-    >
-      <TouchableOpacity onPress={() => navigation.goBack()} style={tw`p-2`}>
+    <View style={tw`flex-row items-center px-3 pt-2 pb-2`}>
+      <TouchableOpacity onPress={() => navigation.goBack()} style={tw`p-2`} accessibilityLabel="Back">
         <Ionicons name="arrow-back" size={22} color={colors.text} />
       </TouchableOpacity>
-      <Text
-        style={[tw`flex-1 text-base font-bold text-center mx-2`, { color: colors.text }]}
-        numberOfLines={1}
-      >
+      <Text style={[tw`flex-1 text-base font-bold text-center mx-2`, { color: colors.text }]} numberOfLines={1}>
         {title}
       </Text>
-      <View style={tw`flex-row items-center`}>
-        {onToggleLanguage && (
-          <TouchableOpacity
-            style={[tw`px-2 py-1 rounded-md mr-1`, { backgroundColor: colors.primary + '20' }]}
-            onPress={onToggleLanguage}
-            activeOpacity={0.7}
-          >
-            <Text style={[tw`text-sm font-bold`, { color: colors.primary }]}>
-              {displayLanguage === 'English' ? 'E' : 'अ'}
-            </Text>
-          </TouchableOpacity>
-        )}
-        {onShare ? (
-          <TouchableOpacity onPress={onShare} style={tw`p-2`}>
-            <Ionicons name="share-outline" size={20} color={colors.text} />
-          </TouchableOpacity>
-        ) : (
-          <View style={tw`w-10`} />
-        )}
+      {onShare ? (
+        <TouchableOpacity onPress={onShare} style={tw`p-2`} accessibilityLabel="Share result">
+          <Ionicons name="share-outline" size={21} color={colors.text} />
+        </TouchableOpacity>
+      ) : (
+        <View style={tw`w-10`} />
+      )}
+    </View>
+  );
+}
+
+function Card({ title, subtitle, colors, children }) {
+  return (
+    <View style={[tw`p-4 rounded-3xl`, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}>
+      <Text style={[tw`text-base font-extrabold`, { color: colors.text }]}>{title}</Text>
+      {subtitle ? <Text style={[tw`text-xs mt-0.5`, { color: colors.textSecondary }]}>{subtitle}</Text> : null}
+      <View style={tw`mt-3`}>{children}</View>
+    </View>
+  );
+}
+
+function BreakdownRow({ label, count, total, tone, colors, last }) {
+  const share = total > 0 ? (count / total) * 100 : 0;
+  return (
+    <View style={tw`${last ? '' : 'mb-3'}`}>
+      <View style={tw`flex-row items-center justify-between mb-1.5`}>
+        <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>{label}</Text>
+        <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>
+          {count} <Text style={[tw`font-normal`, { color: colors.textSecondary }]}>· {share.toFixed(0)}%</Text>
+        </Text>
+      </View>
+      <View style={[tw`h-2 rounded-full overflow-hidden`, { backgroundColor: colors.surfaceMuted }]}>
+        <View style={[tw`h-full rounded-full`, { width: `${share}%`, backgroundColor: tone.fg }]} />
       </View>
     </View>
   );
 }
 
+function ProgressRow({ label, right, detail, value, tone, colors, noMargin }) {
+  return (
+    <View style={tw`${noMargin ? '' : 'mb-3'}`}>
+      <View style={tw`flex-row justify-between items-center mb-1`}>
+        <Text style={[tw`text-sm font-bold flex-1 pr-2`, { color: colors.text }]} numberOfLines={1}>
+          {label}
+        </Text>
+        <Text style={[tw`text-xs font-bold`, { color: colors.text }]}>{right}</Text>
+      </View>
+      <Text style={[tw`text-[11px] mb-1.5`, { color: colors.textSecondary }]}>{detail}</Text>
+      <View style={[tw`h-1.5 rounded-full overflow-hidden`, { backgroundColor: colors.surfaceMuted }]}>
+        <View style={[tw`h-full rounded-full`, { width: `${Math.max(0, Math.min(100, value))}%`, backgroundColor: tone.fg }]} />
+      </View>
+    </View>
+  );
+}
 
+function PeerGrid({ title, cells, footnote, colors, last }) {
+  return (
+    <View style={tw`${last ? '' : 'mb-4'}`}>
+      <Text style={[tw`text-xs font-bold mb-2`, { color: colors.textSecondary }]}>{title.toUpperCase()}</Text>
+      <View style={tw`flex-row gap-2`}>
+        {cells.map((cell) => (
+          <View
+            key={cell.label}
+            style={[
+              tw`flex-1 py-2.5 rounded-xl items-center`,
+              { backgroundColor: cell.highlight ? colors.hero : colors.surfaceMuted },
+            ]}
+          >
+            <Text style={[tw`text-sm font-extrabold`, { color: cell.highlight ? colors.heroText : colors.text }]}>
+              {cell.value}
+            </Text>
+            <Text style={[tw`text-[10px] mt-0.5`, { color: cell.highlight ? colors.heroMuted : colors.textSecondary }]}>
+              {cell.label}
+            </Text>
+          </View>
+        ))}
+      </View>
+      {footnote ? <Text style={[tw`text-xs mt-2`, { color: colors.textSecondary }]}>{footnote}</Text> : null}
+    </View>
+  );
+}
 
+function ChipRow({ children }) {
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={tw`mb-3 -mx-5`} contentContainerStyle={tw`px-5 gap-2`}>
+      {children}
+    </ScrollView>
+  );
+}
 
-// import React, { useState, useEffect } from 'react';
-// import {
-//   View,
-//   Text,
-//   StyleSheet,
-//   ScrollView,
-//   TouchableOpacity,
-//   ActivityIndicator,
-//   RefreshControl,
-//   Alert,
-//   Platform,
-// } from 'react-native';
-// import ScreenWrapper from '../components/ScreenWrapper';
-// import { useTheme } from '../context/ThemeContext';
-// import { Ionicons } from '@expo/vector-icons';
-// import { CommonActions } from '@react-navigation/native';
-// import api from '../services/api';
-// import { formatDate } from '../utils/helpers';
+function Chip({ label, on, onPress, colors }) {
+  return (
+    <TouchableOpacity
+      style={[
+        tw`px-3.5 py-2 rounded-full`,
+        on
+          ? { backgroundColor: colors.hero }
+          : { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
+      ]}
+      onPress={onPress}
+      activeOpacity={0.8}
+    >
+      <Text style={[tw`text-xs font-bold`, { color: on ? colors.heroText : colors.textSecondary }]}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
 
-// export default function ResultScreen({ route, navigation }) {
-//   const { attemptId } = route.params;
-//   const { colors } = useTheme();
-//   const [result, setResult] = useState(null);
-//   const [loading, setLoading] = useState(true);
-//   const [refreshing, setRefreshing] = useState(false);
-//   const [activeTab, setActiveTab] = useState('questions'); // 'questions' or 'analytics'
-//   const [attemptStatus, setAttemptStatus] = useState(null);
-//   const [starting, setStarting] = useState(false);
+function QuestionCard({ answer, index, colors, displayLanguage, isSaved, onToggleSave }) {
+  const [expanded, setExpanded] = useState(false);
+  const question = answer.question;
+  if (!question) return null;
 
-//   const styles = createStyles(colors);
+  const questionText = getLocalizedQuestionText(question, displayLanguage);
+  const questionOptions = getLocalizedQuestionOptions(question, displayLanguage);
+  const explanation = getLocalizedExplanation(question, displayLanguage);
+  const questionId = question._id?.toString?.() || question._id;
 
-//   useEffect(() => {
-//     fetchResult();
-//   }, [attemptId]);
+  const isCorrect = answer.isCorrect;
+  const isSkipped = !answer.selectedAnswer;
+  const userAnswer = answer.selectedAnswer;
+  const correctAnswer = question.correctAnswer;
+  const status = isSkipped
+    ? { tone: { fg: colors.textSecondary, bg: colors.surfaceMuted }, icon: 'remove-circle', label: 'Skipped' }
+    : isCorrect
+      ? { tone: colors.tones.green, icon: 'checkmark-circle', label: 'Correct' }
+      : { tone: colors.tones.red, icon: 'close-circle', label: 'Wrong' };
 
-//   const fetchResult = async () => {
-//     try {
-//       setLoading(true);
-//       const response = await api.get(`/exams/result/${attemptId}`);
-//       setResult(response.data.result);
+  return (
+    <TouchableOpacity
+      style={[tw`rounded-3xl mb-2.5 overflow-hidden`, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}
+      onPress={() => setExpanded(!expanded)}
+      activeOpacity={0.85}
+    >
+      <View style={tw`flex-row items-center p-3.5`}>
+        <View style={[tw`w-9 h-9 rounded-full items-center justify-center mr-3`, { backgroundColor: status.tone.bg }]}>
+          <Text style={[tw`text-xs font-bold`, { color: status.tone.fg }]}>{index + 1}</Text>
+        </View>
+        <View style={tw`flex-1 mr-2`}>
+          <Text style={[tw`text-sm leading-5`, { color: colors.text }]} numberOfLines={expanded ? 0 : 1}>
+            {questionText}
+          </Text>
+          <Text style={[tw`text-[11px] mt-0.5`, { color: status.tone.fg }]}>
+            {status.label}
+            {answer.timeSpent > 0 ? <Text style={{ color: colors.textSecondary }}> · {formatTime(answer.timeSpent)}</Text> : null}
+          </Text>
+        </View>
+        {questionId && onToggleSave && (
+          <TouchableOpacity
+            onPress={(e) => {
+              e?.stopPropagation?.();
+              onToggleSave(questionId);
+            }}
+            hitSlop={8}
+            style={tw`p-1 mr-1`}
+            accessibilityLabel={isSaved ? 'Remove from saved' : 'Save question'}
+          >
+            <Ionicons name={isSaved ? 'bookmark' : 'bookmark-outline'} size={18} color={isSaved ? colors.text : colors.textSecondary} />
+          </TouchableOpacity>
+        )}
+        <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={16} color={colors.textSecondary} />
+      </View>
 
-//       // Also fetch attempt status to check if retry is available
-//       if (response.data.result?.exam?._id) {
-//         try {
-//           const examResponse = await api.get(`/exams/${response.data.result.exam._id}`);
-//           if (examResponse.data.attemptStatus) {
-//             setAttemptStatus(examResponse.data.attemptStatus);
-//           }
-//         } catch (err) {
-//           // Ignore - we just won't show retry option
-//         }
-//       }
-//     } catch (error) {
-//       console.error('Failed to fetch result:', error);
-//     } finally {
-//       setLoading(false);
-//       setRefreshing(false);
-//     }
-//   };
+      {expanded && (
+        <View style={[tw`px-3.5 pb-4`, { borderTopWidth: 1, borderTopColor: colors.border }]}>
+          {question.questionImage ? (
+            <Image
+              source={{ uri: question.questionImage }}
+              style={[tw`w-full h-40 rounded-xl mt-3`, { backgroundColor: colors.surfaceMuted }]}
+              resizeMode="contain"
+            />
+          ) : null}
 
-//   const handleRetryExam = async () => {
-//     if (!result?.exam?._id) return;
+          <View style={tw`gap-2 mt-3`}>
+            {questionOptions?.map((option, i) => {
+              const isCorrectOpt = option.optionLabel === correctAnswer;
+              const isUserWrong = option.optionLabel === userAnswer && !isCorrect;
+              const tone = isCorrectOpt ? colors.tones.green : isUserWrong ? colors.tones.red : null;
+              return (
+                <View
+                  key={i}
+                  style={[
+                    tw`flex-row items-center p-3 rounded-2xl`,
+                    tone
+                      ? { backgroundColor: tone.bg, borderWidth: 1, borderColor: tone.fg }
+                      : { backgroundColor: colors.surfaceMuted },
+                  ]}
+                >
+                  <Text style={[tw`text-xs font-bold w-6`, { color: tone ? tone.fg : colors.textSecondary }]}>
+                    {option.optionLabel}
+                  </Text>
+                  <Text style={[tw`flex-1 text-sm`, { color: colors.text, fontWeight: tone ? '600' : '400' }]}>
+                    {option.optionText}
+                  </Text>
+                  {isCorrectOpt && <Ionicons name="checkmark" size={16} color={colors.tones.green.fg} />}
+                  {isUserWrong && <Ionicons name="close" size={16} color={colors.tones.red.fg} />}
+                </View>
+              );
+            })}
+          </View>
 
-//     try {
-//       setStarting(true);
-//       const response = await api.post(`/exams/${result.exam._id}/start`);
-//       const attemptData = response.data.attempt;
+          <View style={tw`flex-row gap-2 mt-3`}>
+            {[
+              { label: 'Your answer', value: userAnswer || 'Skipped', color: status.tone.fg },
+              { label: 'Correct', value: correctAnswer, color: colors.tones.green.fg },
+              { label: 'Marks', value: `${answer.marksObtained || 0}/${question.marks || 1}`, color: colors.text },
+            ].map((cell) => (
+              <View key={cell.label} style={[tw`flex-1 p-2.5 rounded-xl`, { backgroundColor: colors.surfaceMuted }]}>
+                <Text style={[tw`text-[10px]`, { color: colors.textSecondary }]}>{cell.label}</Text>
+                <Text style={[tw`text-sm font-bold mt-0.5`, { color: cell.color }]}>{cell.value}</Text>
+              </View>
+            ))}
+          </View>
 
-//       const params = {
-//         examId: result.exam._id,
-//         attemptId: attemptData._id,
-//         exam: response.data.exam,
-//         attempt: attemptData,
-//       };
-
-//       // Use CommonActions to navigate to ExamsStack -> ExamInterface
-//       // This works regardless of which stack we're currently in
-//       navigation.dispatch(
-//         CommonActions.navigate({
-//           name: 'ExamsStack',
-//           params: {
-//             screen: 'ExamInterface',
-//             params,
-//           },
-//         })
-//       );
-//     } catch (error) {
-//       console.error('Failed to start exam:', error);
-//       Alert.alert('Error', error.response?.data?.message || 'Failed to start exam');
-//     } finally {
-//       setStarting(false);
-//     }
-//   };
-
-//   const onRefresh = () => {
-//     setRefreshing(true);
-//     fetchResult();
-//   };
-
-//   const formatTime = (seconds) => {
-//     if (!seconds || seconds === 0) return '0s';
-//     const mins = Math.floor(seconds / 60);
-//     const secs = seconds % 60;
-//     if (mins === 0) return `${secs}s`;
-//     if (secs === 0) return `${mins}m`;
-//     return `${mins}m ${secs}s`;
-//   };
-
-//   const getScoreColor = (percentage) => {
-//     if (percentage >= 80) return '#10b981';
-//     if (percentage >= 60) return '#f59e0b';
-//     return '#ef4444';
-//   };
-
-//   if (loading && !result) {
-//     return (
-//       <ScreenWrapper>
-//         <View style={styles.container}>
-//           <View style={styles.header}>
-//             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-//               <Ionicons name="arrow-back" size={24} color={colors.text} />
-//             </TouchableOpacity>
-//             <Text style={styles.headerTitle}>Result</Text>
-//             <View style={{ width: 24 }} />
-//           </View>
-//           <View style={styles.loadingContainer}>
-//             <ActivityIndicator size="large" color={colors.primary} />
-//           </View>
-//         </View>
-//       </ScreenWrapper>
-//     );
-//   }
-
-//   if (!result) {
-//     return (
-//       <ScreenWrapper>
-//         <View style={styles.container}>
-//           <View style={styles.header}>
-//             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-//               <Ionicons name="arrow-back" size={24} color={colors.text} />
-//             </TouchableOpacity>
-//             <Text style={styles.headerTitle}>Result</Text>
-//             <View style={{ width: 24 }} />
-//           </View>
-//           <View style={styles.emptyContainer}>
-//             <Text style={styles.emptyText}>Result not found</Text>
-//           </View>
-//         </View>
-//       </ScreenWrapper>
-//     );
-//   }
-
-//   const percentage = result.percentage || 0;
-//   const scoreColor = getScoreColor(percentage);
-//   const correctQuestions = result.answers?.filter((a) => a.isCorrect) || [];
-//   const wrongQuestions = result.answers?.filter((a) => !a.isCorrect && a.selectedAnswer) || [];
-//   const unattemptedQuestions = result.answers?.filter((a) => !a.selectedAnswer) || [];
-
-//   return (
-//     <ScreenWrapper>
-//       <View style={styles.container}>
-//         <View style={styles.header}>
-//           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-//             <Ionicons name="arrow-back" size={24} color={colors.text} />
-//           </TouchableOpacity>
-//           <Text style={styles.headerTitle} numberOfLines={1}>
-//             {result.exam?.title || 'Exam Result'}
-//           </Text>
-//           <View style={{ width: 24 }} />
-//         </View>
-
-//         <ScrollView
-//           style={styles.scrollView}
-//           contentContainerStyle={styles.scrollContent}
-//           refreshControl={
-//             <RefreshControl
-//               refreshing={refreshing}
-//               onRefresh={onRefresh}
-//               tintColor={colors.primary}
-//             />
-//           }
-//           showsVerticalScrollIndicator={false}
-//         >
-//           {/* Score Summary Card */}
-//           <View style={styles.scoreCard}>
-//             <View style={styles.scoreHeader}>
-//               <Text style={styles.scoreTitle}>Your Score</Text>
-//               <Text style={styles.attemptNumber}>Attempt #{result.attemptNumber || 1}</Text>
-//             </View>
-
-//             <View style={styles.scoreMain}>
-//               <View style={styles.scoreCircle}>
-//                 <Text style={[styles.scorePercentage, { color: scoreColor }]}>
-//                   {percentage.toFixed(1)}%
-//                 </Text>
-//               </View>
-//               <View style={styles.scoreDetails}>
-//                 <Text style={styles.scoreValue}>
-//                   {result.totalScore} / {result.exam?.totalMarks || result.totalScore}
-//                 </Text>
-//                 <Text style={styles.scoreLabel}>Total Marks</Text>
-//               </View>
-//             </View>
-
-//             <View style={styles.scoreStats}>
-//               <View style={styles.statBox}>
-//                 <Ionicons name="checkmark-circle" size={24} color="#10b981" />
-//                 <Text style={styles.statValue}>{result.correctAnswers || 0}</Text>
-//                 <Text style={styles.statLabel}>Correct</Text>
-//               </View>
-//               <View style={styles.statBox}>
-//                 <Ionicons name="close-circle" size={24} color="#ef4444" />
-//                 <Text style={styles.statValue}>{result.incorrectAnswers || 0}</Text>
-//                 <Text style={styles.statLabel}>Wrong</Text>
-//               </View>
-//               <View style={styles.statBox}>
-//                 <Ionicons name="remove-circle" size={24} color={colors.textSecondary} />
-//                 <Text style={styles.statValue}>{result.unattempted || 0}</Text>
-//                 <Text style={styles.statLabel}>Unattempted</Text>
-//               </View>
-//             </View>
-
-//             <View style={styles.timeInfo}>
-//               <Ionicons name="time-outline" size={16} color={colors.textSecondary} />
-//               <Text style={styles.timeText}>
-//                 Time Taken: {formatTime(result.timeTaken || 0)}
-//               </Text>
-//               {result.endTime && (
-//                 <>
-//                   <Text style={styles.timeSeparator}>•</Text>
-//                   <Text style={styles.timeText}>
-//                     {formatDate(result.endTime)}
-//                   </Text>
-//                 </>
-//               )}
-//             </View>
-
-//             {/* Attempt Info & Retry Button */}
-//             {attemptStatus && (
-//               <View style={styles.attemptInfoSection}>
-//                 <View style={styles.attemptInfoRow}>
-//                   <Text style={styles.attemptInfoLabel}>Attempts:</Text>
-//                   <Text style={styles.attemptInfoValue}>
-//                     {attemptStatus.attemptCount} / {attemptStatus.maxAttempts || '∞'}
-//                   </Text>
-//                   {attemptStatus.attemptsRemaining > 0 && (
-//                     <Text style={styles.attemptsRemainingText}>
-//                       ({attemptStatus.attemptsRemaining} remaining)
-//                     </Text>
-//                   )}
-//                 </View>
-//                 {attemptStatus.canReattempt && (
-//                   <TouchableOpacity
-//                     style={styles.retryButton}
-//                     onPress={handleRetryExam}
-//                     disabled={starting}
-//                     activeOpacity={0.7}
-//                   >
-//                     <Ionicons name="refresh-outline" size={20} color="#FFFFFF" />
-//                     <Text style={styles.retryButtonText}>
-//                       {starting ? 'Starting...' : 'Retry Exam'}
-//                     </Text>
-//                   </TouchableOpacity>
-//                 )}
-//                 {!attemptStatus.canReattempt && attemptStatus.maxAttempts && (
-//                   <Text style={styles.noAttemptsText}>
-//                     No more attempts remaining
-//                   </Text>
-//                 )}
-//               </View>
-//             )}
-//           </View>
-
-//           {/* Tab Selector */}
-//           <View style={styles.tabContainer}>
-//             <TouchableOpacity
-//               style={[styles.tab, activeTab === 'questions' && styles.tabActive]}
-//               onPress={() => setActiveTab('questions')}
-//               activeOpacity={0.7}
-//             >
-//               <Text
-//                 style={[styles.tabText, activeTab === 'questions' && styles.tabTextActive]}
-//               >
-//                 Questions
-//               </Text>
-//             </TouchableOpacity>
-//             <TouchableOpacity
-//               style={[styles.tab, activeTab === 'analytics' && styles.tabActive]}
-//               onPress={() => setActiveTab('analytics')}
-//               activeOpacity={0.7}
-//             >
-//               <Text
-//                 style={[styles.tabText, activeTab === 'analytics' && styles.tabTextActive]}
-//               >
-//                 Analytics
-//               </Text>
-//             </TouchableOpacity>
-//           </View>
-
-//           {/* Questions Tab */}
-//           {activeTab === 'questions' && (
-//             <View style={styles.questionsContainer}>
-//               {result.answers?.map((answer, index) => {
-//                 const question = answer.question;
-//                 if (!question) return null;
-
-//                 const isCorrect = answer.isCorrect;
-//                 const userAnswer = answer.selectedAnswer;
-//                 const correctAnswer = question.correctAnswer;
-
-//                 return (
-//                   <View
-//                     key={index}
-//                     style={[
-//                       styles.questionCard,
-//                       isCorrect ? styles.questionCardCorrect : styles.questionCardWrong,
-//                     ]}
-//                   >
-//                     <View style={styles.questionHeader}>
-//                       <View style={styles.questionHeaderLeft}>
-//                         <Text style={styles.questionNumber}>Q{index + 1}</Text>
-//                         {isCorrect ? (
-//                           <Ionicons name="checkmark-circle" size={20} color="#10b981" />
-//                         ) : (
-//                           <Ionicons name="close-circle" size={20} color="#ef4444" />
-//                         )}
-//                       </View>
-//                       <View style={styles.questionMarks}>
-//                         <Text style={styles.marksText}>
-//                           Marks: {answer.marksObtained || 0} /{' '}
-//                           {question.marks || 1}
-//                         </Text>
-//                         {answer.timeSpent > 0 && (
-//                           <Text style={styles.timeSpentText}>
-//                             Time: {formatTime(answer.timeSpent)}
-//                           </Text>
-//                         )}
-//                       </View>
-//                     </View>
-
-//                     {question.questionImage && (
-//                       <View style={styles.questionImageContainer}>
-//                         <Text style={styles.imagePlaceholder}>[Question Image]</Text>
-//                       </View>
-//                     )}
-
-//                     <Text style={styles.questionText}>{question.questionText}</Text>
-
-//                     <View style={styles.optionsContainer}>
-//                       {question.options?.map((option, optIndex) => {
-//                         const isCorrectOption = option.optionLabel === correctAnswer;
-//                         const isUserAnswer = option.optionLabel === userAnswer;
-
-//                         let optionStyle = styles.option;
-//                         if (isCorrectOption) {
-//                           optionStyle = styles.optionCorrect;
-//                         } else if (isUserAnswer && !isCorrect) {
-//                           optionStyle = styles.optionWrong;
-//                         }
-
-//                         return (
-//                           <View key={optIndex} style={optionStyle}>
-//                             <Text style={styles.optionLabel}>{option.optionLabel}.</Text>
-//                             <Text style={styles.optionText}>{option.optionText}</Text>
-//                             {isCorrectOption && (
-//                               <Ionicons name="checkmark" size={16} color="#10b981" />
-//                             )}
-//                             {isUserAnswer && !isCorrect && (
-//                               <Ionicons name="close" size={16} color="#ef4444" />
-//                             )}
-//                           </View>
-//                         );
-//                       })}
-//                     </View>
-
-//                     <View style={styles.answerSummary}>
-//                       <View style={styles.answerRow}>
-//                         <Text style={styles.answerLabel}>Your Answer:</Text>
-//                         <Text
-//                           style={[
-//                             styles.answerValue,
-//                             isCorrect ? styles.answerValueCorrect : styles.answerValueWrong,
-//                           ]}
-//                         >
-//                           {userAnswer || 'Not Attempted'}
-//                         </Text>
-//                       </View>
-//                       <View style={styles.answerRow}>
-//                         <Text style={styles.answerLabel}>Correct Answer:</Text>
-//                         <Text style={[styles.answerValue, styles.answerValueCorrect]}>
-//                           {correctAnswer}
-//                         </Text>
-//                       </View>
-//                     </View>
-
-//                     {question.explanation && (
-//                       <View style={styles.explanationContainer}>
-//                         <Text style={styles.explanationTitle}>Explanation:</Text>
-//                         <Text style={styles.explanationText}>{question.explanation}</Text>
-//                       </View>
-//                     )}
-//                   </View>
-//                 );
-//               })}
-//             </View>
-//           )}
-
-//           {/* Analytics Tab */}
-//           {activeTab === 'analytics' && (
-//             <View style={styles.analyticsContainer}>
-//               {/* Performance Breakdown */}
-//               <View style={styles.analyticsCard}>
-//                 <Text style={styles.analyticsTitle}>Performance Breakdown</Text>
-//                 <View style={styles.breakdownGrid}>
-//                   <View style={styles.breakdownItem}>
-//                     <View style={styles.breakdownBarContainer}>
-//                       <View
-//                         style={[
-//                           styles.breakdownBar,
-//                           {
-//                             width: `${(correctQuestions.length / (result.answers?.length || 1)) * 100}%`,
-//                             backgroundColor: '#10b981',
-//                           },
-//                         ]}
-//                       />
-//                     </View>
-//                     <View style={styles.breakdownInfo}>
-//                       <Ionicons name="checkmark-circle" size={20} color="#10b981" />
-//                       <View style={styles.breakdownTextContainer}>
-//                         <Text style={styles.breakdownLabel}>Correct</Text>
-//                         <Text style={styles.breakdownValue}>
-//                           {correctQuestions.length} ({((correctQuestions.length / (result.answers?.length || 1)) * 100).toFixed(1)}%)
-//                         </Text>
-//                       </View>
-//                     </View>
-//                   </View>
-//                   <View style={styles.breakdownItem}>
-//                     <View style={styles.breakdownBarContainer}>
-//                       <View
-//                         style={[
-//                           styles.breakdownBar,
-//                           {
-//                             width: `${(wrongQuestions.length / (result.answers?.length || 1)) * 100}%`,
-//                             backgroundColor: '#ef4444',
-//                           },
-//                         ]}
-//                       />
-//                     </View>
-//                     <View style={styles.breakdownInfo}>
-//                       <Ionicons name="close-circle" size={20} color="#ef4444" />
-//                       <View style={styles.breakdownTextContainer}>
-//                         <Text style={styles.breakdownLabel}>Wrong</Text>
-//                         <Text style={styles.breakdownValue}>
-//                           {wrongQuestions.length} ({((wrongQuestions.length / (result.answers?.length || 1)) * 100).toFixed(1)}%)
-//                         </Text>
-//                       </View>
-//                     </View>
-//                   </View>
-//                   <View style={styles.breakdownItem}>
-//                     <View style={styles.breakdownBarContainer}>
-//                       <View
-//                         style={[
-//                           styles.breakdownBar,
-//                           {
-//                             width: `${(unattemptedQuestions.length / (result.answers?.length || 1)) * 100}%`,
-//                             backgroundColor: colors.textSecondary,
-//                           },
-//                         ]}
-//                       />
-//                     </View>
-//                     <View style={styles.breakdownInfo}>
-//                       <Ionicons name="remove-circle" size={20} color={colors.textSecondary} />
-//                       <View style={styles.breakdownTextContainer}>
-//                         <Text style={styles.breakdownLabel}>Unattempted</Text>
-//                         <Text style={styles.breakdownValue}>
-//                           {unattemptedQuestions.length} ({((unattemptedQuestions.length / (result.answers?.length || 1)) * 100).toFixed(1)}%)
-//                         </Text>
-//                       </View>
-//                     </View>
-//                   </View>
-//                 </View>
-//               </View>
-
-//               {/* Time Analysis */}
-//               {result.timeTaken > 0 && (
-//                 <View style={styles.analyticsCard}>
-//                   <Text style={styles.analyticsTitle}>Time Analysis</Text>
-//                   <View style={styles.timeAnalysisRow}>
-//                     <View style={styles.timeAnalysisItem}>
-//                       <Text style={styles.timeAnalysisLabel}>Total Time</Text>
-//                       <Text style={styles.timeAnalysisValue}>
-//                         {formatTime(result.timeTaken)}
-//                       </Text>
-//                     </View>
-//                     <View style={styles.timeAnalysisItem}>
-//                       <Text style={styles.timeAnalysisLabel}>Avg per Question</Text>
-//                       <Text style={styles.timeAnalysisValue}>
-//                         {formatTime(
-//                           Math.floor(result.timeTaken / (result.answers?.length || 1))
-//                         )}
-//                       </Text>
-//                     </View>
-//                   </View>
-//                 </View>
-//               )}
-
-//               {/* Exam Info */}
-//               <View style={styles.analyticsCard}>
-//                 <Text style={styles.analyticsTitle}>Exam Information</Text>
-//                 <View style={styles.infoList}>
-//                   <View style={styles.infoItem}>
-//                     <Ionicons name="document-text-outline" size={16} color={colors.textSecondary} />
-//                     <Text style={styles.infoItemText}>
-//                       Total Questions: {result.answers?.length || 0}
-//                     </Text>
-//                   </View>
-//                   <View style={styles.infoItem}>
-//                     <Ionicons name="trophy-outline" size={16} color={colors.textSecondary} />
-//                     <Text style={styles.infoItemText}>
-//                       Total Marks: {result.exam?.totalMarks || 0}
-//                     </Text>
-//                   </View>
-//                   {result.exam?.duration && (
-//                     <View style={styles.infoItem}>
-//                       <Ionicons name="time-outline" size={16} color={colors.textSecondary} />
-//                       <Text style={styles.infoItemText}>
-//                         Duration: {result.exam.duration} minutes
-//                       </Text>
-//                     </View>
-//                   )}
-//                   {result.exam?.category && (
-//                     <View style={styles.infoItem}>
-//                       <Ionicons name="folder-outline" size={16} color={colors.textSecondary} />
-//                       <Text style={styles.infoItemText}>
-//                         Category: {result.exam.category?.name || result.exam.category}
-//                       </Text>
-//                     </View>
-//                   )}
-//                 </View>
-//               </View>
-//             </View>
-//           )}
-//         </ScrollView>
-//       </View>
-//     </ScreenWrapper>
-//   );
-// }
-
-// const createStyles = (colors) =>
-//   StyleSheet.create({
-//     container: {
-//       flex: 1,
-//       backgroundColor: colors.background,
-//     },
-//     header: {
-//       flexDirection: 'row',
-//       alignItems: 'center',
-//       justifyContent: 'space-between',
-//       paddingHorizontal: 20,
-//       paddingTop: 20,
-//       paddingBottom: 16,
-//       borderBottomWidth: 1,
-//       borderBottomColor: colors.border,
-//     },
-//     backButton: {
-//       padding: 8,
-//     },
-//     headerTitle: {
-//       fontSize: 20,
-//       fontWeight: 'bold',
-//       color: colors.text,
-//       flex: 1,
-//       textAlign: 'center',
-//     },
-//     scrollView: {
-//       flex: 1,
-//     },
-//     scrollContent: {
-//       padding: 20,
-//       paddingBottom: 40,
-//     },
-//     loadingContainer: {
-//       flex: 1,
-//       justifyContent: 'center',
-//       alignItems: 'center',
-//     },
-//     emptyContainer: {
-//       flex: 1,
-//       justifyContent: 'center',
-//       alignItems: 'center',
-//       paddingVertical: 60,
-//     },
-//     emptyText: {
-//       fontSize: 16,
-//       color: colors.textSecondary,
-//     },
-//     scoreCard: {
-//       backgroundColor: colors.surface,
-//       borderRadius: 20,
-//       padding: 24,
-//       marginBottom: 20,
-//       borderWidth: 1,
-//       borderColor: colors.border,
-//     },
-//     scoreHeader: {
-//       flexDirection: 'row',
-//       justifyContent: 'space-between',
-//       alignItems: 'center',
-//       marginBottom: 20,
-//     },
-//     scoreTitle: {
-//       fontSize: 22,
-//       fontWeight: 'bold',
-//       color: colors.text,
-//     },
-//     attemptNumber: {
-//       fontSize: 14,
-//       color: colors.textSecondary,
-//       fontWeight: '600',
-//     },
-//     scoreMain: {
-//       flexDirection: 'row',
-//       alignItems: 'center',
-//       justifyContent: 'center',
-//       marginBottom: 24,
-//       gap: 24,
-//     },
-//     scoreCircle: {
-//       width: 100,
-//       height: 100,
-//       borderRadius: 50,
-//       backgroundColor: colors.background,
-//       justifyContent: 'center',
-//       alignItems: 'center',
-//       borderWidth: 4,
-//       borderColor: colors.primary,
-//     },
-//     scorePercentage: {
-//       fontSize: 28,
-//       fontWeight: 'bold',
-//     },
-//     scoreDetails: {
-//       alignItems: 'center',
-//     },
-//     scoreValue: {
-//       fontSize: 24,
-//       fontWeight: 'bold',
-//       color: colors.text,
-//       marginBottom: 4,
-//     },
-//     scoreLabel: {
-//       fontSize: 14,
-//       color: colors.textSecondary,
-//     },
-//     scoreStats: {
-//       flexDirection: 'row',
-//       justifyContent: 'space-around',
-//       marginBottom: 20,
-//       paddingTop: 20,
-//       borderTopWidth: 1,
-//       borderTopColor: colors.border,
-//     },
-//     statBox: {
-//       alignItems: 'center',
-//       gap: 8,
-//     },
-//     statValue: {
-//       fontSize: 20,
-//       fontWeight: 'bold',
-//       color: colors.text,
-//     },
-//     statLabel: {
-//       fontSize: 12,
-//       color: colors.textSecondary,
-//     },
-//     timeInfo: {
-//       flexDirection: 'row',
-//       alignItems: 'center',
-//       justifyContent: 'center',
-//       gap: 8,
-//       paddingTop: 16,
-//       borderTopWidth: 1,
-//       borderTopColor: colors.border,
-//     },
-//     timeText: {
-//       fontSize: 12,
-//       color: colors.textSecondary,
-//     },
-//     timeSeparator: {
-//       fontSize: 12,
-//       color: colors.textSecondary,
-//     },
-//     attemptInfoSection: {
-//       marginTop: 16,
-//       paddingTop: 16,
-//       borderTopWidth: 1,
-//       borderTopColor: colors.border,
-//       alignItems: 'center',
-//     },
-//     attemptInfoRow: {
-//       flexDirection: 'row',
-//       alignItems: 'center',
-//       gap: 8,
-//       marginBottom: 12,
-//     },
-//     attemptInfoLabel: {
-//       fontSize: 14,
-//       color: colors.textSecondary,
-//     },
-//     attemptInfoValue: {
-//       fontSize: 14,
-//       fontWeight: '600',
-//       color: colors.text,
-//     },
-//     attemptsRemainingText: {
-//       fontSize: 13,
-//       color: '#10b981',
-//       fontWeight: '500',
-//     },
-//     retryButton: {
-//       flexDirection: 'row',
-//       alignItems: 'center',
-//       justifyContent: 'center',
-//       backgroundColor: colors.primary,
-//       paddingVertical: 12,
-//       paddingHorizontal: 24,
-//       borderRadius: 10,
-//       gap: 8,
-//     },
-//     retryButtonText: {
-//       fontSize: 16,
-//       fontWeight: '600',
-//       color: '#FFFFFF',
-//     },
-//     noAttemptsText: {
-//       fontSize: 14,
-//       color: colors.textSecondary,
-//       fontStyle: 'italic',
-//     },
-//     tabContainer: {
-//       flexDirection: 'row',
-//       backgroundColor: colors.surface,
-//       borderRadius: 12,
-//       padding: 4,
-//       marginBottom: 20,
-//       borderWidth: 1,
-//       borderColor: colors.border,
-//     },
-//     tab: {
-//       flex: 1,
-//       paddingVertical: 12,
-//       borderRadius: 8,
-//       alignItems: 'center',
-//     },
-//     tabActive: {
-//       backgroundColor: colors.primary,
-//     },
-//     tabText: {
-//       fontSize: 14,
-//       fontWeight: '600',
-//       color: colors.textSecondary,
-//     },
-//     tabTextActive: {
-//       color: '#FFFFFF',
-//     },
-//     questionsContainer: {
-//       gap: 16,
-//     },
-//     questionCard: {
-//       backgroundColor: colors.surface,
-//       borderRadius: 16,
-//       padding: 20,
-//       borderWidth: 2,
-//     },
-//     questionCardCorrect: {
-//       borderColor: '#10b981',
-//       backgroundColor: '#10b981' + '10',
-//     },
-//     questionCardWrong: {
-//       borderColor: '#ef4444',
-//       backgroundColor: '#ef4444' + '10',
-//     },
-//     questionHeader: {
-//       flexDirection: 'row',
-//       justifyContent: 'space-between',
-//       alignItems: 'flex-start',
-//       marginBottom: 16,
-//     },
-//     questionHeaderLeft: {
-//       flexDirection: 'row',
-//       alignItems: 'center',
-//       gap: 8,
-//     },
-//     questionNumber: {
-//       fontSize: 18,
-//       fontWeight: 'bold',
-//       color: colors.text,
-//     },
-//     questionMarks: {
-//       alignItems: 'flex-end',
-//     },
-//     marksText: {
-//       fontSize: 12,
-//       fontWeight: '600',
-//       color: colors.text,
-//     },
-//     timeSpentText: {
-//       fontSize: 11,
-//       color: colors.textSecondary,
-//       marginTop: 2,
-//     },
-//     questionImageContainer: {
-//       marginBottom: 16,
-//       borderRadius: 12,
-//       overflow: 'hidden',
-//     },
-//     imagePlaceholder: {
-//       padding: 40,
-//       textAlign: 'center',
-//       color: colors.textSecondary,
-//       backgroundColor: colors.background,
-//     },
-//     questionText: {
-//       fontSize: 16,
-//       color: colors.text,
-//       lineHeight: 24,
-//       marginBottom: 16,
-//     },
-//     optionsContainer: {
-//       gap: 12,
-//       marginBottom: 16,
-//     },
-//     option: {
-//       flexDirection: 'row',
-//       alignItems: 'center',
-//       padding: 12,
-//       borderRadius: 12,
-//       backgroundColor: colors.background,
-//       borderWidth: 1,
-//       borderColor: colors.border,
-//       gap: 12,
-//     },
-//     optionCorrect: {
-//       backgroundColor: '#10b981' + '20',
-//       borderColor: '#10b981',
-//     },
-//     optionWrong: {
-//       backgroundColor: '#ef4444' + '20',
-//       borderColor: '#ef4444',
-//     },
-//     optionLabel: {
-//       fontSize: 14,
-//       fontWeight: 'bold',
-//       color: colors.text,
-//       minWidth: 24,
-//     },
-//     optionText: {
-//       flex: 1,
-//       fontSize: 14,
-//       color: colors.text,
-//     },
-//     answerSummary: {
-//       backgroundColor: colors.background,
-//       borderRadius: 12,
-//       padding: 16,
-//       marginBottom: 16,
-//       gap: 12,
-//     },
-//     answerRow: {
-//       flexDirection: 'row',
-//       justifyContent: 'space-between',
-//       alignItems: 'center',
-//     },
-//     answerLabel: {
-//       fontSize: 14,
-//       fontWeight: '600',
-//       color: colors.textSecondary,
-//     },
-//     answerValue: {
-//       fontSize: 14,
-//       fontWeight: 'bold',
-//     },
-//     answerValueCorrect: {
-//       color: '#10b981',
-//     },
-//     answerValueWrong: {
-//       color: '#ef4444',
-//     },
-//     explanationContainer: {
-//       backgroundColor: colors.primary + '15',
-//       borderRadius: 12,
-//       padding: 16,
-//       borderLeftWidth: 4,
-//       borderLeftColor: colors.primary,
-//     },
-//     explanationTitle: {
-//       fontSize: 14,
-//       fontWeight: 'bold',
-//       color: colors.text,
-//       marginBottom: 8,
-//     },
-//     explanationText: {
-//       fontSize: 14,
-//       color: colors.text,
-//       lineHeight: 20,
-//     },
-//     analyticsContainer: {
-//       gap: 16,
-//     },
-//     analyticsCard: {
-//       backgroundColor: colors.surface,
-//       borderRadius: 16,
-//       padding: 20,
-//       borderWidth: 1,
-//       borderColor: colors.border,
-//     },
-//     analyticsTitle: {
-//       fontSize: 18,
-//       fontWeight: 'bold',
-//       color: colors.text,
-//       marginBottom: 16,
-//     },
-//     breakdownGrid: {
-//       gap: 16,
-//     },
-//     breakdownItem: {
-//       gap: 8,
-//     },
-//     breakdownBar: {
-//       height: 8,
-//       borderRadius: 4,
-//     },
-//     breakdownLabel: {
-//       fontSize: 14,
-//       color: colors.text,
-//       fontWeight: '600',
-//     },
-//     breakdownValue: {
-//       fontSize: 14,
-//       color: colors.textSecondary,
-//     },
-//     timeAnalysisRow: {
-//       flexDirection: 'row',
-//       justifyContent: 'space-around',
-//       gap: 16,
-//     },
-//     timeAnalysisItem: {
-//       alignItems: 'center',
-//       gap: 8,
-//     },
-//     timeAnalysisLabel: {
-//       fontSize: 12,
-//       color: colors.textSecondary,
-//     },
-//     timeAnalysisValue: {
-//       fontSize: 18,
-//       fontWeight: 'bold',
-//       color: colors.text,
-//     },
-//     infoList: {
-//       gap: 12,
-//     },
-//     infoItem: {
-//       flexDirection: 'row',
-//       alignItems: 'center',
-//       gap: 12,
-//     },
-//     infoItemText: {
-//       fontSize: 14,
-//       color: colors.text,
-//     },
-//   });
-
-
+          {explanation ? (
+            <View style={[tw`flex-row p-3 rounded-2xl mt-3`, { backgroundColor: colors.tones.blue.bg }]}>
+              <Ionicons name="bulb-outline" size={16} color={colors.tones.blue.fg} />
+              <View style={tw`flex-1 ml-2`}>
+                <Text style={[tw`text-xs font-bold mb-1`, { color: colors.tones.blue.fg }]}>Explanation</Text>
+                <Text style={[tw`text-xs leading-5`, { color: colors.text }]}>{explanation}</Text>
+              </View>
+            </View>
+          ) : null}
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+}
