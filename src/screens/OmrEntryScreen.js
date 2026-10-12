@@ -25,7 +25,7 @@ function AnswerCell({ index, selected, onSelect, colors }) {
     <View
       style={[
         tw`flex-row items-center py-2 px-3 mb-2 rounded-xl border`,
-        { backgroundColor: colors.surface, borderColor: colors.border },
+        { backgroundColor: colors.card, borderColor: colors.border },
       ]}
     >
       <Text style={[tw`w-8 text-sm font-bold`, { color: colors.text }]}>Q{index + 1}</Text>
@@ -252,7 +252,7 @@ export default function OmrEntryScreen({ route, navigation }) {
                   key={questionKeys[idx]}
                   style={[
                     tw`mb-4 p-4 rounded-2xl border`,
-                    { backgroundColor: colors.surface, borderColor: colors.border },
+                    { backgroundColor: colors.card, borderColor: colors.border },
                   ]}
                 >
                   <Text style={[tw`text-sm font-bold mb-2`, { color: colors.text }]}>
@@ -275,7 +275,7 @@ export default function OmrEntryScreen({ route, navigation }) {
         <View
           style={[
             tw`absolute bottom-0 left-0 right-0 px-4 py-4 border-t`,
-            { backgroundColor: colors.surface, borderTopColor: colors.border },
+            { backgroundColor: colors.card, borderTopColor: colors.border },
           ]}
         >
           <TouchableOpacity

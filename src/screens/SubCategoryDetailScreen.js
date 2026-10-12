@@ -260,7 +260,7 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
                 source={{ uri: subCategory.logo }}
                 style={[
                   tw`w-14 h-14 rounded-2xl mr-3.5`,
-                  { backgroundColor: colors.surface },
+                  { backgroundColor: colors.card },
                 ]}
                 resizeMode="cover"
               />
@@ -268,7 +268,7 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
               <View
                 style={[
                   tw`w-14 h-14 rounded-2xl items-center justify-center mr-3.5`,
-                  { backgroundColor: colors.surfaceMuted },
+                  { backgroundColor: colors.cardMuted },
                 ]}
               >
                 <Ionicons name="layers" size={24} color={colors.text} />
@@ -304,7 +304,7 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
                 <View
                   style={[
                     tw`self-start px-2 py-0.5 rounded-md mt-2`,
-                    { backgroundColor: colors.surfaceMuted },
+                    { backgroundColor: colors.cardMuted },
                   ]}
                 >
                   <Text style={[tw`text-[10px] font-semibold`, { color: colors.text }]}>
@@ -331,8 +331,8 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
                   style={[
                     tw`px-4 py-2.5 rounded-xl border`,
                     !selectedTierId
-                      ? { backgroundColor: colors.surfaceMuted, borderColor: colors.hero }
-                      : { backgroundColor: colors.surface, borderColor: colors.border },
+                      ? { backgroundColor: colors.cardMuted, borderColor: colors.hero }
+                      : { backgroundColor: colors.card, borderColor: colors.border },
                   ]}
                   onPress={() => setSelectedTierId(null)}
                   activeOpacity={0.7}
@@ -355,8 +355,8 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
                       style={[
                         tw`flex-row items-center px-4 py-2.5 rounded-xl border gap-2`,
                         isSelected
-                          ? { backgroundColor: colors.surfaceMuted, borderColor: colors.hero }
-                          : { backgroundColor: colors.surface, borderColor: colors.border },
+                          ? { backgroundColor: colors.cardMuted, borderColor: colors.hero }
+                          : { backgroundColor: colors.card, borderColor: colors.border },
                       ]}
                       onPress={() => handleTierSelect(tier._id)}
                       activeOpacity={0.7}
@@ -394,7 +394,7 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
           <View
             style={[
               tw`flex-row items-center rounded-xl px-3.5 py-2.5 mb-4 border gap-2`,
-              { backgroundColor: colors.surface, borderColor: colors.border },
+              { backgroundColor: colors.card, borderColor: colors.border },
             ]}
           >
             <Ionicons name="search" size={18} color={colors.textSecondary} />
@@ -466,7 +466,7 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
                       style={[
                         tw`flex-row items-center py-2 px-3.5 rounded-xl border gap-1`,
                         {
-                          backgroundColor: colors.surface,
+                          backgroundColor: colors.card,
                           borderColor: colors.border,
                           opacity: pagination.currentPage === 1 ? 0.4 : 1,
                         },
@@ -505,7 +505,7 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
                       style={[
                         tw`flex-row items-center py-2 px-3.5 rounded-xl border gap-1`,
                         {
-                          backgroundColor: colors.surface,
+                          backgroundColor: colors.card,
                           borderColor: colors.border,
                           opacity:
                             pagination.currentPage === pagination.totalPages ? 0.4 : 1,
@@ -562,7 +562,7 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
                 <View
                   style={[
                     tw`w-14 h-14 rounded-full items-center justify-center mb-3`,
-                    { backgroundColor: colors.surfaceMuted },
+                    { backgroundColor: colors.cardMuted },
                   ]}
                 >
                   <Ionicons name="document-outline" size={24} color={colors.text} />
@@ -589,7 +589,7 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
               <View
                 style={[
                   tw`w-16 h-16 rounded-full items-center justify-center mb-4`,
-                  { backgroundColor: colors.surfaceMuted },
+                  { backgroundColor: colors.cardMuted },
                 ]}
               >
                 <Ionicons name="folder-open-outline" size={32} color={colors.text} />

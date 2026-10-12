@@ -277,7 +277,7 @@ const makeStyles = (colors) =>
     review: { backgroundColor: colors.card, borderRadius: 12, borderWidth: 1, borderColor: colors.border, padding: 12, marginBottom: 10 },
     reviewHead: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 },
     avatar: { width: 32, height: 32, borderRadius: 16 },
-    avatarFallback: { backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
+    avatarFallback: { backgroundColor: colors.cardMuted, alignItems: 'center', justifyContent: 'center' },
     avatarText: { color: colors.text, fontWeight: '700', fontSize: 13 },
     reviewName: { fontSize: 13, fontWeight: '700', color: colors.text },
     reviewTitle: { fontSize: 13, fontWeight: '600', color: colors.text, marginBottom: 2 },

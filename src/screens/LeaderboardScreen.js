@@ -151,7 +151,7 @@ const makeStyles = (colors) =>
     pos: { fontSize: 15, fontWeight: '700', color: colors.textSecondary },
     avatar: { width: 40, height: 40, borderRadius: 20, marginHorizontal: 10 },
     avatarFallback: {
-      backgroundColor: colors.surfaceMuted,
+      backgroundColor: colors.cardMuted,
       alignItems: 'center',
       justifyContent: 'center',
     },

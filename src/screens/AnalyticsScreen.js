@@ -384,7 +384,7 @@ const createStyles = (colors) =>
       paddingVertical: 8,
       paddingHorizontal: 16,
       borderRadius: 20,
-      backgroundColor: colors.surface,
+      backgroundColor: colors.card,
       borderWidth: 1,
       borderColor: colors.border,
     },
@@ -438,7 +438,7 @@ const createStyles = (colors) =>
     statCard: {
       flex: 1,
       minWidth: '47%',
-      backgroundColor: colors.surface,
+      backgroundColor: colors.card,
       borderRadius: 16,
       padding: 16,
       borderWidth: 1,
@@ -498,7 +498,7 @@ const createStyles = (colors) =>
       fontWeight: '700',
     },
     subjectCard: {
-      backgroundColor: colors.surface,
+      backgroundColor: colors.card,
       borderRadius: 12,
       padding: 16,
       marginBottom: 12,
@@ -530,7 +530,7 @@ const createStyles = (colors) =>
       color: colors.textSecondary,
     },
     attemptCard: {
-      backgroundColor: colors.surface,
+      backgroundColor: colors.card,
       borderRadius: 12,
       padding: 16,
       marginBottom: 12,
@@ -571,7 +571,7 @@ const createStyles = (colors) =>
     insightCard: {
       flexDirection: 'row',
       alignItems: 'flex-start',
-      backgroundColor: colors.surface,
+      backgroundColor: colors.card,
       borderRadius: 12,
       padding: 16,
       marginBottom: 12,

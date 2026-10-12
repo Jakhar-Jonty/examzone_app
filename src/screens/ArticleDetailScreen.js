@@ -249,7 +249,7 @@ const createStyles = (colors) =>
     thumbnail: {
       width: '100%',
       height: 200,
-      backgroundColor: colors.surface,
+      backgroundColor: colors.card,
     },
     articleInfo: {
       padding: 20,
@@ -267,7 +267,7 @@ const createStyles = (colors) =>
       paddingHorizontal: 12,
       paddingVertical: 6,
       borderRadius: 16,
-      backgroundColor: colors.surfaceMuted,
+      backgroundColor: colors.cardMuted,
     },
     categoryText: {
       fontSize: 12,
@@ -301,7 +301,7 @@ const createStyles = (colors) =>
       paddingHorizontal: 10,
       paddingVertical: 4,
       borderRadius: 12,
-      backgroundColor: colors.surface,
+      backgroundColor: colors.card,
     },
     subjectText: {
       fontSize: 12,
@@ -339,13 +339,13 @@ const createStyles = (colors) =>
       paddingVertical: 12,
       paddingHorizontal: 16,
       borderRadius: 12,
-      backgroundColor: colors.surfaceMuted,
+      backgroundColor: colors.cardMuted,
       borderWidth: 1,
       borderColor: colors.hero,
       gap: 8,
     },
     downloadButtonSecondary: {
-      backgroundColor: colors.surface,
+      backgroundColor: colors.card,
       borderColor: colors.border,
     },
     downloadButtonText: {

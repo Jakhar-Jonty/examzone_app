@@ -119,7 +119,7 @@ export default function CategoriesScreen({ navigation }) {
               <View
                 style={[
                   tw`w-16 h-16 rounded-full items-center justify-center mb-4`,
-                  { backgroundColor: colors.surfaceMuted },
+                  { backgroundColor: colors.cardMuted },
                 ]}
               >
                 <Ionicons name="folder-open-outline" size={32} color={colors.text} />
@@ -139,7 +139,7 @@ export default function CategoriesScreen({ navigation }) {
                   key={category._id}
                   style={[
                     tw`flex-row items-center p-3.5 rounded-2xl border`,
-                    { backgroundColor: colors.surface, borderColor: colors.border },
+                    { backgroundColor: colors.card, borderColor: colors.border },
                   ]}
                   onPress={() =>
                     navigation.navigate('CategoryDetail', { categoryId: category._id })
@@ -160,7 +160,7 @@ export default function CategoriesScreen({ navigation }) {
                     <View
                       style={[
                         tw`w-13 h-13 rounded-2xl items-center justify-center mr-3.5`,
-                        { backgroundColor: colors.surfaceMuted },
+                        { backgroundColor: colors.cardMuted },
                       ]}
                     >
                       <Ionicons name="book-outline" size={24} color={colors.text} />

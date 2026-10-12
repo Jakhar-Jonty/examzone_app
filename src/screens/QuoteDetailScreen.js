@@ -149,7 +149,7 @@ export default function QuoteDetailScreen({ route, navigation }) {
             <View
               style={[
                 tw`rounded-2xl p-4 border mb-6`,
-                { backgroundColor: colors.surface, borderColor: colors.border },
+                { backgroundColor: colors.card, borderColor: colors.border },
               ]}
             >
               {quote.category && (
@@ -160,7 +160,7 @@ export default function QuoteDetailScreen({ route, navigation }) {
                   <View
                     style={[
                       tw`px-3 py-1 rounded-full`,
-                      { backgroundColor: colors.surfaceMuted },
+                      { backgroundColor: colors.cardMuted },
                     ]}
                   >
                     <Text style={[tw`text-xs font-semibold capitalize`, { color: colors.text }]}>
@@ -207,7 +207,7 @@ export default function QuoteDetailScreen({ route, navigation }) {
           <TouchableOpacity
             style={[
               tw`flex-row items-center justify-center py-3.5 rounded-2xl gap-2 border`,
-              { borderColor: colors.border, backgroundColor: colors.surface },
+              { borderColor: colors.border, backgroundColor: colors.card },
             ]}
             onPress={handleShare}
             activeOpacity={0.7}

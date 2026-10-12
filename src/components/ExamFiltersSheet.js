@@ -223,7 +223,7 @@ export default function ExamFiltersSheet({
             <TouchableOpacity
               style={[
                 tw`flex-1 py-3.5 rounded-xl items-center border`,
-                { borderColor: colors.border, backgroundColor: colors.surface },
+                { borderColor: colors.border, backgroundColor: colors.card },
               ]}
               onPress={handleReset}
               activeOpacity={0.75}
@@ -262,7 +262,7 @@ export function ActiveFilterPills({ items, onRemove, onClearAll, colors }) {
           activeOpacity={0.75}
           style={[
             tw`flex-row items-center px-3 py-1.5 rounded-full gap-1`,
-            { backgroundColor: colors.surfaceMuted },
+            { backgroundColor: colors.cardMuted },
           ]}
           accessibilityLabel={`Remove filter ${label}`}
         >

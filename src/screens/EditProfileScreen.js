@@ -342,7 +342,7 @@ export default function EditProfileScreen({ navigation }) {
           <TouchableOpacity
             onPress={handleSave}
             disabled={loading}
-            style={[tw`px-3 py-1.5 rounded-lg`, { backgroundColor: colors.surfaceMuted }]}
+            style={[tw`px-3 py-1.5 rounded-lg`, { backgroundColor: colors.cardMuted }]}
           >
             {loading ? (
               <ActivityIndicator size="small" color={colors.text} />
@@ -373,7 +373,7 @@ export default function EditProfileScreen({ navigation }) {
                 <View
                   style={[
                     tw`w-24 h-24 rounded-full items-center justify-center border-2 overflow-hidden`,
-                    { borderColor: colors.hero, backgroundColor: colors.surface },
+                    { borderColor: colors.hero, backgroundColor: colors.card },
                   ]}
                 >
                   {imageUri ? (
@@ -408,7 +408,7 @@ export default function EditProfileScreen({ navigation }) {
             <View
               style={[
                 tw`rounded-2xl p-4 border`,
-                { backgroundColor: colors.surface, borderColor: colors.border },
+                { backgroundColor: colors.card, borderColor: colors.border },
               ]}
             >
               <InputField
@@ -493,7 +493,7 @@ export default function EditProfileScreen({ navigation }) {
             <View
               style={[
                 tw`rounded-2xl p-4 border`,
-                { backgroundColor: colors.surface, borderColor: colors.border },
+                { backgroundColor: colors.card, borderColor: colors.border },
               ]}
             >
               <ChipSelect
@@ -509,7 +509,7 @@ export default function EditProfileScreen({ navigation }) {
             <View
               style={[
                 tw`rounded-2xl p-4 border`,
-                { backgroundColor: colors.surface, borderColor: colors.border },
+                { backgroundColor: colors.card, borderColor: colors.border },
               ]}
             >
               {/* State Dropdown */}
@@ -546,7 +546,7 @@ export default function EditProfileScreen({ navigation }) {
                   <View
                     style={[
                       tw`mt-1 rounded-xl border overflow-hidden`,
-                      { backgroundColor: colors.surface, borderColor: colors.border },
+                      { backgroundColor: colors.card, borderColor: colors.border },
                     ]}
                   >
                     <ScrollView style={tw`max-h-44`} nestedScrollEnabled>
@@ -556,7 +556,7 @@ export default function EditProfileScreen({ navigation }) {
                           style={[
                             tw`px-3.5 py-2.5 border-b`,
                             { borderColor: colors.border + '60' },
-                            state === s && { backgroundColor: colors.surfaceMuted },
+                            state === s && { backgroundColor: colors.cardMuted },
                           ]}
                           onPress={() => {
                             setState(s);
@@ -595,7 +595,7 @@ export default function EditProfileScreen({ navigation }) {
             <View
               style={[
                 tw`rounded-2xl p-4 border`,
-                { backgroundColor: colors.surface, borderColor: colors.border },
+                { backgroundColor: colors.card, borderColor: colors.border },
               ]}
             >
               {categoriesLoading ? (
@@ -616,7 +616,7 @@ export default function EditProfileScreen({ navigation }) {
             <View
               style={[
                 tw`rounded-2xl p-4 border`,
-                { backgroundColor: colors.surface, borderColor: colors.border },
+                { backgroundColor: colors.card, borderColor: colors.border },
               ]}
             >
               <ChipSelect
@@ -632,7 +632,7 @@ export default function EditProfileScreen({ navigation }) {
             <View
               style={[
                 tw`rounded-2xl p-4 border`,
-                { backgroundColor: colors.surface, borderColor: colors.border },
+                { backgroundColor: colors.card, borderColor: colors.border },
               ]}
             >
               {/* Daily Goal */}

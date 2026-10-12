@@ -134,7 +134,7 @@ export default function ProfileScreen({ navigation }) {
             <View
               style={[
                 tw`w-24 h-24 rounded-full items-center justify-center border-2`,
-                { borderColor: colors.hero, backgroundColor: colors.surface },
+                { borderColor: colors.hero, backgroundColor: colors.card },
               ]}
             >
               {user?.profileImage ? (
@@ -187,7 +187,7 @@ export default function ProfileScreen({ navigation }) {
           <View
             style={[
               tw`flex-row rounded-2xl p-1 border`,
-              { backgroundColor: colors.surface, borderColor: colors.border },
+              { backgroundColor: colors.card, borderColor: colors.border },
             ]}
           >
             {THEME_OPTIONS.map(({ key, icon, label }) => {
@@ -197,7 +197,7 @@ export default function ProfileScreen({ navigation }) {
                   key={key}
                   style={[
                     tw`flex-1 flex-row items-center justify-center py-2.5 rounded-xl gap-1.5`,
-                    isActive && { backgroundColor: colors.surfaceMuted },
+                    isActive && { backgroundColor: colors.cardMuted },
                   ]}
                   onPress={() => toggleTheme(key)}
                   activeOpacity={0.7}
@@ -235,7 +235,7 @@ export default function ProfileScreen({ navigation }) {
             <View
               style={[
                 tw`rounded-2xl overflow-hidden border`,
-                { backgroundColor: colors.surface, borderColor: colors.border },
+                { backgroundColor: colors.card, borderColor: colors.border },
               ]}
             >
               {section.items.map((item, index) => (
@@ -254,7 +254,7 @@ export default function ProfileScreen({ navigation }) {
                   <View
                     style={[
                       tw`w-8 h-8 rounded-xl items-center justify-center mr-3`,
-                      { backgroundColor: colors.surfaceMuted },
+                      { backgroundColor: colors.cardMuted },
                     ]}
                   >
                     <Ionicons name={item.icon} size={18} color={colors.text} />
@@ -292,7 +292,7 @@ export default function ProfileScreen({ navigation }) {
           <View
             style={[
               tw`flex-row items-center justify-between px-4 py-3.5 rounded-2xl border`,
-              { backgroundColor: colors.surface, borderColor: colors.border },
+              { backgroundColor: colors.card, borderColor: colors.border },
             ]}
           >
             <Text style={[tw`text-sm font-medium`, { color: colors.text }]}>Version</Text>
@@ -305,7 +305,7 @@ export default function ProfileScreen({ navigation }) {
           <TouchableOpacity
             style={[
               tw`flex-row items-center justify-center py-3.5 rounded-2xl border`,
-              { borderColor: colors.error + '30', backgroundColor: colors.error + '08' },
+              { borderColor: colors.tones.red.fg, backgroundColor: colors.tones.red.bg },
             ]}
             onPress={handleLogout}
             activeOpacity={0.7}

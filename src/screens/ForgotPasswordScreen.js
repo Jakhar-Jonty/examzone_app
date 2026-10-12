@@ -188,7 +188,7 @@ const createStyles = (colors) =>
     input: {
       borderWidth: 1,
       borderColor: colors.border,
-      backgroundColor: colors.surface,
+      backgroundColor: colors.card,
       borderRadius: 14,
       paddingHorizontal: 14,
       paddingVertical: 12,

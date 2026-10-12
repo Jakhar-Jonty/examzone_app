@@ -130,7 +130,7 @@ export default function WordOfDayDetailScreen({ route, navigation }) {
             <View
               style={[
                 tw`w-16 h-16 rounded-full items-center justify-center mb-4`,
-                { backgroundColor: colors.surfaceMuted },
+                { backgroundColor: colors.cardMuted },
               ]}
             >
               <Ionicons name="book-outline" size={32} color={colors.text} />
@@ -185,7 +185,7 @@ export default function WordOfDayDetailScreen({ route, navigation }) {
               <TouchableOpacity
                 style={[
                   tw`w-11 h-11 rounded-full items-center justify-center`,
-                  { backgroundColor: colors.surfaceMuted },
+                  { backgroundColor: colors.cardMuted },
                 ]}
                 onPress={speakWord}
                 activeOpacity={0.7}
@@ -208,7 +208,7 @@ export default function WordOfDayDetailScreen({ route, navigation }) {
               <View
                 style={[
                   tw`mt-2 px-3 py-1 rounded-full`,
-                  { backgroundColor: colors.surfaceMuted },
+                  { backgroundColor: colors.cardMuted },
                 ]}
               >
                 <Text style={[tw`text-xs font-semibold italic`, { color: colors.text }]}>
@@ -223,7 +223,7 @@ export default function WordOfDayDetailScreen({ route, navigation }) {
             <View
               style={[
                 tw`p-4 rounded-2xl border`,
-                { backgroundColor: colors.surface, borderColor: colors.border },
+                { backgroundColor: colors.card, borderColor: colors.border },
               ]}
             >
               <Text style={[tw`text-base leading-6`, { color: colors.text }]}>
@@ -238,7 +238,7 @@ export default function WordOfDayDetailScreen({ route, navigation }) {
               <View
                 style={[
                   tw`p-4 rounded-2xl border-l-4`,
-                  { backgroundColor: colors.surfaceMuted, borderLeftColor: colors.hero },
+                  { backgroundColor: colors.cardMuted, borderLeftColor: colors.hero },
                 ]}
               >
                 <Text style={[tw`text-sm leading-5 italic`, { color: colors.text }]}>
@@ -264,7 +264,7 @@ export default function WordOfDayDetailScreen({ route, navigation }) {
                   <View
                     style={[
                       tw`p-3 rounded-2xl border`,
-                      { backgroundColor: colors.surface, borderColor: colors.border },
+                      { backgroundColor: colors.card, borderColor: colors.border },
                     ]}
                   >
                     <View style={tw`flex-row flex-wrap gap-1.5`}>
@@ -297,7 +297,7 @@ export default function WordOfDayDetailScreen({ route, navigation }) {
                   <View
                     style={[
                       tw`p-3 rounded-2xl border`,
-                      { backgroundColor: colors.surface, borderColor: colors.border },
+                      { backgroundColor: colors.card, borderColor: colors.border },
                     ]}
                   >
                     <View style={tw`flex-row flex-wrap gap-1.5`}>
@@ -325,7 +325,7 @@ export default function WordOfDayDetailScreen({ route, navigation }) {
               <View
                 style={[
                   tw`p-4 rounded-2xl border`,
-                  { backgroundColor: colors.surface, borderColor: colors.border },
+                  { backgroundColor: colors.card, borderColor: colors.border },
                 ]}
               >
                 <Text style={[tw`text-sm leading-5`, { color: colors.text }]}>
@@ -341,7 +341,7 @@ export default function WordOfDayDetailScreen({ route, navigation }) {
               <View
                 style={[
                   tw`p-4 rounded-2xl border`,
-                  { backgroundColor: colors.surface, borderColor: colors.border },
+                  { backgroundColor: colors.card, borderColor: colors.border },
                 ]}
               >
                 <View style={tw`flex-row items-start gap-2.5`}>

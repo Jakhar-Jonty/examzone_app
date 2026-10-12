@@ -137,7 +137,7 @@ export default function ExamHistoryScreen({ navigation }) {
       <TouchableOpacity
         style={[
           tw`flex-row items-center p-3.5 rounded-2xl border mb-2.5`,
-          { backgroundColor: colors.surface, borderColor: colors.border },
+          { backgroundColor: colors.card, borderColor: colors.border },
         ]}
         onPress={() => navigation.navigate('Result', { attemptId: attempt._id })}
         activeOpacity={0.7}
@@ -225,7 +225,7 @@ export default function ExamHistoryScreen({ navigation }) {
           <View
             style={[
               tw`flex-row items-center rounded-xl px-3.5 py-2.5 border gap-2`,
-              { backgroundColor: colors.surface, borderColor: colors.border },
+              { backgroundColor: colors.card, borderColor: colors.border },
             ]}
           >
             <Ionicons name="search" size={18} color={colors.textSecondary} />
@@ -277,7 +277,7 @@ export default function ExamHistoryScreen({ navigation }) {
             <View
               style={[
                 tw`w-16 h-16 rounded-full items-center justify-center mb-4`,
-                { backgroundColor: colors.surfaceMuted },
+                { backgroundColor: colors.cardMuted },
               ]}
             >
               <Ionicons name="document-text-outline" size={32} color={colors.text} />

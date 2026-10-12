@@ -65,7 +65,7 @@ export default function OnboardingScreen({ route }) {
           </Text>
           <View style={tw`flex-row flex-wrap gap-3 mb-8`}>
             {FEATURES.map((f) => (
-              <View key={f.label} style={[tw`flex-row items-center gap-3 p-3 rounded-2xl`, { width: '47%', backgroundColor: colors.surface }]}>
+              <View key={f.label} style={[tw`flex-row items-center gap-3 p-3 rounded-2xl`, { width: '47%', backgroundColor: colors.card }]}>
                 <Text style={{ fontSize: 24 }}>{f.icon}</Text>
                 <View style={tw`flex-1`}>
                   <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>{f.label}</Text>

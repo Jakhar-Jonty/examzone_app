@@ -226,7 +226,7 @@ const makeStyles = (colors) =>
     statsRow: { flexDirection: 'row', gap: 10, marginTop: 16 },
     stat: {
       flex: 1,
-      backgroundColor: colors.surface,
+      backgroundColor: colors.card,
       borderRadius: 12,
       padding: 12,
       alignItems: 'center',
@@ -262,7 +262,7 @@ const makeStyles = (colors) =>
       width: 30,
       height: 30,
       borderRadius: 15,
-      backgroundColor: colors.surfaceMuted,
+      backgroundColor: colors.cardMuted,
       alignItems: 'center',
       justifyContent: 'center',
       marginRight: 12,

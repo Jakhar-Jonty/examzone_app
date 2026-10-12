@@ -129,7 +129,7 @@ const makeStyles = (colors) =>
     topRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     title: { flex: 1, fontSize: 15, fontWeight: '700', color: colors.text },
     doneTag: {
-      backgroundColor: colors.success + '22',
+      backgroundColor: colors.tones.green.bg,
       paddingHorizontal: 8,
       paddingVertical: 2,
       borderRadius: 6,

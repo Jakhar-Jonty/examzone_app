@@ -15,6 +15,7 @@ import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
+import { getRefLabel } from '../utils/examDisplay';
 
 export default function QuestionDetailScreen({ route, navigation }) {
   const { questionId, savedQuestionId } = route.params;
@@ -151,16 +152,17 @@ export default function QuestionDetailScreen({ route, navigation }) {
     );
   }
 
-  const getStatusColor = (status) => {
+  // Status → { fg, bg } theme tone (matches the Wrong Book tags).
+  const getStatusTone = (status) => {
     switch (status) {
       case 'mastered':
-        return colors.success;
+        return colors.tones.green;
       case 'reviewed':
-        return colors.tones.blue.fg;
+        return colors.tones.blue;
       case 'needs-review':
-        return colors.tones.orange.fg;
+        return colors.tones.orange;
       default:
-        return colors.textSecondary;
+        return { fg: colors.textSecondary, bg: colors.surfaceMuted };
     }
   };
 
@@ -193,9 +195,9 @@ export default function QuestionDetailScreen({ route, navigation }) {
           {/* Question Meta */}
           <View style={styles.metaSection}>
             <View style={styles.metaRow}>
-              {question.category && (
+              {getRefLabel(question.category) && (
                 <View style={styles.metaBadge}>
-                  <Text style={styles.metaText}>{question.category}</Text>
+                  <Text style={styles.metaText}>{getRefLabel(question.category)}</Text>
                 </View>
               )}
               {question.subject && (
@@ -220,8 +222,8 @@ export default function QuestionDetailScreen({ route, navigation }) {
               </View>
             )}
             {savedQuestion && (
-              <View style={[styles.statusBadge, { backgroundColor: getStatusColor(status) + '20' }]}>
-                <Text style={[styles.statusText, { color: getStatusColor(status) }]}>
+              <View style={[styles.statusBadge, { backgroundColor: getStatusTone(status).bg }]}>
+                <Text style={[styles.statusText, { color: getStatusTone(status).fg }]}>
                   {status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                 </Text>
               </View>
@@ -316,14 +318,14 @@ export default function QuestionDetailScreen({ route, navigation }) {
                           key={s}
                           style={[
                             styles.statusOption,
-                            status === s && { backgroundColor: getStatusColor(s) + '20', borderColor: getStatusColor(s) },
+                            status === s && { backgroundColor: getStatusTone(s).bg, borderColor: getStatusTone(s).fg },
                           ]}
                           onPress={() => setStatus(s)}
                           activeOpacity={0.7}
                         >
                           <Text style={[
                             styles.statusOptionText,
-                            status === s && { color: getStatusColor(s) },
+                            status === s && { color: getStatusTone(s).fg },
                           ]}>
                             {s.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                           </Text>
@@ -457,7 +459,7 @@ const createStyles = (colors) =>
       paddingHorizontal: 12,
       paddingVertical: 6,
       borderRadius: 16,
-      backgroundColor: colors.surface,
+      backgroundColor: colors.card,
     },
     metaText: {
       fontSize: 12,
@@ -491,7 +493,7 @@ const createStyles = (colors) =>
       height: 200,
       borderRadius: 12,
       marginBottom: 20,
-      backgroundColor: colors.surface,
+      backgroundColor: colors.card,
     },
     questionSection: {
       marginBottom: 24,
@@ -516,14 +518,14 @@ const createStyles = (colors) =>
       alignItems: 'flex-start',
       padding: 16,
       borderRadius: 12,
-      backgroundColor: colors.surface,
+      backgroundColor: colors.card,
       marginBottom: 12,
       borderWidth: 1,
       borderColor: colors.border,
     },
     correctOption: {
-      backgroundColor: colors.success + '20',
-      borderColor: colors.success,
+      backgroundColor: colors.tones.green.bg,
+      borderColor: colors.tones.green.fg,
     },
     optionLabel: {
       fontSize: 16,
@@ -578,7 +580,7 @@ const createStyles = (colors) =>
       marginBottom: 8,
     },
     textInput: {
-      backgroundColor: colors.surface,
+      backgroundColor: colors.card,
       borderRadius: 12,
       padding: 12,
       fontSize: 15,
@@ -651,7 +653,7 @@ const createStyles = (colors) =>
       paddingHorizontal: 12,
       paddingVertical: 6,
       borderRadius: 16,
-      backgroundColor: colors.surfaceMuted,
+      backgroundColor: colors.cardMuted,
     },
     tagText: {
       fontSize: 12,
@@ -675,9 +677,9 @@ const createStyles = (colors) =>
       justifyContent: 'center',
       paddingVertical: 14,
       borderRadius: 12,
-      backgroundColor: colors.surface,
+      backgroundColor: colors.card,
       borderWidth: 1,
-      borderColor: colors.error + '40',
+      borderColor: colors.tones.red.fg,
       gap: 8,
     },
     removeButtonText: {

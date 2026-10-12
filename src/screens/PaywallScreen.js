@@ -297,7 +297,7 @@ const makeStyles = (colors) =>
     price: { fontSize: 22, fontWeight: '800', color: colors.text },
     saveTag: {
       alignSelf: 'flex-start',
-      backgroundColor: colors.success + '22',
+      backgroundColor: colors.tones.green.bg,
       paddingHorizontal: 8,
       paddingVertical: 3,
       borderRadius: 8,

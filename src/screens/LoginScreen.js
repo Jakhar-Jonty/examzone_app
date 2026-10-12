@@ -293,7 +293,7 @@ const createStyles = (colors) =>
     subtitle: { fontSize: 14, color: colors.textSecondary, marginTop: 4 },
     tabs: {
       flexDirection: 'row',
-      backgroundColor: colors.surface,
+      backgroundColor: colors.surfaceMuted,
       borderRadius: 12,
       padding: 4,
       marginBottom: 16,
@@ -317,7 +317,7 @@ const createStyles = (colors) =>
     input: {
       borderWidth: 1,
       borderColor: colors.border,
-      backgroundColor: colors.surface,
+      backgroundColor: colors.card,
       borderRadius: 14,
       paddingHorizontal: 14,
       paddingVertical: 12,
@@ -329,7 +329,7 @@ const createStyles = (colors) =>
       alignItems: 'center',
       borderWidth: 1,
       borderColor: colors.border,
-      backgroundColor: colors.surface,
+      backgroundColor: colors.card,
       borderRadius: 14,
       paddingHorizontal: 14,
     },

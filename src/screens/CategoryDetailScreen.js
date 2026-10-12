@@ -278,7 +278,7 @@ export default function CategoryDetailScreen({ route, navigation }) {
                 source={{ uri: category.logo }}
                 style={[
                   tw`w-14 h-14 rounded-2xl mr-3.5`,
-                  { backgroundColor: colors.surface },
+                  { backgroundColor: colors.card },
                 ]}
                 resizeMode="cover"
               />
@@ -286,7 +286,7 @@ export default function CategoryDetailScreen({ route, navigation }) {
               <View
                 style={[
                   tw`w-14 h-14 rounded-2xl items-center justify-center mr-3.5`,
-                  { backgroundColor: colors.surfaceMuted },
+                  { backgroundColor: colors.cardMuted },
                 ]}
               >
                 <Ionicons name="book-outline" size={24} color={colors.text} />
@@ -307,7 +307,7 @@ export default function CategoryDetailScreen({ route, navigation }) {
               <View style={tw`flex-row flex-wrap gap-1.5 mt-2`}>
                 {category.examCount > 0 && (
                   <View
-                    style={[tw`px-2 py-0.5 rounded-md`, { backgroundColor: colors.surfaceMuted }]}
+                    style={[tw`px-2 py-0.5 rounded-md`, { backgroundColor: colors.cardMuted }]}
                   >
                     <Text style={[tw`text-[10px] font-semibold`, { color: colors.text }]}>
                       {category.examCount} {category.examCount === 1 ? 'exam' : 'exams'}
@@ -351,7 +351,7 @@ export default function CategoryDetailScreen({ route, navigation }) {
                           source={{ uri: sub.logo }}
                           style={[
                             tw`w-12 h-12 rounded-2xl mb-1.5`,
-                            { backgroundColor: colors.surface },
+                            { backgroundColor: colors.card },
                           ]}
                           resizeMode="cover"
                         />
@@ -359,7 +359,7 @@ export default function CategoryDetailScreen({ route, navigation }) {
                         <View
                           style={[
                             tw`w-12 h-12 rounded-2xl items-center justify-center mb-1.5`,
-                            { backgroundColor: colors.surfaceMuted },
+                            { backgroundColor: colors.cardMuted },
                           ]}
                         >
                           <Ionicons name="book-outline" size={20} color={colors.text} />
@@ -499,7 +499,7 @@ export default function CategoryDetailScreen({ route, navigation }) {
                       key={tier._id}
                       style={[
                         tw`rounded-2xl border overflow-hidden`,
-                        { backgroundColor: colors.surface, borderColor: colors.border },
+                        { backgroundColor: colors.card, borderColor: colors.border },
                       ]}
                     >
                       {/* Tier Header */}
@@ -518,7 +518,7 @@ export default function CategoryDetailScreen({ route, navigation }) {
                           <View
                             style={[
                               tw`w-9 h-9 rounded-xl items-center justify-center`,
-                              { backgroundColor: colors.surfaceMuted },
+                              { backgroundColor: colors.cardMuted },
                             ]}
                           >
                             <Ionicons name="layers" size={18} color={colors.text} />
@@ -601,7 +601,7 @@ export default function CategoryDetailScreen({ route, navigation }) {
               <View
                 style={[
                   tw`w-16 h-16 rounded-full items-center justify-center mb-4`,
-                  { backgroundColor: colors.surfaceMuted },
+                  { backgroundColor: colors.cardMuted },
                 ]}
               >
                 <Ionicons name="folder-open-outline" size={32} color={colors.text} />

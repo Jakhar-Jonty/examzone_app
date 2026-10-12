@@ -56,7 +56,7 @@ export default function SignUpScreen({ navigation }) {
 
   const inputStyle = [
     tw`rounded-2xl px-4 py-3.5 text-base border`,
-    { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border },
+    { backgroundColor: colors.card, color: colors.text, borderColor: colors.border },
   ];
   const labelStyle = [tw`text-sm font-semibold mb-1.5`, { color: colors.text }];
 
@@ -243,7 +243,7 @@ export default function SignUpScreen({ navigation }) {
                 <View
                   style={[
                     tw`flex-row items-center rounded-2xl border px-4`,
-                    { backgroundColor: colors.surface, borderColor: colors.border },
+                    { backgroundColor: colors.card, borderColor: colors.border },
                   ]}
                 >
                   <TextInput

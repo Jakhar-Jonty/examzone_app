@@ -64,7 +64,7 @@ export default function TestSeriesScreen({ navigation }) {
             <Text style={styles.typeText}>{item.seriesType || 'mock'}</Text>
           </View>
           {item.isEnrolled && (
-            <View style={[styles.typeTag, { backgroundColor: colors.success + '22' }]}>
+            <View style={[styles.typeTag, { backgroundColor: colors.tones.green.bg }]}>
               <Text style={[styles.typeText, { color: colors.success }]}>Enrolled</Text>
             </View>
           )}
