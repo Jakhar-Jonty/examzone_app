@@ -85,13 +85,13 @@ export default function NotificationsScreen({ navigation }) {
       <View
         style={[
           styles.iconCircle,
-          { backgroundColor: (item.iconColor || colors.primary) + '22' },
+          { backgroundColor: (item.iconColor || colors.text) + '22' },
         ]}
       >
         <Ionicons
           name={TYPE_ICON[item.type] || 'notifications'}
           size={20}
-          color={item.iconColor || colors.primary}
+          color={item.iconColor || colors.text}
         />
       </View>
       <View style={{ flex: 1 }}>
@@ -121,7 +121,7 @@ export default function NotificationsScreen({ navigation }) {
 
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator color={colors.primary} size="large" />
+          <ActivityIndicator color={colors.text} size="large" />
         </View>
       ) : (
         <FlatList
@@ -133,7 +133,7 @@ export default function NotificationsScreen({ navigation }) {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => { setRefreshing(true); load(); }}
-              tintColor={colors.primary}
+              tintColor={colors.text}
             />
           }
           ListEmptyComponent={
@@ -159,7 +159,7 @@ const makeStyles = (colors) =>
       paddingVertical: 12,
     },
     headerTitle: { fontSize: 20, fontWeight: '700', color: colors.text },
-    markAll: { fontSize: 14, fontWeight: '600', color: colors.primary, width: 56, textAlign: 'right' },
+    markAll: { fontSize: 14, fontWeight: '600', color: colors.text, width: 56, textAlign: 'right' },
     row: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -170,7 +170,7 @@ const makeStyles = (colors) =>
       borderWidth: 1,
       borderColor: colors.border,
     },
-    rowUnread: { backgroundColor: colors.primary + '08', borderColor: colors.primary + '40' },
+    rowUnread: { backgroundColor: colors.surfaceMuted, borderColor: colors.border },
     iconCircle: {
       width: 40,
       height: 40,
@@ -186,7 +186,7 @@ const makeStyles = (colors) =>
       width: 9,
       height: 9,
       borderRadius: 5,
-      backgroundColor: colors.primary,
+      backgroundColor: colors.hero,
       marginLeft: 8,
     },
     empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 80 },

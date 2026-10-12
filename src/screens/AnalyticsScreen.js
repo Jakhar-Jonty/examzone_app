@@ -67,15 +67,16 @@ export default function AnalyticsScreen({ navigation }) {
 
   const overallStats = analytics?.overallStats || analytics?.stats;
 
-  const getScoreColor = (percentage) => {
-    if (percentage >= 80) return '#10b981';
-    if (percentage >= 60) return '#f59e0b';
-    return '#ef4444';
+  // Green ≥ 80, orange ≥ 60, red below — { fg, bg } theme tone.
+  const getScoreTone = (percentage) => {
+    if (percentage >= 80) return colors.tones.green;
+    if (percentage >= 60) return colors.tones.orange;
+    return colors.tones.red;
   };
 
   const getTrendIcon = (change) => {
-    if (change > 0) return { name: 'trending-up', color: '#10b981' };
-    if (change < 0) return { name: 'trending-down', color: '#ef4444' };
+    if (change > 0) return { name: 'trending-up', color: colors.tones.green.fg };
+    if (change < 0) return { name: 'trending-down', color: colors.tones.red.fg };
     return { name: 'remove', color: colors.textSecondary };
   };
 
@@ -91,7 +92,7 @@ export default function AnalyticsScreen({ navigation }) {
             <View style={{ width: 24 }} />
           </View>
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
+            <ActivityIndicator size="large" color={colors.text} />
           </View>
         </View>
       </ScreenWrapper>
@@ -151,7 +152,7 @@ export default function AnalyticsScreen({ navigation }) {
               <View style={styles.statsGrid}>
                 <View style={styles.statCard}>
                   <View style={styles.statCardHeader}>
-                    <Ionicons name="document-text" size={20} color={colors.primary} />
+                    <Ionicons name="document-text" size={20} color={colors.text} />
                     <Text style={styles.statCardLabel}>Total Attempts</Text>
                   </View>
                   <Text style={styles.statCardValue}>{overallStats.totalAttempts || 0}</Text>
@@ -179,7 +180,7 @@ export default function AnalyticsScreen({ navigation }) {
                     <Ionicons name="trophy" size={20} color="#f59e0b" />
                     <Text style={styles.statCardLabel}>Average Score</Text>
                   </View>
-                  <Text style={[styles.statCardValue, { color: getScoreColor(overallStats.averageScore || 0) }]}>
+                  <Text style={[styles.statCardValue, { color: getScoreTone(overallStats.averageScore || 0).fg }]}>
                     {overallStats.averageScore?.toFixed(1) || 0}%
                   </Text>
                   {analytics.trends && (
@@ -206,17 +207,17 @@ export default function AnalyticsScreen({ navigation }) {
                     <Ionicons name="star" size={20} color="#10b981" />
                     <Text style={styles.statCardLabel}>Best Score</Text>
                   </View>
-                  <Text style={[styles.statCardValue, { color: '#10b981' }]}>
+                  <Text style={[styles.statCardValue, { color: colors.tones.green.fg }]}>
                     {overallStats.bestScore?.toFixed(1) || 0}%
                   </Text>
                 </View>
 
                 <View style={styles.statCard}>
                   <View style={styles.statCardHeader}>
-                    <Ionicons name="trending-up" size={20} color={colors.primary} />
+                    <Ionicons name="trending-up" size={20} color={colors.text} />
                     <Text style={styles.statCardLabel}>Improvement</Text>
                   </View>
-                  <Text style={[styles.statCardValue, { color: colors.primary }]}>
+                  <Text style={[styles.statCardValue, { color: colors.text }]}>
                     {(analytics.trends?.improvementRate ?? 0).toFixed(1)}%
                   </Text>
                 </View>
@@ -242,12 +243,12 @@ export default function AnalyticsScreen({ navigation }) {
                             </Text>
                           ) : null}
                         </View>
-                        <Text style={[styles.subjectScore, { color: getScoreColor(rec.accuracy) }]}>
+                        <Text style={[styles.subjectScore, { color: getScoreTone(rec.accuracy).fg }]}>
                           {rec.accuracy}%
                         </Text>
                       </View>
                       <TouchableOpacity
-                        style={[styles.practiceButton, { backgroundColor: colors.primary }]}
+                        style={[styles.practiceButton, { backgroundColor: colors.hero }]}
                         onPress={() => handleStartPractice(rec)}
                         disabled={startingPractice === rec.topic}
                         activeOpacity={0.8}
@@ -272,7 +273,7 @@ export default function AnalyticsScreen({ navigation }) {
                         <Text style={styles.subjectName} numberOfLines={1}>
                           {typeof subject.subject === 'object' ? subject.subject.name || 'General' : subject.subject || 'General'}
                         </Text>
-                        <Text style={[styles.subjectScore, { color: getScoreColor(subject.averageScore) }]}>
+                        <Text style={[styles.subjectScore, { color: getScoreTone(subject.averageScore).fg }]}>
                           {subject.averageScore.toFixed(1)}%
                         </Text>
                       </View>
@@ -307,10 +308,10 @@ export default function AnalyticsScreen({ navigation }) {
                         <View
                           style={[
                             styles.attemptScoreBadge,
-                            { backgroundColor: getScoreColor(attempt.percentage) + '20' },
+                            { backgroundColor: getScoreTone(attempt.percentage).bg },
                           ]}
                         >
-                          <Text style={[styles.attemptScoreText, { color: getScoreColor(attempt.percentage) }]}>
+                          <Text style={[styles.attemptScoreText, { color: getScoreTone(attempt.percentage).fg }]}>
                             {attempt.percentage.toFixed(1)}%
                           </Text>
                         </View>
@@ -333,7 +334,7 @@ export default function AnalyticsScreen({ navigation }) {
                   <Text style={styles.sectionTitle}>Insights</Text>
                   {analytics.insights.map((insight, index) => (
                     <View key={index} style={styles.insightCard}>
-                      <Ionicons name="bulb-outline" size={20} color={colors.primary} />
+                      <Ionicons name="bulb-outline" size={20} color={colors.text} />
                       <Text style={styles.insightText}>{insight}</Text>
                     </View>
                   ))}
@@ -388,8 +389,8 @@ const createStyles = (colors) =>
       borderColor: colors.border,
     },
     timeRangeButtonActive: {
-      backgroundColor: colors.primary,
-      borderColor: colors.primary,
+      backgroundColor: colors.hero,
+      borderColor: colors.hero,
     },
     timeRangeText: {
       fontSize: 12,
@@ -397,7 +398,7 @@ const createStyles = (colors) =>
       color: colors.textSecondary,
     },
     timeRangeTextActive: {
-      color: '#FFFFFF',
+      color: colors.heroText,
     },
     scrollView: {
       flex: 1,
@@ -492,7 +493,7 @@ const createStyles = (colors) =>
       borderRadius: 12,
     },
     practiceButtonText: {
-      color: '#FFFFFF',
+      color: colors.heroText,
       fontSize: 13,
       fontWeight: '700',
     },

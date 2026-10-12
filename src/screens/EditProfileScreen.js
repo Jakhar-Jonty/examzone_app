@@ -44,7 +44,7 @@ const STUDY_GOALS = [30, 60, 90, 120, 180];
 function SectionLabel({ title, icon, colors }) {
   return (
     <View style={tw`flex-row items-center gap-2 mt-6 mb-2 px-1`}>
-      <Ionicons name={icon} size={16} color={colors.primary} />
+      <Ionicons name={icon} size={16} color={colors.text} />
       <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>{title}</Text>
     </View>
   );
@@ -85,7 +85,7 @@ function ChipSelect({ options, selected, onSelect, multi = false, colors }) {
             style={[
               tw`flex-row items-center px-3.5 py-2 rounded-full border`,
               isActive
-                ? { backgroundColor: colors.primary, borderColor: colors.primary }
+                ? { backgroundColor: colors.hero, borderColor: colors.hero }
                 : { backgroundColor: colors.background, borderColor: colors.border },
             ]}
             onPress={() => onSelect(key)}
@@ -94,7 +94,7 @@ function ChipSelect({ options, selected, onSelect, multi = false, colors }) {
             <Text
               style={[
                 tw`text-xs font-semibold`,
-                { color: isActive ? '#fff' : colors.text },
+                { color: isActive ? colors.heroText : colors.text },
               ]}
             >
               {label}
@@ -342,12 +342,12 @@ export default function EditProfileScreen({ navigation }) {
           <TouchableOpacity
             onPress={handleSave}
             disabled={loading}
-            style={[tw`px-3 py-1.5 rounded-lg`, { backgroundColor: colors.primary + '15' }]}
+            style={[tw`px-3 py-1.5 rounded-lg`, { backgroundColor: colors.surfaceMuted }]}
           >
             {loading ? (
-              <ActivityIndicator size="small" color={colors.primary} />
+              <ActivityIndicator size="small" color={colors.text} />
             ) : (
-              <Text style={[tw`text-sm font-semibold`, { color: colors.primary }]}>Save</Text>
+              <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>Save</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -373,13 +373,13 @@ export default function EditProfileScreen({ navigation }) {
                 <View
                   style={[
                     tw`w-24 h-24 rounded-full items-center justify-center border-2 overflow-hidden`,
-                    { borderColor: colors.primary, backgroundColor: colors.surface },
+                    { borderColor: colors.hero, backgroundColor: colors.surface },
                   ]}
                 >
                   {imageUri ? (
                     <Image source={{ uri: imageUri }} style={tw`w-full h-full`} />
                   ) : (
-                    <Ionicons name="person" size={48} color={colors.primary} />
+                    <Ionicons name="person" size={48} color={colors.text} />
                   )}
                   {uploading && (
                     <View
@@ -392,7 +392,7 @@ export default function EditProfileScreen({ navigation }) {
                 <View
                   style={[
                     tw`absolute -bottom-0.5 -right-0.5 w-8 h-8 rounded-full items-center justify-center border-2`,
-                    { backgroundColor: colors.primary, borderColor: colors.background },
+                    { backgroundColor: colors.hero, borderColor: colors.background },
                   ]}
                 >
                   <Ionicons name="camera" size={14} color="#fff" />
@@ -556,7 +556,7 @@ export default function EditProfileScreen({ navigation }) {
                           style={[
                             tw`px-3.5 py-2.5 border-b`,
                             { borderColor: colors.border + '60' },
-                            state === s && { backgroundColor: colors.primary + '10' },
+                            state === s && { backgroundColor: colors.surfaceMuted },
                           ]}
                           onPress={() => {
                             setState(s);
@@ -568,7 +568,7 @@ export default function EditProfileScreen({ navigation }) {
                             style={[
                               tw`text-sm`,
                               {
-                                color: state === s ? colors.primary : colors.text,
+                                color: colors.text,
                                 fontWeight: state === s ? '600' : '400',
                               },
                             ]}
@@ -599,7 +599,7 @@ export default function EditProfileScreen({ navigation }) {
               ]}
             >
               {categoriesLoading ? (
-                <ActivityIndicator size="small" color={colors.primary} />
+                <ActivityIndicator size="small" color={colors.text} />
               ) : (
                 <ChipSelect
                   options={categories.map((c) => ({ key: c.code, label: c.name }))}
@@ -686,9 +686,9 @@ export default function EditProfileScreen({ navigation }) {
               style={[
                 tw`flex-row items-center justify-center py-4 rounded-2xl mt-6 gap-2`,
                 {
-                  backgroundColor: colors.primary,
+                  backgroundColor: colors.hero,
                   opacity: loading ? 0.6 : 1,
-                  shadowColor: colors.primary,
+                  shadowColor: colors.hero,
                   shadowOffset: { width: 0, height: 4 },
                   shadowOpacity: 0.25,
                   shadowRadius: 8,
@@ -704,7 +704,7 @@ export default function EditProfileScreen({ navigation }) {
               ) : (
                 <>
                   <Ionicons name="checkmark-circle" size={18} color="#fff" />
-                  <Text style={tw`text-sm font-bold text-white`}>Save Changes</Text>
+                  <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>Save Changes</Text>
                 </>
               )}
             </TouchableOpacity>

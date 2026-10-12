@@ -16,7 +16,6 @@ import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { gamificationService } from '../services/gamificationService';
 
-const MEDALS = { 1: '#FFD700', 2: '#C0C0C0', 3: '#CD7F32' };
 
 export default function LeaderboardScreen({ navigation }) {
   const { colors } = useTheme();
@@ -51,7 +50,7 @@ export default function LeaderboardScreen({ navigation }) {
 
   const renderRow = ({ item }) => {
     const isMe = String(item.userId) === String(meId);
-    const medal = MEDALS[item.position];
+    const medal = colors.medals[item.position];
     return (
       <View style={[styles.row, isMe && styles.rowMe]}>
         <View style={styles.posWrap}>
@@ -94,7 +93,7 @@ export default function LeaderboardScreen({ navigation }) {
 
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator color={colors.primary} size="large" />
+          <ActivityIndicator color={colors.text} size="large" />
         </View>
       ) : (
         <FlatList
@@ -109,7 +108,7 @@ export default function LeaderboardScreen({ navigation }) {
                 setRefreshing(true);
                 load();
               }}
-              tintColor={colors.primary}
+              tintColor={colors.text}
             />
           }
           ListEmptyComponent={
@@ -147,20 +146,20 @@ const makeStyles = (colors) =>
       borderWidth: 1,
       borderColor: colors.border,
     },
-    rowMe: { borderColor: colors.primary, borderWidth: 2 },
+    rowMe: { borderColor: colors.hero, borderWidth: 2 },
     posWrap: { width: 32, alignItems: 'center' },
     pos: { fontSize: 15, fontWeight: '700', color: colors.textSecondary },
     avatar: { width: 40, height: 40, borderRadius: 20, marginHorizontal: 10 },
     avatarFallback: {
-      backgroundColor: colors.primary,
+      backgroundColor: colors.surfaceMuted,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    avatarText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+    avatarText: { color: colors.text, fontWeight: '700', fontSize: 14 },
     name: { fontSize: 15, fontWeight: '600', color: colors.text },
     rank: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
     xpWrap: { alignItems: 'flex-end', marginLeft: 8 },
-    xp: { fontSize: 16, fontWeight: '800', color: colors.primary },
+    xp: { fontSize: 16, fontWeight: '800', color: colors.text },
     xpLabel: { fontSize: 10, color: colors.textSecondary },
     empty: { textAlign: 'center', color: colors.textSecondary, marginTop: 40 },
     meBar: {

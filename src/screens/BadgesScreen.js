@@ -81,7 +81,7 @@ export default function BadgesScreen({ navigation }) {
 
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator color={colors.primary} size="large" />
+          <ActivityIndicator color={colors.text} size="large" />
         </View>
       ) : (
         <FlatList
@@ -143,5 +143,5 @@ const makeStyles = (colors) =>
       textAlign: 'center',
       marginTop: 4,
     },
-    earnedAt: { fontSize: 10, color: colors.primary, marginTop: 6, fontWeight: '600' },
+    earnedAt: { fontSize: 10, color: colors.tones.green.fg, marginTop: 6, fontWeight: '600' },
   });

@@ -67,7 +67,7 @@ export default function ReviewSection({ targetType, targetId, canReview = false 
 
   // Rating-only strip before first attempt
   if (!canReview) {
-    if (loading) return <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: 8 }} />;
+    if (loading) return <ActivityIndicator size="small" color={colors.text} style={{ marginTop: 8 }} />;
     return (
       <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
         <Stars value={summary.average} size={14} />
@@ -93,7 +93,7 @@ export default function ReviewSection({ targetType, targetId, canReview = false 
       </View>
 
       {loading ? (
-        <ActivityIndicator color={colors.primary} style={{ marginVertical: 16 }} />
+        <ActivityIndicator color={colors.text} style={{ marginVertical: 16 }} />
       ) : (
         <>
           {/* Summary */}
@@ -254,7 +254,7 @@ const makeStyles = (colors) =>
     wrap: { marginTop: 24 },
     headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
     title: { fontSize: 16, fontWeight: '700', color: colors.text },
-    write: { fontSize: 14, fontWeight: '600', color: colors.primary },
+    write: { fontSize: 14, fontWeight: '600', color: colors.text },
     summary: {
       flexDirection: 'row',
       backgroundColor: colors.card,
@@ -272,13 +272,13 @@ const makeStyles = (colors) =>
     barRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     barStar: { fontSize: 11, color: colors.textSecondary, width: 8 },
     barTrack: { flex: 1, height: 6, borderRadius: 3, backgroundColor: colors.border, overflow: 'hidden', marginLeft: 4 },
-    barFill: { height: '100%', backgroundColor: '#f59e0b' },
+    barFill: { height: '100%', backgroundColor: colors.tones.orange.fg },
     empty: { color: colors.textSecondary, fontSize: 13, paddingVertical: 12, textAlign: 'center' },
     review: { backgroundColor: colors.card, borderRadius: 12, borderWidth: 1, borderColor: colors.border, padding: 12, marginBottom: 10 },
     reviewHead: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 },
     avatar: { width: 32, height: 32, borderRadius: 16 },
-    avatarFallback: { backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
-    avatarText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+    avatarFallback: { backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
+    avatarText: { color: colors.text, fontWeight: '700', fontSize: 13 },
     reviewName: { fontSize: 13, fontWeight: '700', color: colors.text },
     reviewTitle: { fontSize: 13, fontWeight: '600', color: colors.text, marginBottom: 2 },
     reviewBody: { fontSize: 13, color: colors.textSecondary, lineHeight: 18 },
@@ -298,6 +298,6 @@ const makeStyles = (colors) =>
       marginBottom: 12,
     },
     textarea: { height: 90, textAlignVertical: 'top' },
-    modalCta: { backgroundColor: colors.primary, borderRadius: 14, paddingVertical: 15, alignItems: 'center', marginTop: 4 },
-    modalCtaText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+    modalCta: { backgroundColor: colors.hero, borderRadius: 14, paddingVertical: 15, alignItems: 'center', marginTop: 4 },
+    modalCtaText: { color: colors.heroText, fontSize: 16, fontWeight: '700' },
   });

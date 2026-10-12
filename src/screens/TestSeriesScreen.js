@@ -55,7 +55,7 @@ export default function TestSeriesScreen({ navigation }) {
         <Image source={{ uri: item.thumbnail }} style={styles.thumb} />
       ) : (
         <View style={[styles.thumb, styles.thumbFallback]}>
-          <Ionicons name="albums" size={28} color={colors.primary} />
+          <Ionicons name="albums" size={28} color={colors.text} />
         </View>
       )}
       <View style={styles.cardBody}>
@@ -98,7 +98,7 @@ export default function TestSeriesScreen({ navigation }) {
 
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator color={colors.primary} size="large" />
+          <ActivityIndicator color={colors.text} size="large" />
         </View>
       ) : (
         <FlatList
@@ -110,7 +110,7 @@ export default function TestSeriesScreen({ navigation }) {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => { setRefreshing(true); load(); }}
-              tintColor={colors.primary}
+              tintColor={colors.text}
             />
           }
           ListEmptyComponent={
@@ -136,7 +136,7 @@ const makeStyles = (colors) =>
       paddingVertical: 12,
     },
     headerTitle: { fontSize: 22, fontWeight: '800', color: colors.text },
-    myLink: { fontSize: 14, fontWeight: '600', color: colors.primary },
+    myLink: { fontSize: 14, fontWeight: '600', color: colors.text },
     card: {
       flexDirection: 'row',
       backgroundColor: colors.card,
@@ -148,24 +148,24 @@ const makeStyles = (colors) =>
     },
     thumb: { width: 96, height: 'auto', minHeight: 110 },
     thumbFallback: {
-      backgroundColor: colors.primary + '12',
+      backgroundColor: colors.surfaceMuted,
       alignItems: 'center',
       justifyContent: 'center',
     },
     cardBody: { flex: 1, padding: 12 },
     tagRow: { flexDirection: 'row', gap: 6, marginBottom: 6 },
     typeTag: {
-      backgroundColor: colors.primary + '15',
+      backgroundColor: colors.surfaceMuted,
       paddingHorizontal: 8,
       paddingVertical: 2,
       borderRadius: 6,
     },
-    typeText: { fontSize: 10, fontWeight: '700', color: colors.primary, textTransform: 'uppercase' },
+    typeText: { fontSize: 10, fontWeight: '700', color: colors.text, textTransform: 'uppercase' },
     title: { fontSize: 15, fontWeight: '700', color: colors.text },
     metaRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 8 },
     meta: { flexDirection: 'row', alignItems: 'center', gap: 3 },
     metaText: { fontSize: 12, color: colors.textSecondary },
-    price: { marginLeft: 'auto', fontSize: 15, fontWeight: '800', color: colors.primary },
+    price: { marginLeft: 'auto', fontSize: 15, fontWeight: '800', color: colors.text },
     empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 80 },
     emptyText: { color: colors.textSecondary, marginTop: 12, fontSize: 14 },
   });

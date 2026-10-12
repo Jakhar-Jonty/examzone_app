@@ -18,10 +18,11 @@ import api from '../services/api';
 import { formatDate } from '../utils/helpers';
 
 // ─── Helpers ─────────────────────────────────────────────
-const getScoreColor = (pct) => {
-  if (pct >= 80) return '#10b981';
-  if (pct >= 60) return '#f59e0b';
-  return '#ef4444';
+// Green ≥ 80, orange ≥ 60, red below — { fg, bg } theme tone.
+const getScoreTone = (pct, colors) => {
+  if (pct >= 80) return colors.tones.green;
+  if (pct >= 60) return colors.tones.orange;
+  return colors.tones.red;
 };
 
 const formatTime = (seconds) => {
@@ -130,7 +131,7 @@ export default function ExamHistoryScreen({ navigation }) {
   // ─── Render Attempt Card ───────────────────────────────
   const renderAttempt = ({ item: attempt }) => {
     const pct = attempt.percentage || 0;
-    const scoreColor = getScoreColor(pct);
+    const scoreTone = getScoreTone(pct, colors);
 
     return (
       <TouchableOpacity
@@ -145,10 +146,10 @@ export default function ExamHistoryScreen({ navigation }) {
         <View
           style={[
             tw`w-12 h-12 rounded-full items-center justify-center mr-3`,
-            { backgroundColor: scoreColor + '15' },
+            { backgroundColor: scoreTone.bg },
           ]}
         >
-          <Text style={[tw`text-sm font-bold`, { color: scoreColor }]}>
+          <Text style={[tw`text-sm font-bold`, { color: scoreTone.fg }]}>
             {Math.round(pct)}%
           </Text>
         </View>
@@ -215,7 +216,7 @@ export default function ExamHistoryScreen({ navigation }) {
           </TouchableOpacity>
           <Text style={[tw`text-base font-bold`, { color: colors.text }]}>Exam History</Text>
           <TouchableOpacity onPress={() => setShowFilters(true)} style={tw`p-2`}>
-            <Ionicons name="options-outline" size={20} color={colors.primary} />
+            <Ionicons name="options-outline" size={20} color={colors.text} />
           </TouchableOpacity>
         </View>
 
@@ -256,30 +257,30 @@ export default function ExamHistoryScreen({ navigation }) {
         {/* ─── Error ──────────────────────────────────── */}
         {error && (
           <TouchableOpacity
-            style={tw`mx-5 mt-2 p-3 rounded-2xl flex-row items-center bg-red-50 dark:bg-red-900/20`}
+            style={[tw`mx-5 mt-2 p-3 rounded-2xl flex-row items-center`, { backgroundColor: colors.tones.red.bg }]}
             onPress={() => fetchExamHistory(1)}
             activeOpacity={0.7}
           >
-            <Ionicons name="alert-circle" size={18} color="#ef4444" />
-            <Text style={tw`flex-1 text-xs text-red-500 ml-2`}>{error}</Text>
-            <Ionicons name="refresh" size={16} color="#ef4444" />
+            <Ionicons name="alert-circle" size={18} color={colors.tones.red.fg} />
+            <Text style={[tw`flex-1 text-xs ml-2`, { color: colors.tones.red.fg }]}>{error}</Text>
+            <Ionicons name="refresh" size={16} color={colors.tones.red.fg} />
           </TouchableOpacity>
         )}
 
         {/* ─── Content ────────────────────────────────── */}
         {loading && attempts.length === 0 ? (
           <View style={tw`flex-1 items-center justify-center`}>
-            <ActivityIndicator size="large" color={colors.primary} />
+            <ActivityIndicator size="large" color={colors.text} />
           </View>
         ) : attempts.length === 0 ? (
           <View style={tw`flex-1 items-center justify-center px-10`}>
             <View
               style={[
                 tw`w-16 h-16 rounded-full items-center justify-center mb-4`,
-                { backgroundColor: colors.primary + '10' },
+                { backgroundColor: colors.surfaceMuted },
               ]}
             >
-              <Ionicons name="document-text-outline" size={32} color={colors.primary} />
+              <Ionicons name="document-text-outline" size={32} color={colors.text} />
             </View>
             <Text style={[tw`text-base font-semibold mb-1`, { color: colors.text }]}>
               No attempts yet
@@ -291,19 +292,19 @@ export default function ExamHistoryScreen({ navigation }) {
             </Text>
             {searchQuery ? (
               <TouchableOpacity
-                style={[tw`px-5 py-2.5 rounded-xl`, { backgroundColor: colors.primary }]}
+                style={[tw`px-5 py-2.5 rounded-xl`, { backgroundColor: colors.hero }]}
                 onPress={() => setSearchQuery('')}
                 activeOpacity={0.7}
               >
-                <Text style={tw`text-sm font-semibold text-white`}>Clear Search</Text>
+                <Text style={[tw`text-sm font-semibold`, { color: colors.heroText }]}>Clear Search</Text>
               </TouchableOpacity>
             ) : (
               <TouchableOpacity
-                style={[tw`px-5 py-2.5 rounded-xl`, { backgroundColor: colors.primary }]}
+                style={[tw`px-5 py-2.5 rounded-xl`, { backgroundColor: colors.hero }]}
                 onPress={() => navigation.navigate('ExamsTab', { screen: 'ExamsList' })}
                 activeOpacity={0.7}
               >
-                <Text style={tw`text-sm font-semibold text-white`}>Browse Exams</Text>
+                <Text style={[tw`text-sm font-semibold`, { color: colors.heroText }]}>Browse Exams</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -318,7 +319,7 @@ export default function ExamHistoryScreen({ navigation }) {
               <RefreshControl
                 refreshing={refreshing}
                 onRefresh={onRefresh}
-                tintColor={colors.primary}
+                tintColor={colors.text}
               />
             }
             onEndReached={loadMore}
@@ -327,7 +328,7 @@ export default function ExamHistoryScreen({ navigation }) {
             ListFooterComponent={
               loadingMore ? (
                 <View style={tw`py-4 items-center`}>
-                  <ActivityIndicator size="small" color={colors.primary} />
+                  <ActivityIndicator size="small" color={colors.text} />
                 </View>
               ) : null
             }
@@ -376,7 +377,7 @@ export default function ExamHistoryScreen({ navigation }) {
                           style={[
                             tw`px-4 py-2.5 rounded-full border`,
                             isActive
-                              ? { backgroundColor: colors.primary, borderColor: colors.primary }
+                              ? { backgroundColor: colors.hero, borderColor: colors.hero }
                               : { backgroundColor: colors.background, borderColor: colors.border },
                           ]}
                           onPress={() => setFilters((f) => ({ ...f, sortBy: key }))}
@@ -385,7 +386,7 @@ export default function ExamHistoryScreen({ navigation }) {
                           <Text
                             style={[
                               tw`text-xs font-semibold`,
-                              { color: isActive ? '#fff' : colors.text },
+                              { color: isActive ? colors.heroText : colors.text },
                             ]}
                           >
                             {label}
@@ -413,7 +414,7 @@ export default function ExamHistoryScreen({ navigation }) {
                           style={[
                             tw`flex-1 py-2.5 rounded-xl items-center border`,
                             isActive
-                              ? { backgroundColor: colors.primary, borderColor: colors.primary }
+                              ? { backgroundColor: colors.hero, borderColor: colors.hero }
                               : { backgroundColor: colors.background, borderColor: colors.border },
                           ]}
                           onPress={() => setFilters((f) => ({ ...f, sortOrder: key }))}
@@ -422,7 +423,7 @@ export default function ExamHistoryScreen({ navigation }) {
                           <Text
                             style={[
                               tw`text-xs font-semibold`,
-                              { color: isActive ? '#fff' : colors.text },
+                              { color: isActive ? colors.heroText : colors.text },
                             ]}
                           >
                             {label}
@@ -457,12 +458,12 @@ export default function ExamHistoryScreen({ navigation }) {
                 <TouchableOpacity
                   style={[
                     tw`flex-1 py-3 rounded-xl items-center`,
-                    { backgroundColor: colors.primary },
+                    { backgroundColor: colors.hero },
                   ]}
                   onPress={() => setShowFilters(false)}
                   activeOpacity={0.7}
                 >
-                  <Text style={tw`text-sm font-bold text-white`}>Apply</Text>
+                  <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>Apply</Text>
                 </TouchableOpacity>
               </View>
             </View>

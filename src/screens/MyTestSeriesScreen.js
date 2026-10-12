@@ -48,7 +48,7 @@ export default function MyTestSeriesScreen({ navigation }) {
         style={styles.card}
       >
         <View style={styles.topRow}>
-          <Ionicons name="albums" size={18} color={colors.primary} />
+          <Ionicons name="albums" size={18} color={colors.text} />
           <Text style={styles.title} numberOfLines={1}>{ts.title || 'Test Series'}</Text>
           {item.status === 'completed' && (
             <View style={styles.doneTag}>
@@ -81,7 +81,7 @@ export default function MyTestSeriesScreen({ navigation }) {
 
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator color={colors.primary} size="large" />
+          <ActivityIndicator color={colors.text} size="large" />
         </View>
       ) : (
         <FlatList
@@ -143,10 +143,10 @@ const makeStyles = (colors) =>
     emptyText: { color: colors.textSecondary, marginTop: 12, fontSize: 14, textAlign: 'center' },
     browseBtn: {
       marginTop: 16,
-      backgroundColor: colors.primary,
+      backgroundColor: colors.hero,
       paddingHorizontal: 20,
       paddingVertical: 10,
       borderRadius: 12,
     },
-    browseText: { color: '#fff', fontWeight: '700' },
+    browseText: { color: colors.heroText, fontWeight: '700' },
   });

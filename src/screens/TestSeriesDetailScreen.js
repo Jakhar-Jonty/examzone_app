@@ -43,7 +43,7 @@ export default function TestSeriesDetailScreen({ route, navigation }) {
     return (
       <ScreenWrapper>
         <View style={styles.center}>
-          <ActivityIndicator color={colors.primary} size="large" />
+          <ActivityIndicator color={colors.text} size="large" />
         </View>
       </ScreenWrapper>
     );
@@ -166,7 +166,7 @@ export default function TestSeriesDetailScreen({ route, navigation }) {
               <Ionicons
                 name={entry.locked ? 'lock-closed' : 'chevron-forward'}
                 size={18}
-                color={entry.locked ? colors.textSecondary : colors.primary}
+                color={entry.locked ? colors.textSecondary : colors.text}
               />
             </TouchableOpacity>
           );
@@ -203,7 +203,7 @@ function Stat({ icon, label, value, colors }) {
   const styles = makeStyles(colors);
   return (
     <View style={styles.stat}>
-      <Ionicons name={icon} size={18} color={colors.primary} />
+      <Ionicons name={icon} size={18} color={colors.text} />
       <Text style={styles.statValue}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
     </View>
@@ -243,7 +243,7 @@ const makeStyles = (colors) =>
     },
     progressTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     progressLabel: { fontSize: 14, fontWeight: '700', color: colors.text },
-    progressPct: { fontSize: 16, fontWeight: '800', color: colors.primary },
+    progressPct: { fontSize: 16, fontWeight: '800', color: colors.text },
     bar: { height: 8, borderRadius: 4, backgroundColor: colors.border, marginTop: 10, overflow: 'hidden' },
     barFill: { height: '100%', borderRadius: 4, backgroundColor: colors.primary },
     progressSub: { fontSize: 12, color: colors.textSecondary, marginTop: 8 },
@@ -262,12 +262,12 @@ const makeStyles = (colors) =>
       width: 30,
       height: 30,
       borderRadius: 15,
-      backgroundColor: colors.primary + '18',
+      backgroundColor: colors.surfaceMuted,
       alignItems: 'center',
       justifyContent: 'center',
       marginRight: 12,
     },
-    testNumText: { fontSize: 14, fontWeight: '700', color: colors.primary },
+    testNumText: { fontSize: 14, fontWeight: '700', color: colors.text },
     testTitle: { fontSize: 14, fontWeight: '600', color: colors.text },
     testMeta: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
     ctaWrap: {
@@ -282,10 +282,10 @@ const makeStyles = (colors) =>
       backgroundColor: colors.background,
     },
     cta: {
-      backgroundColor: colors.primary,
+      backgroundColor: colors.hero,
       borderRadius: 14,
       paddingVertical: 16,
       alignItems: 'center',
     },
-    ctaText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+    ctaText: { color: colors.heroText, fontSize: 16, fontWeight: '700' },
   });

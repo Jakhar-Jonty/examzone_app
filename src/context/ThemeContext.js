@@ -79,6 +79,7 @@ export const ThemeProvider = ({ children }) => {
         red: { fg: '#b91c1c', bg: '#FEF2F2' },
         purple: { fg: '#6d28d9', bg: '#F5F3FF' },
       },
+      medals: { 1: '#D4A017', 2: '#A8A9AD', 3: '#B87333' }, // gold, silver, bronze
     },
     dark: {
       background: '#1A202C', // Soft dark
@@ -107,6 +108,7 @@ export const ThemeProvider = ({ children }) => {
         red: { fg: '#f87171', bg: 'rgba(248,113,113,0.12)' },
         purple: { fg: '#a78bfa', bg: 'rgba(167,139,250,0.12)' },
       },
+      medals: { 1: '#FACC15', 2: '#D1D5DB', 3: '#D97706' },
     },
   };
 

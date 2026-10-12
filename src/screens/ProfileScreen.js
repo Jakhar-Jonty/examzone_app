@@ -134,7 +134,7 @@ export default function ProfileScreen({ navigation }) {
             <View
               style={[
                 tw`w-24 h-24 rounded-full items-center justify-center border-2`,
-                { borderColor: colors.primary, backgroundColor: colors.surface },
+                { borderColor: colors.hero, backgroundColor: colors.surface },
               ]}
             >
               {user?.profileImage ? (
@@ -143,7 +143,7 @@ export default function ProfileScreen({ navigation }) {
                   style={tw`w-full h-full rounded-full`}
                 />
               ) : (
-                <Text style={[tw`text-3xl font-bold`, { color: colors.primary }]}>
+                <Text style={[tw`text-3xl font-bold`, { color: colors.text }]}>
                   {getInitials(user?.name)}
                 </Text>
               )}
@@ -152,7 +152,7 @@ export default function ProfileScreen({ navigation }) {
             <View
               style={[
                 tw`absolute -bottom-0.5 -right-0.5 w-8 h-8 rounded-full items-center justify-center border-2`,
-                { backgroundColor: colors.primary, borderColor: colors.background },
+                { backgroundColor: colors.hero, borderColor: colors.background },
               ]}
             >
               <Ionicons name="pencil" size={14} color="#fff" />
@@ -197,7 +197,7 @@ export default function ProfileScreen({ navigation }) {
                   key={key}
                   style={[
                     tw`flex-1 flex-row items-center justify-center py-2.5 rounded-xl gap-1.5`,
-                    isActive && { backgroundColor: colors.primary + '15' },
+                    isActive && { backgroundColor: colors.surfaceMuted },
                   ]}
                   onPress={() => toggleTheme(key)}
                   activeOpacity={0.7}
@@ -205,12 +205,12 @@ export default function ProfileScreen({ navigation }) {
                   <Ionicons
                     name={icon}
                     size={16}
-                    color={isActive ? colors.primary : colors.textSecondary}
+                    color={isActive ? colors.text : colors.textSecondary}
                   />
                   <Text
                     style={[
                       tw`text-xs font-semibold`,
-                      { color: isActive ? colors.primary : colors.textSecondary },
+                      { color: isActive ? colors.text : colors.textSecondary },
                     ]}
                   >
                     {label}
@@ -254,10 +254,10 @@ export default function ProfileScreen({ navigation }) {
                   <View
                     style={[
                       tw`w-8 h-8 rounded-xl items-center justify-center mr-3`,
-                      { backgroundColor: colors.primary + '10' },
+                      { backgroundColor: colors.surfaceMuted },
                     ]}
                   >
-                    <Ionicons name={item.icon} size={18} color={colors.primary} />
+                    <Ionicons name={item.icon} size={18} color={colors.text} />
                   </View>
                   <Text style={[tw`flex-1 text-sm font-medium`, { color: colors.text }]}>
                     {item.label}
@@ -266,10 +266,10 @@ export default function ProfileScreen({ navigation }) {
                     <View
                       style={[
                         tw`px-2 py-0.5 rounded-full mr-1.5`,
-                        { backgroundColor: colors.primary },
+                        { backgroundColor: colors.hero },
                       ]}
                     >
-                      <Text style={tw`text-xs font-bold text-white`}>{item.badge}</Text>
+                      <Text style={[tw`text-xs font-bold`, { color: colors.heroText }]}>{item.badge}</Text>
                     </View>
                   ) : null}
                   <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
