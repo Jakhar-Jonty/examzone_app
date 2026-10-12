@@ -177,7 +177,7 @@ export default function AnalyticsScreen({ navigation }) {
 
                 <View style={styles.statCard}>
                   <View style={styles.statCardHeader}>
-                    <Ionicons name="trophy" size={20} color="#f59e0b" />
+                    <Ionicons name="trophy" size={20} color={colors.tones.orange.fg} />
                     <Text style={styles.statCardLabel}>Average Score</Text>
                   </View>
                   <Text style={[styles.statCardValue, { color: getScoreTone(overallStats.averageScore || 0).fg }]}>
@@ -204,7 +204,7 @@ export default function AnalyticsScreen({ navigation }) {
 
                 <View style={styles.statCard}>
                   <View style={styles.statCardHeader}>
-                    <Ionicons name="star" size={20} color="#10b981" />
+                    <Ionicons name="star" size={20} color={colors.tones.green.fg} />
                     <Text style={styles.statCardLabel}>Best Score</Text>
                   </View>
                   <Text style={[styles.statCardValue, { color: colors.tones.green.fg }]}>
@@ -253,7 +253,7 @@ export default function AnalyticsScreen({ navigation }) {
                         disabled={startingPractice === rec.topic}
                         activeOpacity={0.8}
                       >
-                        <Ionicons name="flash" size={16} color="#fff" />
+                        <Ionicons name="flash" size={16} color={colors.heroText} />
                         <Text style={styles.practiceButtonText}>
                           {startingPractice === rec.topic ? 'Starting…' : rec.label || 'Start 15 Qs'}
                         </Text>

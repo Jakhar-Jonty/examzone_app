@@ -59,7 +59,7 @@ export default function ReviewSection({ targetType, targetId, canReview = false 
           key={i}
           name={i <= Math.round(value) ? 'star' : 'star-outline'}
           size={size}
-          color="#f59e0b"
+          color={colors.tones.orange.fg}
         />
       ))}
     </View>
@@ -110,7 +110,7 @@ export default function ReviewSection({ targetType, targetId, canReview = false 
                 return (
                   <View key={star} style={styles.barRow}>
                     <Text style={styles.barStar}>{star}</Text>
-                    <Ionicons name="star" size={10} color="#f59e0b" />
+                    <Ionicons name="star" size={10} color={colors.tones.orange.fg} />
                     <View style={styles.barTrack}>
                       <View style={[styles.barFill, { width: `${pct}%` }]} />
                     </View>
@@ -209,7 +209,7 @@ function ReviewModal({ visible, onClose, existing, onSubmit, colors }) {
                 <Ionicons
                   name={i <= rating ? 'star' : 'star-outline'}
                   size={36}
-                  color="#f59e0b"
+                  color={colors.tones.orange.fg}
                 />
               </TouchableOpacity>
             ))}
@@ -238,7 +238,7 @@ function ReviewModal({ visible, onClose, existing, onSubmit, colors }) {
             activeOpacity={0.85}
           >
             {saving ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={colors.heroText} />
             ) : (
               <Text style={styles.modalCtaText}>{existing ? 'Update' : 'Submit'}</Text>
             )}

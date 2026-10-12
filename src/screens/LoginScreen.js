@@ -196,7 +196,7 @@ export default function LoginScreen({ navigation }) {
                   disabled={loading}
                 >
                   {loading ? (
-                    <ActivityIndicator color="#fff" />
+                    <ActivityIndicator color={colors.heroText} />
                   ) : (
                     <Text style={styles.buttonText}>Sign In</Text>
                   )}
@@ -222,7 +222,7 @@ export default function LoginScreen({ navigation }) {
                   disabled={loading}
                 >
                   {loading ? (
-                    <ActivityIndicator color="#fff" />
+                    <ActivityIndicator color={colors.heroText} />
                   ) : (
                     <Text style={styles.buttonText}>Send OTP</Text>
                   )}
@@ -250,7 +250,7 @@ export default function LoginScreen({ navigation }) {
                   disabled={loading}
                 >
                   {loading ? (
-                    <ActivityIndicator color="#fff" />
+                    <ActivityIndicator color={colors.heroText} />
                   ) : (
                     <Text style={styles.buttonText}>Verify & Sign In</Text>
                   )}
@@ -301,9 +301,9 @@ const createStyles = (colors) =>
       borderColor: colors.border,
     },
     tab: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10 },
-    tabActive: { backgroundColor: colors.primary },
+    tabActive: { backgroundColor: colors.hero },
     tabText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary },
-    tabTextActive: { color: '#fff' },
+    tabTextActive: { color: colors.heroText },
     form: { gap: 4 },
     inputContainer: { marginBottom: 14 },
     labelRow: {
@@ -313,7 +313,7 @@ const createStyles = (colors) =>
       marginBottom: 6,
     },
     label: { fontSize: 13, fontWeight: '600', color: colors.text, marginBottom: 6 },
-    forgot: { fontSize: 12, fontWeight: '700', color: colors.primary, marginBottom: 6 },
+    forgot: { fontSize: 12, fontWeight: '700', color: colors.text, marginBottom: 6 },
     input: {
       borderWidth: 1,
       borderColor: colors.border,
@@ -335,22 +335,22 @@ const createStyles = (colors) =>
     },
     passwordInput: { flex: 1, paddingVertical: 12, fontSize: 16, color: colors.text },
     eyeButton: { paddingLeft: 8 },
-    eyeText: { fontSize: 13, fontWeight: '600', color: colors.primary },
+    eyeText: { fontSize: 13, fontWeight: '600', color: colors.text },
     button: {
-      backgroundColor: colors.primary,
+      backgroundColor: colors.hero,
       borderRadius: 14,
       paddingVertical: 14,
       alignItems: 'center',
       marginTop: 8,
     },
     buttonDisabled: { opacity: 0.7 },
-    buttonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+    buttonText: { color: colors.heroText, fontSize: 16, fontWeight: '700' },
     hint: { fontSize: 13, color: colors.textSecondary, marginBottom: 8 },
-    devHint: { fontSize: 13, color: colors.primary, marginBottom: 8 },
+    devHint: { fontSize: 13, color: colors.text, marginBottom: 8 },
     linkCenter: {
       textAlign: 'center',
       marginTop: 14,
-      color: colors.primary,
+      color: colors.text,
       fontWeight: '600',
       fontSize: 14,
     },
@@ -362,5 +362,5 @@ const createStyles = (colors) =>
     },
     footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 28 },
     footerText: { color: colors.textSecondary, fontSize: 14 },
-    footerLink: { color: colors.primary, fontWeight: '700', fontSize: 14 },
+    footerLink: { color: colors.text, fontWeight: '700', fontSize: 14 },
   });

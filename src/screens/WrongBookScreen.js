@@ -576,10 +576,10 @@ export default function WrongBookScreen({ navigation }) {
               disabled={exporting || selectedIds.size === 0}
             >
               {exporting ? (
-                <ActivityIndicator size="small" color="#fff" />
+                <ActivityIndicator size="small" color={colors.heroText} />
               ) : (
                 <>
-                  <Ionicons name="document-text" size={16} color="#fff" />
+                  <Ionicons name="document-text" size={16} color={colors.heroText} />
                   <Text style={styles.exportBtnText}>PDF</Text>
                 </>
               )}
@@ -620,7 +620,7 @@ export default function WrongBookScreen({ navigation }) {
             disabled={(stats.total || 0) === 0 || practicing}
             activeOpacity={0.85}
           >
-            <Ionicons name="flash" size={16} color="#fff" />
+            <Ionicons name="flash" size={16} color={colors.heroText} />
             <Text style={styles.practiceBtnText}>Practice</Text>
           </TouchableOpacity>
         </View>
@@ -1019,10 +1019,10 @@ export default function WrongBookScreen({ navigation }) {
                 activeOpacity={0.85}
               >
                 {practicing ? (
-                  <ActivityIndicator color="#fff" />
+                  <ActivityIndicator color={colors.heroText} />
                 ) : (
                   <>
-                    <Ionicons name="play" size={18} color="#fff" />
+                    <Ionicons name="play" size={18} color={colors.heroText} />
                     <Text style={styles.startPracticeBtnText}>
                       Start {practiceCount}-question drill
                     </Text>

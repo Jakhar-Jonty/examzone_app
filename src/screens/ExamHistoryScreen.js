@@ -164,13 +164,13 @@ export default function ExamHistoryScreen({ navigation }) {
           </Text>
           <View style={tw`flex-row items-center mt-1 gap-3`}>
             <View style={tw`flex-row items-center gap-1`}>
-              <Ionicons name="checkmark-circle" size={12} color="#10b981" />
+              <Ionicons name="checkmark-circle" size={12} color={colors.tones.green.fg} />
               <Text style={[tw`text-[11px]`, { color: colors.textSecondary }]}>
                 {attempt.correctAnswers || 0}
               </Text>
             </View>
             <View style={tw`flex-row items-center gap-1`}>
-              <Ionicons name="close-circle" size={12} color="#ef4444" />
+              <Ionicons name="close-circle" size={12} color={colors.tones.red.fg} />
               <Text style={[tw`text-[11px]`, { color: colors.textSecondary }]}>
                 {attempt.incorrectAnswers || 0}
               </Text>

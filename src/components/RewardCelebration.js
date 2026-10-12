@@ -16,14 +16,15 @@ import { useTheme } from '../context/ThemeContext';
 const { width } = Dimensions.get('window');
 
 // Lightweight confetti — a burst of colored dots, no extra dependency.
-const CONFETTI_COLORS = ['#16a34a', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6', '#ec4899'];
 const PIECES = 22;
 
 function ConfettiPiece({ delay }) {
+  const { colors } = useTheme();
+  const confettiColors = [colors.primary, colors.tones.orange.fg, colors.tones.red.fg, colors.tones.blue.fg, colors.tones.purple.fg];
   const fall = useRef(new Animated.Value(0)).current;
   const startX = useRef(Math.random() * width).current;
   const drift = useRef((Math.random() - 0.5) * 120).current;
-  const color = useRef(CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)]).current;
+  const color = useRef(confettiColors[Math.floor(Math.random() * confettiColors.length)]).current;
   const size = useRef(6 + Math.random() * 6).current;
 
   useEffect(() => {
@@ -104,12 +105,12 @@ export default function RewardCelebration({ rewards, visible, onClose }) {
 
         <Animated.View style={[styles.card, { opacity, transform: [{ scale }] }]}>
           <LinearGradient
-            colors={[colors.primary, colors.primaryGradientEnd]}
+            colors={[colors.hero, colors.heroRaised]}
             style={styles.hero}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
-            <Ionicons name="trophy" size={44} color="#fff" />
+            <Ionicons name="trophy" size={44} color={colors.heroText} />
             <Text style={styles.heroTitle}>Great work!</Text>
           </LinearGradient>
 
@@ -117,7 +118,7 @@ export default function RewardCelebration({ rewards, visible, onClose }) {
             {/* XP */}
             {rewards.xpGained > 0 && (
               <View style={styles.xpRow}>
-                <Ionicons name="flash" size={22} color={colors.primary} />
+                <Ionicons name="flash" size={22} color={colors.text} />
                 <Text style={styles.xpText}>+{rewards.xpGained} XP</Text>
                 <Text style={styles.xpSub}>({rewards.totalXp} total)</Text>
               </View>
@@ -177,10 +178,10 @@ const makeStyles = (colors) =>
       overflow: 'hidden',
     },
     hero: { alignItems: 'center', paddingVertical: 28 },
-    heroTitle: { fontSize: 22, fontWeight: '800', color: '#fff', marginTop: 8 },
+    heroTitle: { fontSize: 22, fontWeight: '800', color: colors.heroText, marginTop: 8 },
     body: { padding: 22, gap: 16 },
     xpRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-    xpText: { fontSize: 26, fontWeight: '900', color: colors.primary },
+    xpText: { fontSize: 26, fontWeight: '900', color: colors.text },
     xpSub: { fontSize: 13, color: colors.textSecondary },
     rankRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
     rankText: { fontSize: 15, color: colors.text },
@@ -197,11 +198,11 @@ const makeStyles = (colors) =>
     badgeIcon: { fontSize: 30 },
     badgeName: { fontSize: 11, fontWeight: '700', color: colors.text, marginTop: 4, textAlign: 'center' },
     cta: {
-      backgroundColor: colors.primary,
+      backgroundColor: colors.hero,
       borderRadius: 14,
       paddingVertical: 14,
       alignItems: 'center',
       marginTop: 4,
     },
-    ctaText: { fontSize: 16, fontWeight: '800', color: '#fff' },
+    ctaText: { fontSize: 16, fontWeight: '800', color: colors.heroText },
   });

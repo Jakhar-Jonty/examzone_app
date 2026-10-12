@@ -63,7 +63,7 @@ export default function ArticleDetailScreen({ route, navigation }) {
             <View style={{ width: 24 }} />
           </View>
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
+            <ActivityIndicator size="large" color={colors.text} />
           </View>
         </View>
       </ScreenWrapper>
@@ -133,7 +133,7 @@ export default function ArticleDetailScreen({ route, navigation }) {
               )}
               {article.isPremium && (
                 <View style={styles.premiumBadge}>
-                  <Ionicons name="diamond" size={14} color="#f59e0b" />
+                  <Ionicons name="diamond" size={14} color={colors.tones.purple.fg} />
                   <Text style={styles.premiumText}>Premium</Text>
                 </View>
               )}
@@ -173,7 +173,7 @@ export default function ArticleDetailScreen({ route, navigation }) {
                     onPress={() => handleDownload('pdf')}
                     activeOpacity={0.7}
                   >
-                    <Ionicons name="document-text" size={20} color={colors.primary} />
+                    <Ionicons name="document-text" size={20} color={colors.text} />
                     <Text style={styles.downloadButtonText}>PDF</Text>
                   </TouchableOpacity>
                 )}
@@ -267,12 +267,12 @@ const createStyles = (colors) =>
       paddingHorizontal: 12,
       paddingVertical: 6,
       borderRadius: 16,
-      backgroundColor: colors.primary + '20',
+      backgroundColor: colors.surfaceMuted,
     },
     categoryText: {
       fontSize: 12,
       fontWeight: '600',
-      color: colors.primary,
+      color: colors.text,
     },
     premiumBadge: {
       flexDirection: 'row',
@@ -281,12 +281,12 @@ const createStyles = (colors) =>
       paddingHorizontal: 10,
       paddingVertical: 4,
       borderRadius: 12,
-      backgroundColor: '#f59e0b20',
+      backgroundColor: colors.tones.purple.bg,
     },
     premiumText: {
       fontSize: 12,
       fontWeight: '600',
-      color: '#f59e0b',
+      color: colors.tones.purple.fg,
     },
     dateText: {
       fontSize: 12,
@@ -339,9 +339,9 @@ const createStyles = (colors) =>
       paddingVertical: 12,
       paddingHorizontal: 16,
       borderRadius: 12,
-      backgroundColor: colors.primary + '20',
+      backgroundColor: colors.surfaceMuted,
       borderWidth: 1,
-      borderColor: colors.primary,
+      borderColor: colors.hero,
       gap: 8,
     },
     downloadButtonSecondary: {
@@ -351,7 +351,7 @@ const createStyles = (colors) =>
     downloadButtonText: {
       fontSize: 14,
       fontWeight: '600',
-      color: colors.primary,
+      color: colors.text,
     },
     downloadButtonTextSecondary: {
       color: colors.text,

@@ -12,7 +12,7 @@ export default function LoadingScreen({ message = 'Loading...' }) {
       edges={['top', 'bottom', 'left', 'right']}
     >
       <View style={styles.content}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color={colors.text} />
         <Text style={[styles.text, { color: colors.textSecondary }]}>
           {message}
         </Text>

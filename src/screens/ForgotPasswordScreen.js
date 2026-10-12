@@ -115,7 +115,7 @@ export default function ForgotPasswordScreen({ navigation }) {
               disabled={loading}
             >
               {loading ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color={colors.heroText} />
               ) : (
                 <Text style={styles.btnText}>Send email OTP</Text>
               )}
@@ -158,7 +158,7 @@ export default function ForgotPasswordScreen({ navigation }) {
               disabled={loading}
             >
               {loading ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color={colors.heroText} />
               ) : (
                 <Text style={styles.btnText}>Reset password</Text>
               )}
@@ -181,7 +181,7 @@ const createStyles = (colors) =>
     container: { flex: 1, backgroundColor: colors.background },
     scroll: { padding: 24, paddingTop: 56 },
     back: { marginBottom: 16 },
-    backText: { color: colors.primary, fontWeight: '600', fontSize: 15 },
+    backText: { color: colors.text, fontWeight: '600', fontSize: 15 },
     title: { fontSize: 26, fontWeight: '800', color: colors.text },
     sub: { fontSize: 14, color: colors.textSecondary, marginTop: 6, marginBottom: 20 },
     label: { fontSize: 13, fontWeight: '600', color: colors.text, marginBottom: 6, marginTop: 10 },
@@ -196,19 +196,19 @@ const createStyles = (colors) =>
       color: colors.text,
     },
     btn: {
-      backgroundColor: colors.primary,
+      backgroundColor: colors.hero,
       borderRadius: 14,
       paddingVertical: 14,
       alignItems: 'center',
       marginTop: 20,
     },
     btnDisabled: { opacity: 0.7 },
-    btnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
-    hint: { color: colors.primary, marginBottom: 8, fontSize: 13 },
+    btnText: { color: colors.heroText, fontWeight: '700', fontSize: 16 },
+    hint: { color: colors.text, marginBottom: 8, fontSize: 13 },
     link: {
       textAlign: 'center',
       marginTop: 16,
-      color: colors.primary,
+      color: colors.text,
       fontWeight: '600',
     },
     linkMuted: {

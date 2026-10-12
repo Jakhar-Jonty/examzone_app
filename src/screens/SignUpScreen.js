@@ -19,6 +19,7 @@ import { authService } from '../services/authService';
 const mark = require('../../assets/examzone_mark.png');
 
 function StepDots({ current, total = 3 }) {
+  const { colors } = useTheme();
   return (
     <View style={tw`flex-row items-center justify-center gap-2 mb-6`}>
       {Array.from({ length: total }).map((_, i) => (
@@ -27,10 +28,10 @@ function StepDots({ current, total = 3 }) {
           style={[
             tw`rounded-full`,
             i + 1 === current
-              ? tw`h-2.5 w-8 bg-green-600`
+              ? [tw`h-2.5 w-8`, { backgroundColor: colors.hero }]
               : i + 1 < current
-                ? tw`h-2 w-2 bg-green-400`
-                : tw`h-2 w-2 bg-gray-200`,
+                ? [tw`h-2 w-2`, { backgroundColor: colors.primary }]
+                : [tw`h-2 w-2`, { backgroundColor: colors.border }],
           ]}
         />
       ))}
@@ -165,14 +166,14 @@ export default function SignUpScreen({ navigation }) {
                 />
               </View>
               <TouchableOpacity
-                style={[tw`rounded-2xl py-4 items-center`, { backgroundColor: colors.primary, opacity: loading ? 0.7 : 1 }]}
+                style={[tw`rounded-2xl py-4 items-center`, { backgroundColor: colors.hero, opacity: loading ? 0.7 : 1 }]}
                 onPress={handleSendOtp}
                 disabled={loading}
               >
                 {loading ? (
-                  <ActivityIndicator color="#fff" />
+                  <ActivityIndicator color={colors.heroText} />
                 ) : (
-                  <Text style={tw`text-white font-bold text-base`}>Send OTP</Text>
+                  <Text style={[tw` font-bold text-base`, { color: colors.heroText }]}>Send OTP</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -181,7 +182,7 @@ export default function SignUpScreen({ navigation }) {
           {step === 2 && (
             <View style={tw`gap-4`}>
               {otpHint ? (
-                <Text style={[tw`text-sm`, { color: colors.primary }]}>{otpHint}</Text>
+                <Text style={[tw`text-sm`, { color: colors.text }]}>{otpHint}</Text>
               ) : null}
               <View>
                 <Text style={labelStyle}>6-digit OTP</Text>
@@ -196,14 +197,14 @@ export default function SignUpScreen({ navigation }) {
                 />
               </View>
               <TouchableOpacity
-                style={[tw`rounded-2xl py-4 items-center`, { backgroundColor: colors.primary, opacity: loading ? 0.7 : 1 }]}
+                style={[tw`rounded-2xl py-4 items-center`, { backgroundColor: colors.hero, opacity: loading ? 0.7 : 1 }]}
                 onPress={handleVerifyOtp}
                 disabled={loading}
               >
                 {loading ? (
-                  <ActivityIndicator color="#fff" />
+                  <ActivityIndicator color={colors.heroText} />
                 ) : (
-                  <Text style={tw`text-white font-bold text-base`}>Verify email</Text>
+                  <Text style={[tw` font-bold text-base`, { color: colors.heroText }]}>Verify email</Text>
                 )}
               </TouchableOpacity>
               <View style={tw`flex-row justify-between`}>
@@ -218,7 +219,7 @@ export default function SignUpScreen({ navigation }) {
                   <Text style={[tw`text-sm font-semibold`, { color: colors.textSecondary }]}>Change email</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={handleSendOtp} disabled={loading}>
-                  <Text style={[tw`text-sm font-semibold`, { color: colors.primary }]}>Resend OTP</Text>
+                  <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>Resend OTP</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -272,14 +273,14 @@ export default function SignUpScreen({ navigation }) {
                 />
               </View>
               <TouchableOpacity
-                style={[tw`rounded-2xl py-4 items-center`, { backgroundColor: colors.primary, opacity: loading ? 0.7 : 1 }]}
+                style={[tw`rounded-2xl py-4 items-center`, { backgroundColor: colors.hero, opacity: loading ? 0.7 : 1 }]}
                 onPress={handleComplete}
                 disabled={loading}
               >
                 {loading ? (
-                  <ActivityIndicator color="#fff" />
+                  <ActivityIndicator color={colors.heroText} />
                 ) : (
-                  <Text style={tw`text-white font-bold text-base`}>Create account</Text>
+                  <Text style={[tw` font-bold text-base`, { color: colors.heroText }]}>Create account</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -289,7 +290,7 @@ export default function SignUpScreen({ navigation }) {
             <TouchableOpacity style={tw`mt-8 items-center`} onPress={() => navigation.navigate('Login')}>
               <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
                 Already have an account?{' '}
-                <Text style={{ color: colors.primary, fontWeight: '700' }}>Sign In</Text>
+                <Text style={{ color: colors.text, fontWeight: '700' }}>Sign In</Text>
               </Text>
             </TouchableOpacity>
           )}

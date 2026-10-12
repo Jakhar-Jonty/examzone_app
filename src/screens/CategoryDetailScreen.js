@@ -206,11 +206,11 @@ export default function CategoryDetailScreen({ route, navigation }) {
               {error || 'Category not found'}
             </Text>
             <TouchableOpacity
-              style={[tw`mt-4 px-5 py-2.5 rounded-xl`, { backgroundColor: colors.primary }]}
+              style={[tw`mt-4 px-5 py-2.5 rounded-xl`, { backgroundColor: colors.hero }]}
               onPress={fetchCategory}
               activeOpacity={0.7}
             >
-              <Text style={tw`text-sm font-semibold text-white`}>Retry</Text>
+              <Text style={[tw`text-sm font-semibold`, { color: colors.heroText }]}>Retry</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -266,7 +266,7 @@ export default function CategoryDetailScreen({ route, navigation }) {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor={colors.primary}
+              tintColor={colors.text}
             />
           }
           showsVerticalScrollIndicator={false}
@@ -286,10 +286,10 @@ export default function CategoryDetailScreen({ route, navigation }) {
               <View
                 style={[
                   tw`w-14 h-14 rounded-2xl items-center justify-center mr-3.5`,
-                  { backgroundColor: colors.primary + '10' },
+                  { backgroundColor: colors.surfaceMuted },
                 ]}
               >
-                <Ionicons name="book-outline" size={24} color={colors.primary} />
+                <Ionicons name="book-outline" size={24} color={colors.text} />
               </View>
             )}
             <View style={tw`flex-1`}>
@@ -307,9 +307,9 @@ export default function CategoryDetailScreen({ route, navigation }) {
               <View style={tw`flex-row flex-wrap gap-1.5 mt-2`}>
                 {category.examCount > 0 && (
                   <View
-                    style={[tw`px-2 py-0.5 rounded-md`, { backgroundColor: colors.primary + '12' }]}
+                    style={[tw`px-2 py-0.5 rounded-md`, { backgroundColor: colors.surfaceMuted }]}
                   >
-                    <Text style={[tw`text-[10px] font-semibold`, { color: colors.primary }]}>
+                    <Text style={[tw`text-[10px] font-semibold`, { color: colors.text }]}>
                       {category.examCount} {category.examCount === 1 ? 'exam' : 'exams'}
                     </Text>
                   </View>
@@ -359,20 +359,20 @@ export default function CategoryDetailScreen({ route, navigation }) {
                         <View
                           style={[
                             tw`w-12 h-12 rounded-2xl items-center justify-center mb-1.5`,
-                            { backgroundColor: colors.primary + '10' },
+                            { backgroundColor: colors.surfaceMuted },
                           ]}
                         >
-                          <Ionicons name="book-outline" size={20} color={colors.primary} />
+                          <Ionicons name="book-outline" size={20} color={colors.text} />
                         </View>
                       )}
                       {isRecent && (
                         <View
                           style={[
                             tw`absolute -top-1 -right-1 w-4 h-4 rounded-full items-center justify-center`,
-                            { backgroundColor: colors.primary },
+                            { backgroundColor: colors.hero },
                           ]}
                         >
-                          <Ionicons name="time" size={9} color="#fff" />
+                          <Ionicons name="time" size={9} color={colors.heroText} />
                         </View>
                       )}
                     </View>
@@ -518,10 +518,10 @@ export default function CategoryDetailScreen({ route, navigation }) {
                           <View
                             style={[
                               tw`w-9 h-9 rounded-xl items-center justify-center`,
-                              { backgroundColor: colors.primary + '10' },
+                              { backgroundColor: colors.surfaceMuted },
                             ]}
                           >
-                            <Ionicons name="layers" size={18} color={colors.primary} />
+                            <Ionicons name="layers" size={18} color={colors.text} />
                           </View>
                           <View style={tw`flex-1`}>
                             <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>
@@ -601,10 +601,10 @@ export default function CategoryDetailScreen({ route, navigation }) {
               <View
                 style={[
                   tw`w-16 h-16 rounded-full items-center justify-center mb-4`,
-                  { backgroundColor: colors.primary + '10' },
+                  { backgroundColor: colors.surfaceMuted },
                 ]}
               >
-                <Ionicons name="folder-open-outline" size={32} color={colors.primary} />
+                <Ionicons name="folder-open-outline" size={32} color={colors.text} />
               </View>
               <Text style={[tw`text-base font-semibold mb-1`, { color: colors.text }]}>
                 No content yet

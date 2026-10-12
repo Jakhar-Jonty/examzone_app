@@ -75,7 +75,7 @@ export default function CategoriesScreen({ navigation }) {
         <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
           <Header navigation={navigation} colors={colors} />
           <View style={tw`flex-1 items-center justify-center`}>
-            <ActivityIndicator size="large" color={colors.primary} />
+            <ActivityIndicator size="large" color={colors.text} />
           </View>
         </View>
       </ScreenWrapper>
@@ -95,7 +95,7 @@ export default function CategoriesScreen({ navigation }) {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor={colors.primary}
+              tintColor={colors.text}
             />
           }
           showsVerticalScrollIndicator={false}
@@ -103,13 +103,13 @@ export default function CategoriesScreen({ navigation }) {
           {/* Error */}
           {error && (
             <TouchableOpacity
-              style={tw`flex-row items-center p-3 rounded-2xl mb-4 bg-red-50 dark:bg-red-900/20`}
+              style={[tw`flex-row items-center p-3 rounded-2xl mb-4`, { backgroundColor: colors.tones.red.bg }]}
               onPress={fetchCategories}
               activeOpacity={0.7}
             >
-              <Ionicons name="alert-circle" size={18} color="#ef4444" />
-              <Text style={tw`flex-1 text-xs text-red-500 ml-2`}>{error}</Text>
-              <Ionicons name="refresh" size={16} color="#ef4444" />
+              <Ionicons name="alert-circle" size={18} color={colors.tones.red.fg} />
+              <Text style={[tw`flex-1 text-xs ml-2`, { color: colors.tones.red.fg }]}>{error}</Text>
+              <Ionicons name="refresh" size={16} color={colors.tones.red.fg} />
             </TouchableOpacity>
           )}
 
@@ -119,10 +119,10 @@ export default function CategoriesScreen({ navigation }) {
               <View
                 style={[
                   tw`w-16 h-16 rounded-full items-center justify-center mb-4`,
-                  { backgroundColor: colors.primary + '10' },
+                  { backgroundColor: colors.surfaceMuted },
                 ]}
               >
-                <Ionicons name="folder-open-outline" size={32} color={colors.primary} />
+                <Ionicons name="folder-open-outline" size={32} color={colors.text} />
               </View>
               <Text style={[tw`text-base font-semibold mb-1`, { color: colors.text }]}>
                 No categories
@@ -160,10 +160,10 @@ export default function CategoriesScreen({ navigation }) {
                     <View
                       style={[
                         tw`w-13 h-13 rounded-2xl items-center justify-center mr-3.5`,
-                        { backgroundColor: colors.primary + '10' },
+                        { backgroundColor: colors.surfaceMuted },
                       ]}
                     >
-                      <Ionicons name="book-outline" size={24} color={colors.primary} />
+                      <Ionicons name="book-outline" size={24} color={colors.text} />
                     </View>
                   )}
 
@@ -185,8 +185,8 @@ export default function CategoriesScreen({ navigation }) {
                     )}
                     {category.examCount > 0 && (
                       <View style={tw`flex-row items-center gap-1`}>
-                        <Ionicons name="document-text-outline" size={12} color={colors.primary} />
-                        <Text style={[tw`text-[10px] font-semibold`, { color: colors.primary }]}>
+                        <Ionicons name="document-text-outline" size={12} color={colors.text} />
+                        <Text style={[tw`text-[10px] font-semibold`, { color: colors.text }]}>
                           {category.examCount} {category.examCount === 1 ? 'exam' : 'exams'}
                         </Text>
                       </View>

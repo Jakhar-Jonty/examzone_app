@@ -125,7 +125,7 @@ export default function QuestionDetailScreen({ route, navigation }) {
             <View style={{ width: 24 }} />
           </View>
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
+            <ActivityIndicator size="large" color={colors.text} />
           </View>
         </View>
       </ScreenWrapper>
@@ -156,9 +156,9 @@ export default function QuestionDetailScreen({ route, navigation }) {
       case 'mastered':
         return colors.success;
       case 'reviewed':
-        return colors.primary;
+        return colors.tones.blue.fg;
       case 'needs-review':
-        return '#f59e0b';
+        return colors.tones.orange.fg;
       default:
         return colors.textSecondary;
     }
@@ -180,7 +180,7 @@ export default function QuestionDetailScreen({ route, navigation }) {
             <Ionicons
               name={editing ? "close" : "create-outline"}
               size={24}
-              color={colors.primary}
+              color={colors.text}
             />
           </TouchableOpacity>
         </View>
@@ -212,9 +212,9 @@ export default function QuestionDetailScreen({ route, navigation }) {
             {question.difficulty && (
               <View style={[
                 styles.difficultyBadge,
-                question.difficulty === 'Easy' && { backgroundColor: '#10b98120' },
-                question.difficulty === 'Medium' && { backgroundColor: '#f59e0b20' },
-                question.difficulty === 'Hard' && { backgroundColor: '#ef444420' },
+                question.difficulty === 'Easy' && { backgroundColor: colors.tones.green.bg },
+                question.difficulty === 'Medium' && { backgroundColor: colors.tones.orange.bg },
+                question.difficulty === 'Hard' && { backgroundColor: colors.tones.red.bg },
               ]}>
                 <Text style={styles.difficultyText}>{question.difficulty}</Text>
               </View>
@@ -555,7 +555,7 @@ const createStyles = (colors) =>
     explanationBox: {
       padding: 16,
       borderRadius: 12,
-      backgroundColor: '#3b82f620',
+      backgroundColor: colors.tones.blue.bg,
     },
     explanationText: {
       fontSize: 15,
@@ -607,7 +607,7 @@ const createStyles = (colors) =>
       color: colors.textSecondary,
     },
     saveButton: {
-      backgroundColor: colors.primary,
+      backgroundColor: colors.hero,
       paddingVertical: 14,
       borderRadius: 12,
       alignItems: 'center',
@@ -616,12 +616,12 @@ const createStyles = (colors) =>
     saveButtonText: {
       fontSize: 16,
       fontWeight: '600',
-      color: '#FFFFFF',
+      color: colors.heroText,
     },
     notesBox: {
       padding: 16,
       borderRadius: 12,
-      backgroundColor: '#fef3c720',
+      backgroundColor: colors.tones.orange.bg,
       marginBottom: 12,
     },
     notesLabel: {
@@ -651,12 +651,12 @@ const createStyles = (colors) =>
       paddingHorizontal: 12,
       paddingVertical: 6,
       borderRadius: 16,
-      backgroundColor: colors.primary + '20',
+      backgroundColor: colors.surfaceMuted,
     },
     tagText: {
       fontSize: 12,
       fontWeight: '500',
-      color: colors.primary,
+      color: colors.text,
     },
     savedDate: {
       fontSize: 12,

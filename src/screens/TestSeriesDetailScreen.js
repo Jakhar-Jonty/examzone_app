@@ -151,7 +151,7 @@ export default function TestSeriesDetailScreen({ route, navigation }) {
             >
               <View style={[styles.testNum, entry.completed && { backgroundColor: colors.success }]}>
                 {entry.completed ? (
-                  <Ionicons name="checkmark" size={16} color="#fff" />
+                  <Ionicons name="checkmark" size={16} color={colors.heroText} />
                 ) : (
                   <Text style={styles.testNumText}>{idx + 1}</Text>
                 )}
@@ -186,7 +186,7 @@ export default function TestSeriesDetailScreen({ route, navigation }) {
             onPress={handleEnroll}
           >
             {enrolling ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={colors.heroText} />
             ) : (
               <Text style={styles.ctaText}>
                 {isPaid ? `Enroll · ${priceText}` : 'Enroll for Free'}

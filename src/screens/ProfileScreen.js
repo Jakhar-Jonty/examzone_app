@@ -155,7 +155,7 @@ export default function ProfileScreen({ navigation }) {
                 { backgroundColor: colors.hero, borderColor: colors.background },
               ]}
             >
-              <Ionicons name="pencil" size={14} color="#fff" />
+              <Ionicons name="pencil" size={14} color={colors.heroText} />
             </View>
           </TouchableOpacity>
 

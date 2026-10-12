@@ -100,7 +100,7 @@ function ChipSelect({ options, selected, onSelect, multi = false, colors }) {
               {label}
             </Text>
             {isActive && multi && (
-              <Ionicons name="checkmark" size={12} color="#fff" style={tw`ml-1`} />
+              <Ionicons name="checkmark" size={12} color={colors.heroText} style={tw`ml-1`} />
             )}
           </TouchableOpacity>
         );
@@ -385,7 +385,7 @@ export default function EditProfileScreen({ navigation }) {
                     <View
                       style={tw`absolute inset-0 bg-black/40 items-center justify-center`}
                     >
-                      <ActivityIndicator size="small" color="#fff" />
+                      <ActivityIndicator size="small" color={colors.heroText} />
                     </View>
                   )}
                 </View>
@@ -395,7 +395,7 @@ export default function EditProfileScreen({ navigation }) {
                     { backgroundColor: colors.hero, borderColor: colors.background },
                   ]}
                 >
-                  <Ionicons name="camera" size={14} color="#fff" />
+                  <Ionicons name="camera" size={14} color={colors.heroText} />
                 </View>
               </TouchableOpacity>
               <Text style={[tw`text-xs mt-2`, { color: colors.textSecondary }]}>
@@ -700,10 +700,10 @@ export default function EditProfileScreen({ navigation }) {
               activeOpacity={0.7}
             >
               {loading ? (
-                <ActivityIndicator size="small" color="#fff" />
+                <ActivityIndicator size="small" color={colors.heroText} />
               ) : (
                 <>
-                  <Ionicons name="checkmark-circle" size={18} color="#fff" />
+                  <Ionicons name="checkmark-circle" size={18} color={colors.heroText} />
                   <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>Save Changes</Text>
                 </>
               )}

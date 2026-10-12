@@ -54,7 +54,7 @@ export default function QuoteDetailScreen({ route, navigation }) {
         <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
           <Header title="Daily Quote" navigation={navigation} colors={colors} />
           <View style={tw`flex-1 items-center justify-center`}>
-            <ActivityIndicator size="large" color={colors.primary} />
+            <ActivityIndicator size="large" color={colors.text} />
           </View>
         </View>
       </ScreenWrapper>
@@ -71,20 +71,20 @@ export default function QuoteDetailScreen({ route, navigation }) {
             <View
               style={[
                 tw`w-16 h-16 rounded-full items-center justify-center mb-4`,
-                { backgroundColor: '#f59e0b' + '10' },
+                { backgroundColor: colors.tones.orange.bg },
               ]}
             >
-              <Ionicons name="chatbubble-ellipses-outline" size={32} color="#f59e0b" />
+              <Ionicons name="chatbubble-ellipses-outline" size={32} color={colors.tones.orange.fg} />
             </View>
             <Text style={[tw`text-base font-semibold mb-1`, { color: colors.text }]}>
               {error || 'No quote available'}
             </Text>
             <TouchableOpacity
-              style={[tw`mt-4 px-5 py-2.5 rounded-xl`, { backgroundColor: colors.primary }]}
+              style={[tw`mt-4 px-5 py-2.5 rounded-xl`, { backgroundColor: colors.hero }]}
               onPress={fetchQuote}
               activeOpacity={0.7}
             >
-              <Text style={tw`text-sm font-semibold text-white`}>Retry</Text>
+              <Text style={[tw`text-sm font-semibold`, { color: colors.heroText }]}>Retry</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -115,7 +115,7 @@ export default function QuoteDetailScreen({ route, navigation }) {
           {/* ─── Quote Visual ─────────────────────────── */}
           <View style={tw`items-center pt-10 pb-8`}>
             {/* Large opening quote mark */}
-            <Text style={[tw`text-7xl leading-none mb-2`, { color: colors.primary + '30' }]}>
+            <Text style={[tw`text-7xl leading-none mb-2`, { color: colors.text + '30' }]}>
               "
             </Text>
           </View>
@@ -136,9 +136,9 @@ export default function QuoteDetailScreen({ route, navigation }) {
           {quote.author && (
             <View style={tw`items-center mb-10`}>
               <View
-                style={[tw`w-12 h-0.5 mb-4`, { backgroundColor: colors.primary }]}
+                style={[tw`w-12 h-0.5 mb-4`, { backgroundColor: colors.hero }]}
               />
-              <Text style={[tw`text-lg font-semibold`, { color: colors.primary }]}>
+              <Text style={[tw`text-lg font-semibold`, { color: colors.text }]}>
                 — {quote.author}
               </Text>
             </View>
@@ -160,10 +160,10 @@ export default function QuoteDetailScreen({ route, navigation }) {
                   <View
                     style={[
                       tw`px-3 py-1 rounded-full`,
-                      { backgroundColor: colors.primary + '10' },
+                      { backgroundColor: colors.surfaceMuted },
                     ]}
                   >
-                    <Text style={[tw`text-xs font-semibold capitalize`, { color: colors.primary }]}>
+                    <Text style={[tw`text-xs font-semibold capitalize`, { color: colors.text }]}>
                       {quote.category}
                     </Text>
                   </View>
@@ -212,8 +212,8 @@ export default function QuoteDetailScreen({ route, navigation }) {
             onPress={handleShare}
             activeOpacity={0.7}
           >
-            <Ionicons name="share-outline" size={18} color={colors.primary} />
-            <Text style={[tw`text-sm font-semibold`, { color: colors.primary }]}>
+            <Ionicons name="share-outline" size={18} color={colors.text} />
+            <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>
               Share Quote
             </Text>
           </TouchableOpacity>

@@ -39,13 +39,13 @@ function AnswerCell({ index, selected, onSelect, colors }) {
               style={[
                 tw`w-9 h-9 rounded-lg items-center justify-center border`,
                 {
-                  backgroundColor: active ? colors.primary : colors.background,
-                  borderColor: active ? colors.primary : colors.border,
+                  backgroundColor: active ? colors.hero : colors.card,
+                  borderColor: active ? colors.hero : colors.border,
                 },
               ]}
               activeOpacity={0.7}
             >
-              <Text style={[tw`text-xs font-bold`, { color: active ? '#fff' : colors.text }]}>
+              <Text style={[tw`text-xs font-bold`, { color: active ? colors.heroText : colors.text }]}>
                 {opt}
               </Text>
             </TouchableOpacity>
@@ -192,7 +192,7 @@ export default function OmrEntryScreen({ route, navigation }) {
             </Text>
           </View>
           <TouchableOpacity onPress={handleSharePaper} style={tw`p-2`}>
-            <Ionicons name="share-outline" size={20} color={colors.primary} />
+            <Ionicons name="share-outline" size={20} color={colors.text} />
           </TouchableOpacity>
         </View>
 
@@ -209,13 +209,13 @@ export default function OmrEntryScreen({ route, navigation }) {
               }}
               style={[
                 tw`flex-1 py-2.5 items-center`,
-                activeTab === tab.key && { borderBottomWidth: 2, borderBottomColor: colors.primary, marginBottom: -1 },
+                activeTab === tab.key && { borderBottomWidth: 2, borderBottomColor: colors.hero, marginBottom: -1 },
               ]}
             >
               <Text
                 style={[
                   tw`text-sm font-semibold`,
-                  { color: activeTab === tab.key ? colors.primary : colors.textSecondary },
+                  { color: activeTab === tab.key ? colors.text : colors.textSecondary },
                 ]}
               >
                 {tab.label}
@@ -240,7 +240,7 @@ export default function OmrEntryScreen({ route, navigation }) {
           </ScrollView>
         ) : loadingPaper ? (
           <View style={tw`flex-1 items-center justify-center`}>
-            <ActivityIndicator size="large" color={colors.primary} />
+            <ActivityIndicator size="large" color={colors.text} />
           </View>
         ) : (
           <ScrollView contentContainerStyle={tw`px-4 pb-28 pt-2`}>
@@ -255,7 +255,7 @@ export default function OmrEntryScreen({ route, navigation }) {
                     { backgroundColor: colors.surface, borderColor: colors.border },
                   ]}
                 >
-                  <Text style={[tw`text-sm font-bold mb-2`, { color: colors.primary }]}>
+                  <Text style={[tw`text-sm font-bold mb-2`, { color: colors.text }]}>
                     Q{idx + 1}
                   </Text>
                   <Text style={[tw`text-sm mb-3`, { color: colors.text }]}>{text}</Text>
@@ -281,13 +281,13 @@ export default function OmrEntryScreen({ route, navigation }) {
           <TouchableOpacity
             onPress={handleSubmit}
             disabled={submitting}
-            style={[tw`py-3.5 rounded-2xl items-center`, { backgroundColor: colors.primary }]}
+            style={[tw`py-3.5 rounded-2xl items-center`, { backgroundColor: colors.hero }]}
             activeOpacity={0.85}
           >
             {submitting ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={colors.heroText} />
             ) : (
-              <Text style={tw`text-sm font-bold text-white`}>Submit OMR Sheet</Text>
+              <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>Submit OMR Sheet</Text>
             )}
           </TouchableOpacity>
         </View>

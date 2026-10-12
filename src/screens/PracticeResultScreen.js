@@ -62,7 +62,7 @@ export default function PracticeResultScreen({ route, navigation }) {
         </View>
 
         <TouchableOpacity style={styles.btn} onPress={() => navigation.navigate('PracticeSessions')}>
-          <Ionicons name="arrow-back" size={18} color="#fff" />
+          <Ionicons name="arrow-back" size={18} color={colors.heroText} />
           <Text style={styles.btnText}>Back to Practice</Text>
         </TouchableOpacity>
       </View>

@@ -83,7 +83,7 @@ export default function PaywallScreen({ navigation, route }) {
         <Header colors={colors} onClose={() => navigation.goBack()} title="Premium" />
         <View style={styles.activeWrap}>
           <View style={styles.activeBadge}>
-            <Ionicons name="diamond" size={40} color="#fff" />
+            <Ionicons name="diamond" size={40} color={colors.heroText} />
           </View>
           <Text style={styles.activeTitle}>You're Premium</Text>
           <Text style={styles.activeSub}>
@@ -102,7 +102,7 @@ export default function PaywallScreen({ navigation, route }) {
 
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator color={colors.primary} size="large" />
+          <ActivityIndicator color={colors.text} size="large" />
         </View>
       ) : (
         <ScrollView
@@ -111,12 +111,12 @@ export default function PaywallScreen({ navigation, route }) {
         >
           {/* Hero */}
           <LinearGradient
-            colors={[colors.primary, colors.primaryGradientEnd]}
+            colors={[colors.hero, colors.heroRaised]}
             style={styles.hero}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
-            <Ionicons name="rocket" size={36} color="#fff" />
+            <Ionicons name="rocket" size={36} color={colors.heroText} />
             <Text style={styles.heroTitle}>Unlock Everything</Text>
             <Text style={styles.heroSub}>
               {reason || 'Unlimited exams, all study material, ad-free.'}
@@ -193,7 +193,7 @@ export default function PaywallScreen({ navigation, route }) {
             style={[styles.cta, purchasing && { opacity: 0.7 }]}
           >
             {purchasing ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={colors.heroText} />
             ) : (
               <Text style={styles.ctaText}>
                 {selected === 'yearly'
@@ -241,12 +241,12 @@ const makeStyles = (colors) =>
     heroTitle: {
       fontSize: 22,
       fontWeight: '800',
-      color: '#fff',
+      color: colors.heroText,
       marginTop: 10,
     },
     heroSub: {
       fontSize: 14,
-      color: 'rgba(255,255,255,0.9)',
+      color: colors.heroTextSecondary,
       textAlign: 'center',
       marginTop: 6,
     },
@@ -258,24 +258,24 @@ const makeStyles = (colors) =>
       padding: 16,
       marginBottom: 14,
     },
-    cardSel: { borderColor: colors.primary },
+    cardSel: { borderColor: colors.hero },
     bestBadge: {
       position: 'absolute',
       top: -10,
       right: 16,
-      backgroundColor: colors.primary,
+      backgroundColor: colors.hero,
       paddingHorizontal: 10,
       paddingVertical: 3,
       borderRadius: 10,
     },
-    bestText: { color: '#fff', fontSize: 10, fontWeight: '800' },
+    bestText: { color: colors.heroText, fontSize: 10, fontWeight: '800' },
     cardHeadRow: { flexDirection: 'row', alignItems: 'center' },
     radio: {
       width: 22,
       height: 22,
       borderRadius: 11,
       borderWidth: 2,
-      borderColor: colors.primary,
+      borderColor: colors.hero,
       marginRight: 12,
       alignItems: 'center',
       justifyContent: 'center',
@@ -284,7 +284,7 @@ const makeStyles = (colors) =>
       width: 12,
       height: 12,
       borderRadius: 6,
-      backgroundColor: colors.primary,
+      backgroundColor: colors.hero,
     },
     planName: { fontSize: 16, fontWeight: '700', color: colors.text },
     planDuration: { fontSize: 13, color: colors.textSecondary, marginTop: 2 },
@@ -320,18 +320,18 @@ const makeStyles = (colors) =>
       backgroundColor: colors.background,
     },
     cta: {
-      backgroundColor: colors.primary,
+      backgroundColor: colors.hero,
       borderRadius: 14,
       paddingVertical: 16,
       alignItems: 'center',
     },
-    ctaText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+    ctaText: { color: colors.heroText, fontSize: 16, fontWeight: '700' },
     activeWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
     activeBadge: {
       width: 90,
       height: 90,
       borderRadius: 45,
-      backgroundColor: colors.primary,
+      backgroundColor: colors.hero,
       alignItems: 'center',
       justifyContent: 'center',
       marginBottom: 20,

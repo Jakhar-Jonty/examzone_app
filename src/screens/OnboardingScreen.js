@@ -44,15 +44,15 @@ export default function OnboardingScreen({ route }) {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.primary }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.hero }}>
       <ScrollView contentContainerStyle={tw`flex-grow`} showsVerticalScrollIndicator={false}>
         {/* Hero */}
         <View style={tw`px-6 pt-12 pb-8 items-center`}>
           <Image source={mark} style={tw`h-16 w-16 rounded-2xl mb-4`} resizeMode="cover" />
-          <Text style={[tw`text-3xl font-extrabold text-center mb-1`, { color: '#fff' }]}>
+          <Text style={[tw`text-3xl font-extrabold text-center mb-1`, { color: colors.heroText }]}>
             Welcome{user?.name ? `, ${user.name.split(' ')[0]}` : ''}!
           </Text>
-          <Text style={[tw`text-base text-center`, { color: 'rgba(255,255,255,0.8)' }]}>
+          <Text style={[tw`text-base text-center`, { color: colors.heroTextSecondary }]}>
             You're all set. Let's make this count.
           </Text>
         </View>
@@ -91,10 +91,10 @@ export default function OnboardingScreen({ route }) {
                   onPress={() => setGoal(g.value)}
                   style={[
                     tw`flex-row items-center justify-between px-4 py-3.5 rounded-2xl border-2`,
-                    { borderColor: sel ? colors.primary : colors.border, backgroundColor: sel ? (colors.primary + '15') : colors.surface },
+                    { borderColor: sel ? colors.hero : colors.border, backgroundColor: sel ? colors.surfaceMuted : colors.card },
                   ]}
                 >
-                  <Text style={[tw`text-sm font-bold`, { color: sel ? colors.primary : colors.text }]}>{g.label}</Text>
+                  <Text style={[tw`text-sm font-bold`, { color: sel ? colors.text : colors.text }]}>{g.label}</Text>
                   <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>{g.sub}</Text>
                 </TouchableOpacity>
               );
@@ -102,13 +102,13 @@ export default function OnboardingScreen({ route }) {
           </View>
 
           <TouchableOpacity
-            style={[tw`py-4 rounded-2xl items-center`, { backgroundColor: loading ? '#86efac' : colors.primary }]}
+            style={[tw`py-4 rounded-2xl items-center`, { backgroundColor: colors.hero, opacity: loading ? 0.6 : 1 }]}
             onPress={finish}
             disabled={loading}
           >
             {loading
-              ? <ActivityIndicator color="#fff" />
-              : <Text style={[tw`text-base font-extrabold`, { color: '#fff' }]}>Start My Journey →</Text>
+              ? <ActivityIndicator color={colors.heroText} />
+              : <Text style={[tw`text-base font-extrabold`, { color: colors.heroText }]}>Start My Journey →</Text>
             }
           </TouchableOpacity>
         </View>

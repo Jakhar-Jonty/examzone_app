@@ -239,7 +239,7 @@ export default function StudyPlanCreateScreen({ navigation }) {
           <>
             {form.categoryId ? (
               loadingTopics ? (
-                <ActivityIndicator color={colors.primary} style={{ marginVertical: 16 }} />
+                <ActivityIndicator color={colors.text} style={{ marginVertical: 16 }} />
               ) : (
                 subjectsAndTopics.map((s) => (
                   <View key={s.subject} style={styles.subjectBlock}>
@@ -260,7 +260,7 @@ export default function StudyPlanCreateScreen({ navigation }) {
                       const selected = selectedTopicKeys.has(key);
                       return (
                         <TouchableOpacity key={topic} style={styles.topicRow} onPress={() => toggleTopic(s.subject, topic)}>
-                          <Ionicons name={selected ? 'checkbox' : 'square-outline'} size={20} color={selected ? colors.primary : colors.textSecondary} />
+                          <Ionicons name={selected ? 'checkbox' : 'square-outline'} size={20} color={selected ? colors.text : colors.textSecondary} />
                           <Text style={styles.topicText}>{topic}</Text>
                         </TouchableOpacity>
                       );
@@ -340,8 +340,8 @@ const makeStyles = (colors) =>
     headerSub: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
     stepRow: { flexDirection: 'row', justifyContent: 'center', gap: 6, paddingBottom: 12 },
     stepDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.border },
-    stepDotActive: { width: 24, backgroundColor: colors.primary },
-    stepDotDone: { backgroundColor: colors.primary + '80' },
+    stepDotActive: { width: 24, backgroundColor: colors.hero },
+    stepDotDone: { backgroundColor: colors.surfaceMuted },
     body: { padding: 16, paddingBottom: 32 },
     label: { fontSize: 13, fontWeight: '700', color: colors.text, marginBottom: 6, marginTop: 12 },
     input: {
@@ -363,18 +363,18 @@ const makeStyles = (colors) =>
       marginRight: 8,
       backgroundColor: colors.surface,
     },
-    chipActive: { borderColor: colors.primary, backgroundColor: colors.primary + '15' },
+    chipActive: { borderColor: colors.hero, backgroundColor: colors.surfaceMuted },
     chipText: { fontSize: 13, color: colors.textSecondary },
-    chipTextActive: { color: colors.primary, fontWeight: '700' },
+    chipTextActive: { color: colors.text, fontWeight: '700' },
     hint: { fontSize: 13, color: colors.textSecondary, marginVertical: 8 },
     subjectBlock: { marginBottom: 8, borderWidth: 1, borderColor: colors.border, borderRadius: 10, overflow: 'hidden' },
     subjectHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 12, backgroundColor: colors.surface },
     subjectTitle: { fontSize: 14, fontWeight: '700', color: colors.text },
     topicRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderTopWidth: 1, borderTopColor: colors.border },
     topicText: { fontSize: 14, color: colors.text },
-    selectedCount: { marginTop: 12, fontSize: 13, color: colors.primary, fontWeight: '600' },
-    addBtn: { backgroundColor: colors.primary, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 10, alignSelf: 'flex-start', marginTop: 8 },
-    addBtnText: { color: '#fff', fontWeight: '700' },
+    selectedCount: { marginTop: 12, fontSize: 13, color: colors.text, fontWeight: '600' },
+    addBtn: { backgroundColor: colors.hero, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 10, alignSelf: 'flex-start', marginTop: 8 },
+    addBtnText: { color: colors.heroText, fontWeight: '700' },
     milestoneItem: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderWidth: 1, borderColor: colors.border, borderRadius: 10, marginTop: 8 },
     milestoneTitle: { flex: 1, fontSize: 14, fontWeight: '600', color: colors.text },
     milestoneDate: { fontSize: 12, color: colors.textSecondary },
@@ -383,6 +383,6 @@ const makeStyles = (colors) =>
     reviewDesc: { fontSize: 14, color: colors.textSecondary, marginTop: 6 },
     reviewMeta: { fontSize: 13, color: colors.textSecondary, marginTop: 8 },
     footer: { padding: 16, borderTopWidth: 1, borderTopColor: colors.border },
-    primaryBtn: { backgroundColor: colors.primary, paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
-    primaryBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
+    primaryBtn: { backgroundColor: colors.hero, paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
+    primaryBtnText: { color: colors.heroText, fontWeight: '800', fontSize: 16 },
   });

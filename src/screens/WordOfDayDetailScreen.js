@@ -112,7 +112,7 @@ export default function WordOfDayDetailScreen({ route, navigation }) {
         <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
           <ScreenHeader title="Word of the Day" navigation={navigation} colors={colors} />
           <View style={tw`flex-1 items-center justify-center`}>
-            <ActivityIndicator size="large" color={colors.primary} />
+            <ActivityIndicator size="large" color={colors.text} />
             <Text style={[tw`mt-3 text-sm`, { color: colors.textSecondary }]}>Loading...</Text>
           </View>
         </View>
@@ -130,20 +130,20 @@ export default function WordOfDayDetailScreen({ route, navigation }) {
             <View
               style={[
                 tw`w-16 h-16 rounded-full items-center justify-center mb-4`,
-                { backgroundColor: colors.primary + '10' },
+                { backgroundColor: colors.surfaceMuted },
               ]}
             >
-              <Ionicons name="book-outline" size={32} color={colors.primary} />
+              <Ionicons name="book-outline" size={32} color={colors.text} />
             </View>
             <Text style={[tw`text-base font-semibold mb-1`, { color: colors.text }]}>
               {error || 'No word available'}
             </Text>
             <TouchableOpacity
-              style={[tw`mt-4 px-5 py-2.5 rounded-xl`, { backgroundColor: colors.primary }]}
+              style={[tw`mt-4 px-5 py-2.5 rounded-xl`, { backgroundColor: colors.hero }]}
               onPress={fetchWordOfDay}
               activeOpacity={0.7}
             >
-              <Text style={tw`text-sm font-semibold text-white`}>Retry</Text>
+              <Text style={[tw`text-sm font-semibold`, { color: colors.heroText }]}>Retry</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -177,7 +177,7 @@ export default function WordOfDayDetailScreen({ route, navigation }) {
               <Text
                 style={[
                   tw`text-4xl font-bold`,
-                  { color: colors.primary, letterSpacing: -1 },
+                  { color: colors.text, letterSpacing: -1 },
                 ]}
               >
                 {word.word}
@@ -185,15 +185,15 @@ export default function WordOfDayDetailScreen({ route, navigation }) {
               <TouchableOpacity
                 style={[
                   tw`w-11 h-11 rounded-full items-center justify-center`,
-                  { backgroundColor: colors.primary + '12' },
+                  { backgroundColor: colors.surfaceMuted },
                 ]}
                 onPress={speakWord}
                 activeOpacity={0.7}
               >
                 {isSpeaking ? (
-                  <ActivityIndicator size="small" color={colors.primary} />
+                  <ActivityIndicator size="small" color={colors.text} />
                 ) : (
-                  <Ionicons name="volume-high" size={22} color={colors.primary} />
+                  <Ionicons name="volume-high" size={22} color={colors.text} />
                 )}
               </TouchableOpacity>
             </View>
@@ -208,10 +208,10 @@ export default function WordOfDayDetailScreen({ route, navigation }) {
               <View
                 style={[
                   tw`mt-2 px-3 py-1 rounded-full`,
-                  { backgroundColor: colors.primary + '10' },
+                  { backgroundColor: colors.surfaceMuted },
                 ]}
               >
-                <Text style={[tw`text-xs font-semibold italic`, { color: colors.primary }]}>
+                <Text style={[tw`text-xs font-semibold italic`, { color: colors.text }]}>
                   {word.type}
                 </Text>
               </View>
@@ -238,7 +238,7 @@ export default function WordOfDayDetailScreen({ route, navigation }) {
               <View
                 style={[
                   tw`p-4 rounded-2xl border-l-4`,
-                  { backgroundColor: colors.primary + '08', borderLeftColor: colors.primary },
+                  { backgroundColor: colors.surfaceMuted, borderLeftColor: colors.hero },
                 ]}
               >
                 <Text style={[tw`text-sm leading-5 italic`, { color: colors.text }]}>
@@ -273,10 +273,10 @@ export default function WordOfDayDetailScreen({ route, navigation }) {
                           key={i}
                           style={[
                             tw`px-2.5 py-1 rounded-full`,
-                            { backgroundColor: '#10b981' + '12' },
+                            { backgroundColor: colors.tones.green.bg },
                           ]}
                         >
-                          <Text style={tw`text-xs font-medium text-green-600`}>{s}</Text>
+                          <Text style={[tw`text-xs font-medium`, { color: colors.tones.green.fg }]}>{s}</Text>
                         </View>
                       ))}
                     </View>
@@ -306,10 +306,10 @@ export default function WordOfDayDetailScreen({ route, navigation }) {
                           key={i}
                           style={[
                             tw`px-2.5 py-1 rounded-full`,
-                            { backgroundColor: '#ef4444' + '12' },
+                            { backgroundColor: colors.tones.red.bg },
                           ]}
                         >
-                          <Text style={tw`text-xs font-medium text-red-500`}>{a}</Text>
+                          <Text style={[tw`text-xs font-medium`, { color: colors.tones.red.fg }]}>{a}</Text>
                         </View>
                       ))}
                     </View>

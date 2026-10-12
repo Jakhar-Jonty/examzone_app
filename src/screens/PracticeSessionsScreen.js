@@ -310,7 +310,7 @@ export default function PracticeSessionsScreen({ navigation }) {
               <Text style={styles.accuracy}>{s.accuracy}%</Text>
             ) : (
               <TouchableOpacity style={styles.resumeBtn} onPress={() => startSession(s)}>
-                <Ionicons name="play" size={14} color="#fff" />
+                <Ionicons name="play" size={14} color={colors.heroText} />
                 <Text style={styles.resumeText}>Resume</Text>
               </TouchableOpacity>
             )}

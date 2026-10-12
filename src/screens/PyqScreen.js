@@ -343,10 +343,10 @@ export default function PyqScreen({ navigation }) {
                                 activeOpacity={0.85}
                               >
                                 {practicing ? (
-                                  <ActivityIndicator color="#fff" size="small" />
+                                  <ActivityIndicator color={colors.heroText} size="small" />
                                 ) : (
                                   <>
-                                    <Ionicons name="play" size={14} color="#fff" />
+                                    <Ionicons name="play" size={14} color={colors.heroText} />
                                     <Text style={styles.startBtnText}>Start</Text>
                                   </>
                                 )}

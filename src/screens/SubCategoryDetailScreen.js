@@ -213,11 +213,11 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
               {error || 'Subcategory not found'}
             </Text>
             <TouchableOpacity
-              style={[tw`mt-4 px-5 py-2.5 rounded-xl`, { backgroundColor: colors.primary }]}
+              style={[tw`mt-4 px-5 py-2.5 rounded-xl`, { backgroundColor: colors.hero }]}
               onPress={fetchSubCategory}
               activeOpacity={0.7}
             >
-              <Text style={tw`text-sm font-semibold text-white`}>Retry</Text>
+              <Text style={[tw`text-sm font-semibold`, { color: colors.heroText }]}>Retry</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -248,7 +248,7 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor={colors.primary}
+              tintColor={colors.text}
             />
           }
           showsVerticalScrollIndicator={false}
@@ -268,10 +268,10 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
               <View
                 style={[
                   tw`w-14 h-14 rounded-2xl items-center justify-center mr-3.5`,
-                  { backgroundColor: colors.primary + '10' },
+                  { backgroundColor: colors.surfaceMuted },
                 ]}
               >
-                <Ionicons name="layers" size={24} color={colors.primary} />
+                <Ionicons name="layers" size={24} color={colors.text} />
               </View>
             )}
             <View style={tw`flex-1`}>
@@ -287,7 +287,7 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
                   }
                   activeOpacity={0.7}
                 >
-                  <Text style={[tw`text-[11px] font-semibold mt-0.5`, { color: colors.primary }]}>
+                  <Text style={[tw`text-[11px] font-semibold mt-0.5`, { color: colors.text }]}>
                     {parentCategory.displayName || parentCategory.name}
                   </Text>
                 </TouchableOpacity>
@@ -304,10 +304,10 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
                 <View
                   style={[
                     tw`self-start px-2 py-0.5 rounded-md mt-2`,
-                    { backgroundColor: colors.primary + '12' },
+                    { backgroundColor: colors.surfaceMuted },
                   ]}
                 >
-                  <Text style={[tw`text-[10px] font-semibold`, { color: colors.primary }]}>
+                  <Text style={[tw`text-[10px] font-semibold`, { color: colors.text }]}>
                     {subCategory.examCount} {subCategory.examCount === 1 ? 'exam' : 'exams'}
                   </Text>
                 </View>
@@ -331,7 +331,7 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
                   style={[
                     tw`px-4 py-2.5 rounded-xl border`,
                     !selectedTierId
-                      ? { backgroundColor: colors.primary + '12', borderColor: colors.primary }
+                      ? { backgroundColor: colors.surfaceMuted, borderColor: colors.hero }
                       : { backgroundColor: colors.surface, borderColor: colors.border },
                   ]}
                   onPress={() => setSelectedTierId(null)}
@@ -340,7 +340,7 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
                   <Text
                     style={[
                       tw`text-xs font-semibold`,
-                      { color: !selectedTierId ? colors.primary : colors.text },
+                      { color: !selectedTierId ? colors.text : colors.text },
                     ]}
                   >
                     All
@@ -355,7 +355,7 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
                       style={[
                         tw`flex-row items-center px-4 py-2.5 rounded-xl border gap-2`,
                         isSelected
-                          ? { backgroundColor: colors.primary + '12', borderColor: colors.primary }
+                          ? { backgroundColor: colors.surfaceMuted, borderColor: colors.hero }
                           : { backgroundColor: colors.surface, borderColor: colors.border },
                       ]}
                       onPress={() => handleTierSelect(tier._id)}
@@ -371,13 +371,13 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
                         <Ionicons
                           name="layers"
                           size={14}
-                          color={isSelected ? colors.primary : colors.textSecondary}
+                          color={isSelected ? colors.text : colors.textSecondary}
                         />
                       )}
                       <Text
                         style={[
                           tw`text-xs font-semibold`,
-                          { color: isSelected ? colors.primary : colors.text },
+                          { color: isSelected ? colors.text : colors.text },
                         ]}
                         numberOfLines={1}
                       >
@@ -479,7 +479,7 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
                         name="chevron-back"
                         size={16}
                         color={
-                          pagination.currentPage === 1 ? colors.textSecondary : colors.primary
+                          pagination.currentPage === 1 ? colors.textSecondary : colors.text
                         }
                       />
                       <Text
@@ -489,7 +489,7 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
                             color:
                               pagination.currentPage === 1
                                 ? colors.textSecondary
-                                : colors.primary,
+                                : colors.text,
                           },
                         ]}
                       >
@@ -522,7 +522,7 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
                             color:
                               pagination.currentPage === pagination.totalPages
                                 ? colors.textSecondary
-                                : colors.primary,
+                                : colors.text,
                           },
                         ]}
                       >
@@ -534,7 +534,7 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
                         color={
                           pagination.currentPage === pagination.totalPages
                             ? colors.textSecondary
-                            : colors.primary
+                            : colors.text
                         }
                       />
                     </TouchableOpacity>
@@ -562,10 +562,10 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
                 <View
                   style={[
                     tw`w-14 h-14 rounded-full items-center justify-center mb-3`,
-                    { backgroundColor: colors.primary + '10' },
+                    { backgroundColor: colors.surfaceMuted },
                   ]}
                 >
-                  <Ionicons name="document-outline" size={24} color={colors.primary} />
+                  <Ionicons name="document-outline" size={24} color={colors.text} />
                 </View>
                 <Text style={[tw`text-sm font-semibold mb-1`, { color: colors.text }]}>
                   No exams found
@@ -589,10 +589,10 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
               <View
                 style={[
                   tw`w-16 h-16 rounded-full items-center justify-center mb-4`,
-                  { backgroundColor: colors.primary + '10' },
+                  { backgroundColor: colors.surfaceMuted },
                 ]}
               >
-                <Ionicons name="folder-open-outline" size={32} color={colors.primary} />
+                <Ionicons name="folder-open-outline" size={32} color={colors.text} />
               </View>
               <Text style={[tw`text-base font-semibold mb-1`, { color: colors.text }]}>
                 No content yet
