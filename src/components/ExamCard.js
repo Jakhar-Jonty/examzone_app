@@ -31,20 +31,11 @@ function Badge({ label, tone, colors }) {
   );
 }
 
-function Spec({ value, label, colors }) {
-  return (
-    <View style={[tw`flex-1 py-2.5 px-3 rounded-2xl`, { backgroundColor: colors.surfaceMuted }]}>
-      <Text style={[tw`text-base font-extrabold`, { color: colors.text }]}>{value}</Text>
-      <Text style={[tw`text-[11px]`, { color: colors.textSecondary }]}>{label}</Text>
-    </View>
-  );
-}
-
 function Meta({ icon, label, color, colors }) {
   if (!label) return null;
   return (
-    <View style={tw`flex-row items-center mr-3 mb-1`}>
-      <Ionicons name={icon} size={12} color={color || colors.textSecondary} />
+    <View style={tw`flex-row items-center mr-3`}>
+      <Ionicons name={icon} size={11} color={color || colors.textSecondary} />
       <Text style={[tw`text-[11px] font-semibold ml-1`, { color: color || colors.textSecondary }]}>{label}</Text>
     </View>
   );
@@ -62,13 +53,13 @@ function ActionButton({ label, icon, onPress, colors, variant = 'primary' }) {
       onPress={onPress}
       activeOpacity={0.85}
       style={[
-        tw`flex-1 h-11 rounded-2xl items-center justify-center flex-row`,
+        tw`flex-1 h-10 rounded-xl items-center justify-center flex-row`,
         { backgroundColor: style.bg },
         style.border && { borderWidth: 1, borderColor: style.border },
       ]}
     >
-      {icon ? <Ionicons name={icon} size={15} color={style.fg} /> : null}
-      <Text style={[tw`text-sm font-bold`, icon && tw`ml-1.5`, { color: style.fg }]}>{label}</Text>
+      {icon ? <Ionicons name={icon} size={14} color={style.fg} /> : null}
+      <Text style={[tw`text-[13px] font-bold`, icon && tw`ml-1.5`, { color: style.fg }]}>{label}</Text>
     </TouchableOpacity>
   );
 }
@@ -162,22 +153,22 @@ export default function ExamCard({ exam, navigation, colors, showBreadcrumb = tr
       onPress={openDetail}
       activeOpacity={0.92}
       style={[
-        tw`rounded-3xl`,
+        tw`rounded-2xl`,
         compact ? tw`mb-0` : null,
         { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
       ]}
     >
-      <View style={tw`p-4`}>
+      <View style={tw`p-3.5`}>
         <View style={tw`flex-row items-start`}>
           <View style={tw`flex-1 pr-2`}>
             <Text
-              style={[compact ? tw`text-sm` : tw`text-base`, tw`font-extrabold leading-snug`, { color: colors.text }]}
+              style={[tw`text-[15px] font-extrabold leading-snug`, { color: colors.text }]}
               numberOfLines={2}
             >
               {exam.title}
             </Text>
             {showBreadcrumb && breadcrumb ? (
-              <Text style={[tw`text-[11px] mt-1`, { color: colors.textSecondary }]} numberOfLines={1}>
+              <Text style={[tw`text-[11px] mt-0.5`, { color: colors.textSecondary }]} numberOfLines={1}>
                 {breadcrumb}
               </Text>
             ) : null}
@@ -204,24 +195,34 @@ export default function ExamCard({ exam, navigation, colors, showBreadcrumb = tr
           </View>
         </View>
 
-        <View style={tw`flex-row gap-2 mt-3`}>
-          {qCount > 0 && <Spec value={qCount} label="Questions" colors={colors} />}
-          <Spec value={exam.duration} label="Minutes" colors={colors} />
-          <Spec value={exam.totalMarks} label="Marks" colors={colors} />
+        <View style={tw`flex-row items-center justify-between mt-2.5`}>
+          <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>
+            {[
+              qCount > 0 && `${qCount} Qs`,
+              exam.duration != null && `${exam.duration} min`,
+              exam.totalMarks != null && `${exam.totalMarks} marks`,
+            ]
+              .filter(Boolean)
+              .map((part, i) => (
+                <Text key={part}>
+                  {i > 0 ? '  ·  ' : ''}
+                  <Text style={[tw`font-bold`, { color: colors.text }]}>{part.split(' ')[0]}</Text>
+                  {` ${part.split(' ').slice(1).join(' ')}`}
+                </Text>
+              ))}
+          </Text>
+          {attempted && exam.lastScore != null && exam.totalMarks != null && (
+            <View style={[tw`px-2 py-1 rounded-lg`, { backgroundColor: scoreTone?.bg || colors.surfaceMuted }]}>
+              <Text style={[tw`text-xs font-extrabold`, { color: scoreTone?.fg || colors.text }]}>
+                {exam.lastScore}/{exam.totalMarks}
+                {scorePct != null ? ` · ${scorePct}%` : ''}
+              </Text>
+            </View>
+          )}
         </View>
 
-        {attempted && exam.lastScore != null && exam.totalMarks != null && (
-          <View style={[tw`flex-row items-center justify-between mt-2 px-3 py-2.5 rounded-2xl`, { backgroundColor: scoreTone?.bg || colors.surfaceMuted }]}>
-            <Text style={[tw`text-xs font-semibold`, { color: colors.text }]}>Your score</Text>
-            <Text style={[tw`text-sm font-extrabold`, { color: scoreTone?.fg || colors.text }]}>
-              {exam.lastScore}/{exam.totalMarks}
-              {scorePct != null ? `  ·  ${scorePct}%` : ''}
-            </Text>
-          </View>
-        )}
-
         {(exam.difficultyLevel || exam.averageRating > 0 || attemptLabel || langLabel || stats?.topScore != null) && (
-          <View style={tw`flex-row flex-wrap mt-3`}>
+          <View style={tw`flex-row flex-wrap mt-1.5`}>
             {exam.difficultyLevel && (
               <Meta icon="speedometer-outline" label={exam.difficultyLevel} color={diffTone?.fg} colors={colors} />
             )}
