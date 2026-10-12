@@ -1,8 +1,10 @@
-import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import React, { useCallback, useEffect, useRef } from 'react';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
+import * as Notifications from 'expo-notifications';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { routeFromNotification } from '../services/notificationService';
 
 // Auth
 import LoginScreen from '../screens/LoginScreen';
@@ -30,17 +32,59 @@ import OmrEntryScreen from '../screens/OmrEntryScreen';
 import LoadingScreen from '../components/LoadingScreen';
 
 const Stack = createNativeStackNavigator();
+const navigationRef = createNavigationContainerRef();
+
+/**
+ * Open the right screen when a push notification is tapped — including when
+ * the tap cold-starts the app. Taps that arrive before the app is ready (or
+ * while signed out) are kept and handled once the main screens exist.
+ */
+function useNotificationTaps(isAuthenticated) {
+  const pending = useRef(null);
+  const handled = useRef(new Set());
+
+  const flush = useCallback(() => {
+    if (!pending.current || !isAuthenticated || !navigationRef.isReady()) return;
+    const data = pending.current;
+    pending.current = null;
+    routeFromNotification(navigationRef, data);
+  }, [isAuthenticated]);
+
+  const onResponse = useCallback(
+    (response) => {
+      const id = response?.notification?.request?.identifier;
+      if (!id || handled.current.has(id)) return;
+      handled.current.add(id);
+      pending.current = response.notification.request.content.data || {};
+      flush();
+    },
+    [flush]
+  );
+
+  useEffect(() => {
+    const sub = Notifications.addNotificationResponseReceivedListener(onResponse);
+    Notifications.getLastNotificationResponseAsync().then((r) => r && onResponse(r)).catch(() => {});
+    return () => sub.remove();
+  }, [onResponse]);
+
+  useEffect(() => {
+    flush();
+  }, [flush]);
+
+  return flush;
+}
 
 export default function AppNavigator() {
   const { isAuthenticated, loading } = useAuth();
   const { colors } = useTheme();
+  const flushNotificationTap = useNotificationTaps(isAuthenticated);
 
   if (loading) {
     return <LoadingScreen message="Initializing..." />;
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef} onReady={flushNotificationTap}>
       <Stack.Navigator
         screenOptions={{
           headerShown: false,

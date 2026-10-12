@@ -99,3 +99,19 @@ export const notificationApi = {
     return res.data;
   },
 };
+
+/**
+ * Where a tapped push notification should take the user. The server sets
+ * `data.screen` on reminders: 'daily-quiz' → Home (Today card), 'exam' →
+ * that exam's detail; anything else → the Notifications list.
+ */
+export const routeFromNotification = (navigation, data = {}) => {
+  if (data.notificationId) notificationApi.markRead(data.notificationId).catch(() => {});
+  if (data.screen === 'exam' && data.examId) {
+    navigation.navigate('ExamDetail', { examId: data.examId });
+  } else if (data.screen === 'daily-quiz') {
+    navigation.navigate('MainTabs', { screen: 'HomeTab', params: { screen: 'Dashboard' } });
+  } else {
+    navigation.navigate('Notifications');
+  }
+};
