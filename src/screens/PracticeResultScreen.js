@@ -104,9 +104,9 @@ const makeStyles = (colors) =>
       alignItems: 'center',
       justifyContent: 'center',
       gap: 8,
-      backgroundColor: colors.primary,
+      backgroundColor: colors.hero,
       paddingVertical: 14,
       borderRadius: 12,
     },
-    btnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
+    btnText: { color: colors.heroText, fontWeight: '800', fontSize: 16 },
   });

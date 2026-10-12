@@ -20,11 +20,12 @@ const STATUS_LABEL = {
   'in-progress': 'In progress',
   completed: 'Completed',
 };
-const STATUS_COLOR = {
-  'not-started': '#9ca3af',
-  'in-progress': '#3b82f6',
-  completed: '#16a34a',
-};
+// Topic status → theme color (needs `colors`, so it's a function).
+const statusColor = (status, colors) =>
+  ({
+    'in-progress': colors.tones.blue.fg,
+    completed: colors.tones.green.fg,
+  })[status] || colors.textSecondary;
 
 function ProgressBar({ value, colors }) {
   return (
@@ -86,10 +87,10 @@ function PlanCard({ plan, colors, onDelete, onTopicToggle, onMilestoneComplete }
                   <Ionicons
                     name={topic.status === 'completed' ? 'checkmark-circle' : topic.status === 'in-progress' ? 'ellipse' : 'ellipse-outline'}
                     size={18}
-                    color={STATUS_COLOR[topic.status] || STATUS_COLOR['not-started']}
+                    color={statusColor(topic.status, colors)}
                   />
                   <Text style={styles.topicName}>{topic.name}</Text>
-                  <Text style={[styles.topicStatus, { color: STATUS_COLOR[topic.status] }]}>
+                  <Text style={[styles.topicStatus, { color: statusColor(topic.status, colors) }]}>
                     {STATUS_LABEL[topic.status] || topic.status}
                   </Text>
                 </TouchableOpacity>
@@ -199,12 +200,12 @@ export default function StudyPlansScreen({ navigation }) {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Study Plans</Text>
         <TouchableOpacity onPress={() => navigation.navigate('StudyPlanCreate')} hitSlop={12}>
-          <Ionicons name="add-circle" size={28} color={colors.primary} />
+          <Ionicons name="add-circle" size={28} color={colors.text} />
         </TouchableOpacity>
       </View>
 
       {loading ? (
-        <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
+        <View style={styles.center}><ActivityIndicator size="large" color={colors.text} /></View>
       ) : (
         <FlatList
           data={plans}
@@ -220,7 +221,7 @@ export default function StudyPlansScreen({ navigation }) {
           )}
           contentContainerStyle={{ padding: 16, flexGrow: 1 }}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={colors.primary} />
+            <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={colors.text} />
           }
           ListEmptyComponent={
             <View style={styles.empty}>
@@ -252,8 +253,8 @@ const makeStyles = (colors) =>
     empty: { alignItems: 'center', paddingTop: 60, paddingHorizontal: 24 },
     emptyTitle: { fontSize: 18, fontWeight: '700', color: colors.text, marginTop: 12 },
     emptyDesc: { fontSize: 14, color: colors.textSecondary, textAlign: 'center', marginTop: 6 },
-    emptyBtn: { marginTop: 20, backgroundColor: colors.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 10 },
-    emptyBtnText: { color: '#fff', fontWeight: '700' },
+    emptyBtn: { marginTop: 20, backgroundColor: colors.hero, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 14 },
+    emptyBtnText: { color: colors.heroText, fontWeight: '700' },
   });
 
 const cardStyles = (colors) =>

@@ -9,6 +9,7 @@ import {
   RefreshControl,
   TextInput,
   Modal,
+  Image,
 } from 'react-native';
 import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
@@ -379,7 +380,7 @@ export default function StudyScreen({ navigation, route }) {
   };
 
   return (
-    <ScreenWrapper>
+    <ScreenWrapper backgroundColor={colors.surface}>
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
@@ -393,8 +394,8 @@ export default function StudyScreen({ navigation, route }) {
             onPress={() => navigation.navigate('WrongBook')}
             activeOpacity={0.85}
           >
-            <View style={[styles.quickIcon, { backgroundColor: '#ef444418' }]}>
-              <Ionicons name="book" size={18} color="#ef4444" />
+            <View style={[styles.quickIcon, { backgroundColor: colors.tones.red.bg }]}>
+              <Ionicons name="close-circle-outline" size={18} color={colors.tones.red.fg} />
             </View>
             <Text style={styles.quickTitle} numberOfLines={1}>Wrong Book</Text>
           </TouchableOpacity>
@@ -403,8 +404,8 @@ export default function StudyScreen({ navigation, route }) {
             onPress={() => navigation.navigate('Pyq')}
             activeOpacity={0.85}
           >
-            <View style={[styles.quickIcon, { backgroundColor: '#6366f118' }]}>
-              <Ionicons name="time" size={18} color="#6366f1" />
+            <View style={[styles.quickIcon, { backgroundColor: colors.tones.blue.bg }]}>
+              <Ionicons name="book-outline" size={18} color={colors.tones.blue.fg} />
             </View>
             <Text style={styles.quickTitle} numberOfLines={1}>PYQ</Text>
           </TouchableOpacity>
@@ -413,8 +414,8 @@ export default function StudyScreen({ navigation, route }) {
             onPress={() => navigation.navigate('PracticeSessions')}
             activeOpacity={0.85}
           >
-            <View style={[styles.quickIcon, { backgroundColor: colors.primary + '18' }]}>
-              <Ionicons name="flash" size={18} color={colors.primary} />
+            <View style={[styles.quickIcon, { backgroundColor: colors.tones.orange.bg }]}>
+              <Ionicons name="flash-outline" size={18} color={colors.tones.orange.fg} />
             </View>
             <Text style={styles.quickTitle} numberOfLines={1}>Practice</Text>
           </TouchableOpacity>
@@ -423,8 +424,8 @@ export default function StudyScreen({ navigation, route }) {
             onPress={() => navigation.navigate('StudyPlans')}
             activeOpacity={0.85}
           >
-            <View style={[styles.quickIcon, { backgroundColor: '#3b82f618' }]}>
-              <Ionicons name="calendar" size={18} color="#3b82f6" />
+            <View style={[styles.quickIcon, { backgroundColor: colors.tones.purple.bg }]}>
+              <Ionicons name="calendar-outline" size={18} color={colors.tones.purple.fg} />
             </View>
             <Text style={styles.quickTitle} numberOfLines={1}>Plans</Text>
           </TouchableOpacity>
@@ -439,8 +440,8 @@ export default function StudyScreen({ navigation, route }) {
           >
             <Ionicons
               name="document-text-outline"
-              size={20}
-              color={activeTab === 'articles' ? colors.primary : colors.textSecondary}
+              size={17}
+              color={activeTab === 'articles' ? colors.text : colors.textSecondary}
             />
             <Text style={[styles.tabText, activeTab === 'articles' && styles.tabTextActive]}>
               Articles
@@ -453,8 +454,8 @@ export default function StudyScreen({ navigation, route }) {
           >
             <Ionicons
               name="bookmark"
-              size={20}
-              color={activeTab === 'questionBank' ? colors.primary : colors.textSecondary}
+              size={17}
+              color={activeTab === 'questionBank' ? colors.text : colors.textSecondary}
             />
             <Text style={[styles.tabText, activeTab === 'questionBank' && styles.tabTextActive]}>
               Question Bank
@@ -484,7 +485,7 @@ export default function StudyScreen({ navigation, route }) {
             onPress={() => setShowFilters(true)}
             activeOpacity={0.7}
           >
-            <Ionicons name="filter" size={20} color={colors.primary} />
+            <Ionicons name="options-outline" size={20} color={colors.text} />
             {getActiveFiltersCount() > 0 && (
               <View style={styles.filterBadge}>
                 <Text style={styles.filterBadgeText}>{getActiveFiltersCount()}</Text>
@@ -501,14 +502,14 @@ export default function StudyScreen({ navigation, route }) {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor={colors.primary}
+              tintColor={colors.text}
             />
           }
           showsVerticalScrollIndicator={false}
         >
           {loading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={colors.primary} />
+              <ActivityIndicator size="large" color={colors.text} />
             </View>
           ) : activeTab === 'articles' ? (
             <>
@@ -530,9 +531,15 @@ export default function StudyScreen({ navigation, route }) {
                     onPress={() => handleArticlePress(article)}
                     activeOpacity={0.7}
                   >
-                    {article.thumbnail && (
-                      <View style={styles.articleThumbnail}>
-                        <Text style={styles.thumbnailPlaceholder}>📄</Text>
+                    {article.thumbnail ? (
+                      <Image
+                        source={{ uri: article.thumbnail }}
+                        style={styles.articleThumbnail}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View style={[styles.articleThumbnail, styles.articleThumbnailEmpty]}>
+                        <Ionicons name="document-text-outline" size={22} color={colors.textSecondary} />
                       </View>
                     )}
                     <View style={styles.articleContent}>
@@ -552,8 +559,8 @@ export default function StudyScreen({ navigation, route }) {
                         )}
                         {article.isPremium && (
                           <View style={styles.premiumBadge}>
-                            <Ionicons name="diamond" size={12} color="#f59e0b" />
-                            <Text style={styles.premiumText}>Premium</Text>
+                            <Ionicons name="diamond" size={11} color={colors.tones.purple.fg} />
+                            <Text style={styles.premiumText}>PRO</Text>
                           </View>
                         )}
                         {article.createdAt && (
@@ -639,7 +646,7 @@ export default function StudyScreen({ navigation, route }) {
                           onPress={() => handleQuestionPress(savedQuestion)}
                           activeOpacity={0.7}
                         >
-                          <Ionicons name="eye-outline" size={18} color={colors.primary} />
+                          <Ionicons name="eye-outline" size={17} color={colors.text} />
                           <Text style={styles.actionText}>View</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
@@ -647,7 +654,7 @@ export default function StudyScreen({ navigation, route }) {
                           onPress={() => handleUnsaveQuestion(savedQuestion._id, question._id)}
                           activeOpacity={0.7}
                         >
-                          <Ionicons name="bookmark" size={18} color={colors.error} />
+                          <Ionicons name="bookmark" size={17} color={colors.tones.red.fg} />
                           <Text style={[styles.actionText, styles.unsaveText]}>Remove</Text>
                         </TouchableOpacity>
                       </View>
@@ -1025,7 +1032,7 @@ const createStyles = (colors) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background,
+      backgroundColor: colors.surface,
     },
     header: {
       paddingHorizontal: 20,
@@ -1033,8 +1040,8 @@ const createStyles = (colors) =>
       paddingBottom: 8,
     },
     headerTitle: {
-      fontSize: 22,
-      fontWeight: 'bold',
+      fontSize: 24,
+      fontWeight: '800',
       color: colors.text,
     },
     quickActions: {
@@ -1047,51 +1054,48 @@ const createStyles = (colors) =>
       flex: 1,
       alignItems: 'center',
       gap: 6,
-      paddingVertical: 10,
+      paddingVertical: 12,
       paddingHorizontal: 6,
-      borderRadius: 12,
+      borderRadius: 16,
       backgroundColor: colors.card,
       borderWidth: 1,
       borderColor: colors.border,
     },
     quickIcon: {
-      width: 32,
-      height: 32,
-      borderRadius: 8,
+      width: 36,
+      height: 36,
+      borderRadius: 10,
       alignItems: 'center',
       justifyContent: 'center',
     },
     quickTitle: { fontSize: 11, fontWeight: '700', color: colors.text },
     tabContainer: {
       flexDirection: 'row',
-      paddingHorizontal: 16,
-      paddingTop: 4,
-      gap: 8,
+      marginHorizontal: 16,
+      marginTop: 4,
+      padding: 4,
+      borderRadius: 16,
+      backgroundColor: colors.surfaceMuted,
     },
     tab: {
       flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      paddingVertical: 12,
-      paddingHorizontal: 16,
+      paddingVertical: 10,
       borderRadius: 12,
-      backgroundColor: colors.surface,
-      borderWidth: 1,
-      borderColor: colors.border,
-      gap: 8,
+      gap: 6,
     },
     tabActive: {
-      backgroundColor: colors.primary + '20',
-      borderColor: colors.primary,
+      backgroundColor: colors.card,
     },
     tabText: {
-      fontSize: 14,
-      fontWeight: '600',
+      fontSize: 13,
+      fontWeight: '700',
       color: colors.textSecondary,
     },
     tabTextActive: {
-      color: colors.primary,
+      color: colors.text,
     },
     notebookFilterRow: {
       maxHeight: 44,
@@ -1105,13 +1109,13 @@ const createStyles = (colors) =>
       paddingHorizontal: 12,
       paddingVertical: 8,
       borderRadius: 20,
-      backgroundColor: colors.surface,
+      backgroundColor: colors.card,
       borderWidth: 1,
       borderColor: colors.border,
     },
     notebookChipActive: {
-      backgroundColor: colors.primary,
-      borderColor: colors.primary,
+      backgroundColor: colors.hero,
+      borderColor: colors.hero,
     },
     notebookChipText: {
       fontSize: 12,
@@ -1119,31 +1123,27 @@ const createStyles = (colors) =>
       color: colors.textSecondary,
     },
     notebookChipTextActive: {
-      color: '#FFFFFF',
+      color: colors.heroText,
     },
     mistakeBadge: {
-      backgroundColor: '#ef444420',
-      borderColor: '#ef444440',
-      borderWidth: 1,
+      backgroundColor: colors.tones.red.bg,
     },
     mistakeBadgeText: {
       fontSize: 10,
       fontWeight: '700',
-      color: '#ef4444',
+      color: colors.tones.red.fg,
     },
     wrongCountBadge: {
-      backgroundColor: '#f59e0b20',
-      borderColor: '#f59e0b40',
-      borderWidth: 1,
+      backgroundColor: colors.tones.orange.bg,
     },
     wrongCountText: {
       fontSize: 10,
       fontWeight: '700',
-      color: '#f59e0b',
+      color: colors.tones.orange.fg,
     },
     searchFilterRow: {
       flexDirection: 'row',
-      paddingHorizontal: 20,
+      paddingHorizontal: 16,
       paddingTop: 12,
       gap: 8,
     },
@@ -1151,10 +1151,10 @@ const createStyles = (colors) =>
       flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      backgroundColor: colors.surface,
-      borderRadius: 12,
+      paddingHorizontal: 14,
+      height: 44,
+      backgroundColor: colors.card,
+      borderRadius: 16,
       borderWidth: 1,
       borderColor: colors.border,
     },
@@ -1163,19 +1163,19 @@ const createStyles = (colors) =>
     },
     searchInput: {
       flex: 1,
-      fontSize: 16,
+      fontSize: 15,
       color: colors.text,
     },
     clearButton: {
       marginLeft: 8,
     },
     filterButton: {
-      width: 48,
-      height: 48,
+      width: 44,
+      height: 44,
       justifyContent: 'center',
       alignItems: 'center',
-      backgroundColor: colors.surface,
-      borderRadius: 12,
+      backgroundColor: colors.card,
+      borderRadius: 16,
       borderWidth: 1,
       borderColor: colors.border,
       position: 'relative',
@@ -1184,7 +1184,7 @@ const createStyles = (colors) =>
       position: 'absolute',
       top: 4,
       right: 4,
-      backgroundColor: colors.primary,
+      backgroundColor: colors.hero,
       borderRadius: 10,
       minWidth: 20,
       height: 20,
@@ -1193,7 +1193,7 @@ const createStyles = (colors) =>
       paddingHorizontal: 4,
     },
     filterBadgeText: {
-      color: '#FFFFFF',
+      color: colors.heroText,
       fontSize: 10,
       fontWeight: 'bold',
     },
@@ -1201,7 +1201,7 @@ const createStyles = (colors) =>
       flex: 1,
     },
     scrollContent: {
-      padding: 20,
+      padding: 16,
       paddingBottom: 40,
     },
     loadingContainer: {
@@ -1231,36 +1231,35 @@ const createStyles = (colors) =>
     articleCard: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: colors.surface,
-      borderRadius: 16,
-      padding: 16,
-      marginBottom: 12,
+      backgroundColor: colors.card,
+      borderRadius: 20,
+      padding: 14,
+      marginBottom: 10,
       borderWidth: 1,
       borderColor: colors.border,
     },
     articleThumbnail: {
       width: 60,
       height: 60,
-      borderRadius: 12,
-      backgroundColor: colors.background,
-      justifyContent: 'center',
-      alignItems: 'center',
+      borderRadius: 14,
+      backgroundColor: colors.surfaceMuted,
       marginRight: 12,
     },
-    thumbnailPlaceholder: {
-      fontSize: 24,
+    articleThumbnailEmpty: {
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     articleContent: {
       flex: 1,
     },
     articleTitle: {
-      fontSize: 16,
-      fontWeight: '600',
+      fontSize: 15,
+      fontWeight: '700',
       color: colors.text,
       marginBottom: 4,
     },
     articleDescription: {
-      fontSize: 14,
+      fontSize: 13,
       color: colors.textSecondary,
       marginBottom: 8,
     },
@@ -1271,10 +1270,10 @@ const createStyles = (colors) =>
       gap: 8,
     },
     questionCard: {
-      backgroundColor: colors.surface,
-      borderRadius: 16,
-      padding: 16,
-      marginBottom: 12,
+      backgroundColor: colors.card,
+      borderRadius: 20,
+      padding: 14,
+      marginBottom: 10,
       borderWidth: 1,
       borderColor: colors.border,
     },
@@ -1316,28 +1315,26 @@ const createStyles = (colors) =>
       justifyContent: 'center',
       paddingVertical: 10,
       paddingHorizontal: 12,
-      borderRadius: 8,
-      backgroundColor: colors.background,
-      borderWidth: 1,
-      borderColor: colors.border,
+      borderRadius: 12,
+      backgroundColor: colors.surfaceMuted,
       gap: 6,
     },
     unsaveButton: {
-      borderColor: colors.error + '40',
+      backgroundColor: colors.tones.red.bg,
     },
     actionText: {
-      fontSize: 14,
-      fontWeight: '600',
-      color: colors.primary,
+      fontSize: 13,
+      fontWeight: '700',
+      color: colors.text,
     },
     unsaveText: {
-      color: colors.error,
+      color: colors.tones.red.fg,
     },
     metaBadge: {
-      paddingHorizontal: 10,
+      paddingHorizontal: 8,
       paddingVertical: 4,
-      borderRadius: 12,
-      backgroundColor: colors.background,
+      borderRadius: 8,
+      backgroundColor: colors.surfaceMuted,
     },
     metaText: {
       fontSize: 12,
@@ -1354,33 +1351,33 @@ const createStyles = (colors) =>
       gap: 4,
       paddingHorizontal: 8,
       paddingVertical: 4,
-      borderRadius: 12,
-      backgroundColor: '#f59e0b20',
+      borderRadius: 8,
+      backgroundColor: colors.tones.purple.bg,
     },
     premiumText: {
-      fontSize: 11,
-      fontWeight: '600',
-      color: '#f59e0b',
+      fontSize: 10,
+      fontWeight: '700',
+      color: colors.tones.purple.fg,
     },
     difficultyEasy: {
-      backgroundColor: '#10b98120',
+      backgroundColor: colors.tones.green.bg,
     },
     difficultyMedium: {
-      backgroundColor: '#f59e0b20',
+      backgroundColor: colors.tones.orange.bg,
     },
     difficultyHard: {
-      backgroundColor: '#ef444420',
+      backgroundColor: colors.tones.red.bg,
     },
     statusBadge: {
-      paddingHorizontal: 10,
+      paddingHorizontal: 8,
       paddingVertical: 4,
-      borderRadius: 12,
-      backgroundColor: colors.primary + '20',
+      borderRadius: 8,
+      backgroundColor: colors.tones.blue.bg,
     },
     statusText: {
       fontSize: 12,
-      fontWeight: '500',
-      color: colors.primary,
+      fontWeight: '600',
+      color: colors.tones.blue.fg,
       textTransform: 'capitalize',
     },
     // Modal Styles
@@ -1390,7 +1387,7 @@ const createStyles = (colors) =>
       justifyContent: 'flex-end',
     },
     modalContent: {
-      backgroundColor: colors.background,
+      backgroundColor: colors.card,
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
       maxHeight: '80%',
@@ -1432,14 +1429,14 @@ const createStyles = (colors) =>
       paddingHorizontal: 16,
       paddingVertical: 8,
       borderRadius: 20,
-      backgroundColor: colors.surface,
+      backgroundColor: colors.card,
       borderWidth: 1,
       borderColor: colors.border,
       marginRight: 8,
     },
     filterChipActive: {
-      backgroundColor: colors.primary + '20',
-      borderColor: colors.primary,
+      backgroundColor: colors.hero,
+      borderColor: colors.hero,
     },
     filterChipText: {
       fontSize: 14,
@@ -1447,8 +1444,8 @@ const createStyles = (colors) =>
       fontWeight: '500',
     },
     filterChipTextActive: {
-      color: colors.primary,
-      fontWeight: '600',
+      color: colors.heroText,
+      fontWeight: '700',
     },
     filterRow: {
       flexDirection: 'row',
@@ -1459,14 +1456,14 @@ const createStyles = (colors) =>
       paddingVertical: 12,
       paddingHorizontal: 16,
       borderRadius: 12,
-      backgroundColor: colors.surface,
+      backgroundColor: colors.card,
       borderWidth: 1,
       borderColor: colors.border,
       alignItems: 'center',
     },
     filterOptionActive: {
-      backgroundColor: colors.primary + '20',
-      borderColor: colors.primary,
+      backgroundColor: colors.hero,
+      borderColor: colors.hero,
     },
     filterOptionText: {
       fontSize: 14,
@@ -1474,8 +1471,8 @@ const createStyles = (colors) =>
       fontWeight: '500',
     },
     filterOptionTextActive: {
-      color: colors.primary,
-      fontWeight: '600',
+      color: colors.heroText,
+      fontWeight: '700',
     },
     modalFooter: {
       flexDirection: 'row',
@@ -1487,8 +1484,8 @@ const createStyles = (colors) =>
     clearFiltersButton: {
       flex: 1,
       paddingVertical: 14,
-      borderRadius: 12,
-      backgroundColor: colors.surface,
+      borderRadius: 14,
+      backgroundColor: colors.card,
       borderWidth: 1,
       borderColor: colors.border,
       alignItems: 'center',
@@ -1501,14 +1498,14 @@ const createStyles = (colors) =>
     applyFiltersButton: {
       flex: 1,
       paddingVertical: 14,
-      borderRadius: 12,
-      backgroundColor: colors.primary,
+      borderRadius: 14,
+      backgroundColor: colors.hero,
       alignItems: 'center',
     },
     applyFiltersText: {
       fontSize: 16,
-      fontWeight: '600',
-      color: '#FFFFFF',
+      fontWeight: '700',
+      color: colors.heroText,
     },
   });
 

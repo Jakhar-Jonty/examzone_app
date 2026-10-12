@@ -61,8 +61,8 @@ function QuestionPaletteGrid({
     switch (status) {
       case 'correct': return colors.success;
       case 'wrong': return colors.error;
-      case 'skipped': return '#f97316';
-      case 'marked': return '#eab308';
+      case 'skipped': return colors.tones.orange.fg;
+      case 'marked': return colors.tones.purple.fg;
       case 'unanswered': return colors.error;
       default: return colors.border;
     }
@@ -86,10 +86,10 @@ function QuestionPaletteGrid({
               alignItems: 'center',
               justifyContent: 'center',
               borderWidth: isCurrent ? 2 : 0,
-              borderColor: colors.primary,
+              borderColor: colors.hero,
             }}
           >
-            <Text style={{ fontWeight: '700', color: status ? '#fff' : colors.textSecondary, fontSize: 13 }}>
+            <Text style={{ fontWeight: '700', color: status ? colors.heroText : colors.textSecondary, fontSize: 13 }}>
               {index + 1}
             </Text>
           </TouchableOpacity>
@@ -266,7 +266,7 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
     return (
       <ScreenWrapper>
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.primary} />
+          <ActivityIndicator size="large" color={colors.text} />
           <Text style={styles.loadingText}>Loading questions...</Text>
         </View>
       </ScreenWrapper>
@@ -339,12 +339,12 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
           ) : null}
           {currentQuestion.difficulty ? (
             <View style={[styles.tag, styles.tagBlue]}>
-              <Text style={[styles.tagText, { color: colors.primary }]}>{currentQuestion.difficulty}</Text>
+              <Text style={[styles.tagText, { color: colors.tones.blue.fg }]}>{currentQuestion.difficulty}</Text>
             </View>
           ) : null}
           {isMarked ? (
             <View style={[styles.tag, styles.tagOrange]}>
-              <Text style={[styles.tagText, { color: '#ea580c' }]}>Marked</Text>
+              <Text style={[styles.tagText, { color: colors.tones.purple.fg }]}>Marked</Text>
             </View>
           ) : null}
         </View>
@@ -458,8 +458,8 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
                 {[
                   ['Correct', colors.success],
                   ['Wrong', colors.error],
-                  ['Skipped', '#f97316'],
-                  ['Marked', '#eab308'],
+                  ['Skipped', colors.tones.orange.fg],
+                  ['Marked', colors.tones.purple.fg],
                   ['Not visited', colors.border],
                 ].map(([label, c]) => (
                   <View key={label} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -499,8 +499,8 @@ const makeStyles = (colors) => ({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   loadingText: { marginTop: 12, color: colors.textSecondary },
   emptyText: { color: colors.textSecondary, marginBottom: 16 },
-  primaryBtn: { backgroundColor: colors.primary, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 10 },
-  primaryBtnText: { color: '#fff', fontWeight: '700' },
+  primaryBtn: { backgroundColor: colors.hero, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 14 },
+  primaryBtnText: { color: colors.heroText, fontWeight: '700' },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -517,8 +517,8 @@ const makeStyles = (colors) => ({
   scroll: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16 },
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
   tag: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
-  tagBlue: { backgroundColor: colors.primary + '12', borderColor: colors.primary + '30' },
-  tagOrange: { backgroundColor: '#fff7ed', borderColor: '#fed7aa' },
+  tagBlue: { backgroundColor: colors.tones.blue.bg, borderColor: colors.tones.blue.bg },
+  tagOrange: { backgroundColor: colors.tones.purple.bg, borderColor: colors.tones.purple.bg },
   tagText: { fontSize: 12, fontWeight: '600', color: colors.textSecondary },
   questionCard: {
     backgroundColor: colors.card,
@@ -538,7 +538,7 @@ const makeStyles = (colors) => ({
     borderColor: colors.border,
     marginBottom: 10,
   },
-  optionSelected: { borderColor: colors.primary, backgroundColor: colors.primary + '08' },
+  optionSelected: { borderColor: colors.hero, borderWidth: 1.5, backgroundColor: colors.surfaceMuted },
   optionCorrect: { borderColor: colors.success, backgroundColor: colors.success + '12' },
   optionWrong: { borderColor: colors.error, backgroundColor: colors.error + '12' },
   optionDim: { opacity: 0.55 },
@@ -590,7 +590,7 @@ const makeStyles = (colors) => ({
     borderRadius: 12,
     alignItems: 'center',
   },
-  finishBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
+  finishBtnText: { color: colors.heroText, fontWeight: '800', fontSize: 16 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   modalSheet: {
     backgroundColor: colors.background,
@@ -615,5 +615,5 @@ const makeStyles = (colors) => ({
   dialogCancel: { flex: 1, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: colors.border, alignItems: 'center' },
   dialogCancelText: { fontWeight: '600', color: colors.text },
   dialogConfirm: { flex: 1, padding: 12, borderRadius: 10, backgroundColor: colors.error, alignItems: 'center' },
-  dialogConfirmText: { fontWeight: '700', color: '#fff' },
+  dialogConfirmText: { fontWeight: '700', color: colors.heroText },
 });

@@ -144,8 +144,8 @@ function CreateSessionModal({ visible, onClose, onCreated, colors }) {
                   style={[styles.typeCard, form.sessionType === t.value && styles.typeCardActive]}
                   onPress={() => setForm((f) => ({ ...f, sessionType: t.value }))}
                 >
-                  <Ionicons name={t.icon} size={20} color={form.sessionType === t.value ? colors.primary : colors.textSecondary} />
-                  <Text style={[styles.typeLabel, form.sessionType === t.value && { color: colors.primary }]}>{t.label}</Text>
+                  <Ionicons name={t.icon} size={20} color={form.sessionType === t.value ? colors.text : colors.textSecondary} />
+                  <Text style={[styles.typeLabel, form.sessionType === t.value && { color: colors.text, fontWeight: '800' }]}>{t.label}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -173,7 +173,7 @@ function CreateSessionModal({ visible, onClose, onCreated, colors }) {
               <>
                 <Text style={styles.label}>Subject</Text>
                 {loadingTopics ? (
-                  <ActivityIndicator color={colors.primary} style={{ marginVertical: 8 }} />
+                  <ActivityIndicator color={colors.text} style={{ marginVertical: 8 }} />
                 ) : (
                   <View style={styles.chipWrap}>
                     {subjectsAndTopics.map((s) => (
@@ -298,7 +298,7 @@ export default function PracticeSessionsScreen({ navigation }) {
     return (
       <View style={styles.card}>
         <View style={styles.cardIcon}>
-          <Ionicons name={typeMeta?.icon || 'flash-outline'} size={22} color={colors.primary} />
+          <Ionicons name={typeMeta?.icon || 'flash-outline'} size={22} color={colors.tones.orange.fg} />
         </View>
         <View style={styles.cardBody}>
           <View style={styles.cardTop}>
@@ -343,7 +343,7 @@ export default function PracticeSessionsScreen({ navigation }) {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Practice</Text>
         <TouchableOpacity onPress={() => setShowCreate(true)} hitSlop={12}>
-          <Ionicons name="add-circle" size={28} color={colors.primary} />
+          <Ionicons name="add-circle" size={28} color={colors.text} />
         </TouchableOpacity>
       </View>
 
@@ -364,7 +364,7 @@ export default function PracticeSessionsScreen({ navigation }) {
       )}
 
       {loading ? (
-        <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
+        <View style={styles.center}><ActivityIndicator size="large" color={colors.text} /></View>
       ) : (
         <FlatList
           data={sessions}
@@ -372,7 +372,7 @@ export default function PracticeSessionsScreen({ navigation }) {
           renderItem={renderItem}
           contentContainerStyle={{ padding: 16, flexGrow: 1 }}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={colors.primary} />
+            <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={colors.text} />
           }
           ListEmptyComponent={
             <View style={styles.empty}>
@@ -434,7 +434,7 @@ const makeStyles = (colors) =>
       width: 44,
       height: 44,
       borderRadius: 12,
-      backgroundColor: colors.primary + '15',
+      backgroundColor: colors.tones.orange.bg,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -447,27 +447,27 @@ const makeStyles = (colors) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: 4,
-      backgroundColor: colors.primary,
+      backgroundColor: colors.hero,
       paddingHorizontal: 12,
       paddingVertical: 6,
       borderRadius: 8,
     },
-    resumeText: { color: '#fff', fontWeight: '700', fontSize: 12 },
+    resumeText: { color: colors.heroText, fontWeight: '700', fontSize: 12 },
     statsRow: { flexDirection: 'row', gap: 12, marginTop: 8 },
     statGreen: { fontSize: 12, color: colors.success, fontWeight: '600' },
     statRed: { fontSize: 12, color: colors.error, fontWeight: '600' },
     statGray: { fontSize: 12, color: colors.textSecondary },
     badge: { alignSelf: 'flex-start', marginTop: 8, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
     badgeDone: { backgroundColor: colors.success + '18' },
-    badgeProgress: { backgroundColor: '#fef3c7' },
+    badgeProgress: { backgroundColor: colors.tones.orange.bg },
     badgeText: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase' },
     badgeTextDone: { color: colors.success },
-    badgeTextProgress: { color: '#d97706' },
+    badgeTextProgress: { color: colors.tones.orange.fg },
     empty: { alignItems: 'center', paddingTop: 60, paddingHorizontal: 24 },
     emptyTitle: { fontSize: 18, fontWeight: '700', color: colors.text, marginTop: 12 },
     emptyDesc: { fontSize: 14, color: colors.textSecondary, textAlign: 'center', marginTop: 6 },
-    emptyBtn: { marginTop: 20, backgroundColor: colors.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 10 },
-    emptyBtnText: { color: '#fff', fontWeight: '700' },
+    emptyBtn: { marginTop: 20, backgroundColor: colors.hero, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 14 },
+    emptyBtnText: { color: colors.heroText, fontWeight: '700' },
   });
 
 const modalStyles = (colors) =>
@@ -495,7 +495,7 @@ const modalStyles = (colors) =>
       backgroundColor: colors.surface,
       gap: 6,
     },
-    typeCardActive: { borderColor: colors.primary, backgroundColor: colors.primary + '10' },
+    typeCardActive: { borderColor: colors.hero, borderWidth: 1.5, backgroundColor: colors.surfaceMuted },
     typeLabel: { fontSize: 13, fontWeight: '600', color: colors.text },
     chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 4 },
     chip: {
@@ -507,9 +507,9 @@ const modalStyles = (colors) =>
       backgroundColor: colors.surface,
       marginRight: 8,
     },
-    chipActive: { borderColor: colors.primary, backgroundColor: colors.primary + '15' },
+    chipActive: { borderColor: colors.hero, backgroundColor: colors.hero },
     chipText: { fontSize: 13, color: colors.textSecondary, fontWeight: '500' },
-    chipTextActive: { color: colors.primary, fontWeight: '700' },
+    chipTextActive: { color: colors.heroText, fontWeight: '700' },
     input: {
       borderWidth: 1,
       borderColor: colors.border,
@@ -522,6 +522,6 @@ const modalStyles = (colors) =>
     footer: { flexDirection: 'row', gap: 12, padding: 16, borderTopWidth: 1, borderTopColor: colors.border },
     cancelBtn: { flex: 1, padding: 14, borderRadius: 10, borderWidth: 1, borderColor: colors.border, alignItems: 'center' },
     cancelText: { fontWeight: '600', color: colors.text },
-    startBtn: { flex: 1, padding: 14, borderRadius: 10, backgroundColor: colors.primary, alignItems: 'center' },
-    startText: { fontWeight: '700', color: '#fff' },
+    startBtn: { flex: 1, padding: 14, borderRadius: 14, backgroundColor: colors.hero, alignItems: 'center' },
+    startText: { fontWeight: '700', color: colors.heroText },
   });

@@ -231,9 +231,9 @@ export default function PyqScreen({ navigation }) {
                 onPress={() => handleExport(activePaper, 'download')}
               >
                 {exportingKey === `${activePaper.label}-download` ? (
-                  <ActivityIndicator size="small" color={colors.primary} />
+                  <ActivityIndicator size="small" color={colors.text} />
                 ) : (
-                  <Ionicons name="download-outline" size={20} color={colors.primary} />
+                  <Ionicons name="download-outline" size={20} color={colors.text} />
                 )}
               </TouchableOpacity>
               <TouchableOpacity
@@ -242,9 +242,9 @@ export default function PyqScreen({ navigation }) {
                 onPress={() => handleExport(activePaper, 'print')}
               >
                 {exportingKey === `${activePaper.label}-print` ? (
-                  <ActivityIndicator size="small" color={colors.primary} />
+                  <ActivityIndicator size="small" color={colors.text} />
                 ) : (
-                  <Ionicons name="print-outline" size={20} color={colors.primary} />
+                  <Ionicons name="print-outline" size={20} color={colors.text} />
                 )}
               </TouchableOpacity>
             </View>
@@ -253,7 +253,7 @@ export default function PyqScreen({ navigation }) {
 
         {metaLoading ? (
           <View style={styles.centered}>
-            <ActivityIndicator size="large" color={colors.primary} />
+            <ActivityIndicator size="large" color={colors.text} />
           </View>
         ) : (
           <ScrollView
@@ -308,7 +308,7 @@ export default function PyqScreen({ navigation }) {
                 {selectedExam ? (
                   papersLoading ? (
                     <View style={styles.centered}>
-                      <ActivityIndicator size="large" color={colors.primary} />
+                      <ActivityIndicator size="large" color={colors.text} />
                     </View>
                   ) : papers.length === 0 ? (
                     <View style={styles.empty}>
@@ -326,7 +326,7 @@ export default function PyqScreen({ navigation }) {
                           ]}
                         >
                           <View style={styles.paperIcon}>
-                            <Ionicons name="document-text" size={18} color={colors.primary} />
+                            <Ionicons name="document-text" size={18} color={colors.text} />
                           </View>
                           <View style={styles.paperBody}>
                             <Text style={styles.paperTitle} numberOfLines={2}>
@@ -364,9 +364,9 @@ export default function PyqScreen({ navigation }) {
                                 hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
                               >
                                 {exportingKey === `${paper.label}-download` ? (
-                                  <ActivityIndicator size="small" color={colors.primary} />
+                                  <ActivityIndicator size="small" color={colors.text} />
                                 ) : (
-                                  <Ionicons name="download-outline" size={18} color={colors.primary} />
+                                  <Ionicons name="download-outline" size={18} color={colors.text} />
                                 )}
                               </TouchableOpacity>
                               <TouchableOpacity
@@ -376,9 +376,9 @@ export default function PyqScreen({ navigation }) {
                                 hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
                               >
                                 {exportingKey === `${paper.label}-print` ? (
-                                  <ActivityIndicator size="small" color={colors.primary} />
+                                  <ActivityIndicator size="small" color={colors.text} />
                                 ) : (
-                                  <Ionicons name="print-outline" size={18} color={colors.primary} />
+                                  <Ionicons name="print-outline" size={18} color={colors.text} />
                                 )}
                               </TouchableOpacity>
                             </View>
@@ -391,7 +391,7 @@ export default function PyqScreen({ navigation }) {
               </>
             ) : questionsLoading ? (
               <View style={styles.centered}>
-                <ActivityIndicator size="large" color={colors.primary} />
+                <ActivityIndicator size="large" color={colors.text} />
               </View>
             ) : questions.length === 0 ? (
               <View style={styles.empty}>
@@ -439,7 +439,7 @@ export default function PyqScreen({ navigation }) {
                         <Ionicons
                           name={expanded ? 'eye-off-outline' : 'eye-outline'}
                           size={15}
-                          color={colors.primary}
+                          color={colors.text}
                         />
                         <Text style={styles.answerBtnText}>
                           {expanded ? 'Hide answer' : 'Show answer'}
@@ -533,11 +533,11 @@ const createStyles = (colors) =>
       backgroundColor: colors.surface,
       gap: 6,
     },
-    chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+    chipActive: { backgroundColor: colors.hero, borderColor: colors.hero },
     chipText: { fontSize: 13, fontWeight: '600', color: colors.text },
-    chipTextActive: { color: '#fff' },
+    chipTextActive: { color: colors.heroText },
     chipCount: { fontSize: 12, color: colors.textSecondary },
-    chipCountActive: { color: 'rgba(255,255,255,0.85)' },
+    chipCountActive: { color: colors.heroTextSecondary },
     promptBox: {
       marginHorizontal: 16,
       marginTop: 24,
@@ -574,7 +574,7 @@ const createStyles = (colors) =>
       width: 36,
       height: 36,
       borderRadius: 8,
-      backgroundColor: colors.primary + '14',
+      backgroundColor: colors.surfaceMuted,
       alignItems: 'center',
       justifyContent: 'center',
       marginTop: 1,
@@ -592,15 +592,15 @@ const createStyles = (colors) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: 4,
-      backgroundColor: colors.primary,
+      backgroundColor: colors.hero,
       paddingHorizontal: 12,
       paddingVertical: 7,
       borderRadius: 8,
       minWidth: 72,
       justifyContent: 'center',
     },
-    startBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
-    solutionsLink: { fontSize: 13, fontWeight: '600', color: colors.primary },
+    startBtnText: { color: colors.heroText, fontSize: 13, fontWeight: '700' },
+    solutionsLink: { fontSize: 13, fontWeight: '700', color: colors.text },
     iconAction: { padding: 4 },
     qCard: {
       marginHorizontal: 16,
@@ -613,12 +613,12 @@ const createStyles = (colors) =>
     },
     qMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
     qPill: {
-      backgroundColor: colors.primary + '14',
+      backgroundColor: colors.surfaceMuted,
       paddingHorizontal: 7,
       paddingVertical: 2,
       borderRadius: 5,
     },
-    qPillText: { fontSize: 11, fontWeight: '800', color: colors.primary },
+    qPillText: { fontSize: 11, fontWeight: '800', color: colors.text },
     qMeta: { flex: 1, fontSize: 11, color: colors.textSecondary },
     qText: { fontSize: 14, fontWeight: '600', color: colors.text, lineHeight: 20, marginBottom: 8 },
     optRow: {
@@ -630,9 +630,9 @@ const createStyles = (colors) =>
       backgroundColor: colors.background,
       marginBottom: 4,
     },
-    optRowCorrect: { backgroundColor: '#ecfdf5', borderWidth: 1, borderColor: '#22c55e' },
+    optRowCorrect: { backgroundColor: colors.tones.green.bg, borderWidth: 1, borderColor: colors.tones.green.fg },
     optLabel: { fontSize: 13, fontWeight: '700', color: colors.text },
-    optLabelCorrect: { color: '#166534' },
+    optLabelCorrect: { color: colors.tones.green.fg },
     optText: { flex: 1, fontSize: 13, color: colors.text, lineHeight: 18 },
     answerBtn: {
       flexDirection: 'row',
@@ -642,16 +642,16 @@ const createStyles = (colors) =>
       marginTop: 6,
       paddingVertical: 4,
     },
-    answerBtnText: { fontSize: 12, fontWeight: '600', color: colors.primary },
+    answerBtnText: { fontSize: 12, fontWeight: '700', color: colors.text },
     answerBox: {
       marginTop: 8,
       padding: 10,
       borderRadius: 8,
-      backgroundColor: '#ecfdf5',
+      backgroundColor: colors.tones.green.bg,
       borderWidth: 1,
-      borderColor: '#bbf7d0',
+      borderColor: colors.tones.green.fg,
     },
-    answerCorrect: { fontSize: 13, fontWeight: '700', color: '#166534' },
+    answerCorrect: { fontSize: 13, fontWeight: '700', color: colors.tones.green.fg },
     answerExpl: { fontSize: 12, color: colors.text, marginTop: 4, lineHeight: 17 },
     pagerRow: {
       flexDirection: 'row',
