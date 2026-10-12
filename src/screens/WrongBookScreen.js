@@ -36,21 +36,21 @@ const STATUS_CHOICES = [
     label: 'Needs review',
     hint: 'Still weak — come back to this',
     icon: 'alert-circle',
-    color: '#f59e0b',
+    tone: 'orange',
   },
   {
     value: 'reviewed',
     label: 'Reviewed',
     hint: 'Checked once — keep drilling',
     icon: 'eye',
-    color: null, // primary
+    tone: 'blue',
   },
   {
     value: 'mastered',
     label: 'Mastered',
     hint: 'You own this question',
     icon: 'checkmark-circle',
-    color: '#10b981',
+    tone: 'green',
   },
 ];
 
@@ -61,19 +61,19 @@ const PRACTICE_STATUS_OPTIONS = [
     value: 'needs-review',
     label: 'Needs review',
     hint: 'Still weak',
-    color: '#f59e0b',
+    tone: 'orange',
   },
   {
     value: 'reviewed',
     label: 'Reviewed',
     hint: 'Checked once',
-    color: null,
+    tone: 'blue',
   },
   {
     value: 'mastered',
     label: 'Mastered',
     hint: 'Optional refresher',
-    color: '#10b981',
+    tone: 'green',
   },
 ];
 
@@ -98,10 +98,11 @@ function formatWrongDate(date) {
   }
 }
 
-function statusColor(status, colors) {
-  if (status === 'mastered') return '#10b981';
-  if (status === 'reviewed') return colors.primary;
-  return '#f59e0b';
+// Needs review = orange, reviewed = blue, mastered = green ({ fg, bg } theme tone).
+function statusTone(status, colors) {
+  if (status === 'mastered') return colors.tones.green;
+  if (status === 'reviewed') return colors.tones.blue;
+  return colors.tones.orange;
 }
 
 function statusLabel(status) {
@@ -442,7 +443,7 @@ export default function WrongBookScreen({ navigation }) {
     const q = item.question;
     if (!q) return null;
     const wrongDate = formatWrongDate(item.lastWrongAt || item.savedAt);
-    const badge = statusColor(item.status, colors);
+    const badge = statusTone(item.status, colors);
 
     const isSelected = selectedIds.has(item._id);
 
@@ -466,19 +467,19 @@ export default function WrongBookScreen({ navigation }) {
               <Ionicons
                 name={isSelected ? 'checkbox' : 'square-outline'}
                 size={22}
-                color={isSelected ? colors.primary : colors.textSecondary}
+                color={isSelected ? colors.text : colors.textSecondary}
                 style={{ marginRight: 6 }}
               />
             ) : null}
             <TouchableOpacity
-              style={[styles.statusPill, { backgroundColor: badge + '22' }]}
+              style={[styles.statusPill, { backgroundColor: badge.bg }]}
               onPress={() => setStatusTarget(item)}
               hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
             >
-              <Text style={[styles.statusPillText, { color: badge }]}>
+              <Text style={[styles.statusPillText, { color: badge.fg }]}>
                 {statusLabel(item.status)}
               </Text>
-              <Ionicons name="chevron-down" size={12} color={badge} />
+              <Ionicons name="chevron-down" size={12} color={badge.fg} />
             </TouchableOpacity>
             {(item.wrongCount || 0) > 0 && (
               <View style={styles.wrongPill}>
@@ -507,12 +508,12 @@ export default function WrongBookScreen({ navigation }) {
             style={[styles.actionBtn, styles.statusActionBtn]}
             onPress={() => setStatusTarget(item)}
           >
-            <Ionicons name="swap-horizontal" size={16} color={colors.primary} />
-            <Text style={[styles.actionText, { color: colors.primary }]}>Change status</Text>
+            <Ionicons name="swap-horizontal" size={16} color={colors.text} />
+            <Text style={[styles.actionText, { color: colors.text }]}>Change status</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionBtn} onPress={() => handleRemove(item)}>
-            <Ionicons name="trash-outline" size={16} color="#ef4444" />
-            <Text style={[styles.actionText, { color: '#ef4444' }]}>Remove</Text>
+            <Ionicons name="trash-outline" size={16} color={colors.tones.red.fg} />
+            <Text style={[styles.actionText, { color: colors.tones.red.fg }]}>Remove</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -520,7 +521,7 @@ export default function WrongBookScreen({ navigation }) {
   };
 
   return (
-    <ScreenWrapper>
+    <ScreenWrapper backgroundColor={colors.surface}>
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
@@ -528,7 +529,7 @@ export default function WrongBookScreen({ navigation }) {
           </TouchableOpacity>
           <View style={styles.headerTextWrap}>
             <Text style={styles.headerTitle}>Wrong Book</Text>
-            <Text style={styles.headerSub}>Wrong answers from exams — review & drill</Text>
+            <Text style={styles.headerSub}>Your mistakes, ready to drill</Text>
           </View>
           <TouchableOpacity
             onPress={() => {
@@ -537,7 +538,7 @@ export default function WrongBookScreen({ navigation }) {
             }}
             style={styles.filterBtn}
           >
-            <Ionicons name="filter" size={20} color={colors.primary} />
+            <Ionicons name="filter" size={20} color={colors.text} />
             {activeFilterCount > 0 && (
               <View style={styles.filterBadge}>
                 <Text style={styles.filterBadgeText}>{activeFilterCount}</Text>
@@ -552,7 +553,7 @@ export default function WrongBookScreen({ navigation }) {
             <Ionicons
               name={selectMode ? 'close-circle-outline' : 'checkbox-outline'}
               size={22}
-              color={colors.primary}
+              color={colors.text}
             />
           </TouchableOpacity>
         </View>
@@ -592,11 +593,11 @@ export default function WrongBookScreen({ navigation }) {
             <Text style={styles.statLabel}>Total</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={[styles.statValue, { color: '#f59e0b' }]}>{stats.needsReview || 0}</Text>
+            <Text style={[styles.statValue, { color: colors.tones.orange.fg }]}>{stats.needsReview || 0}</Text>
             <Text style={styles.statLabel}>Needs review</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={[styles.statValue, { color: '#ef4444' }]}>{stats.revisit || 0}</Text>
+            <Text style={[styles.statValue, { color: colors.tones.red.fg }]}>{stats.revisit || 0}</Text>
             <Text style={styles.statLabel}>Revisit 2+</Text>
           </View>
         </View>
@@ -626,7 +627,7 @@ export default function WrongBookScreen({ navigation }) {
 
         {loading && !refreshing ? (
           <View style={styles.centered}>
-            <ActivityIndicator size="large" color={colors.primary} />
+            <ActivityIndicator size="large" color={colors.text} />
           </View>
         ) : (
           <FlatList
@@ -635,7 +636,7 @@ export default function WrongBookScreen({ navigation }) {
             renderItem={renderItem}
             contentContainerStyle={styles.listContent}
             refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.text} />
             }
             onEndReached={() => {
               if (hasMore && !loadingMore && !loading) {
@@ -646,7 +647,7 @@ export default function WrongBookScreen({ navigation }) {
             ListFooterComponent={
               <View style={styles.listFooter}>
                 {loadingMore ? (
-                  <ActivityIndicator style={{ marginVertical: 8 }} color={colors.primary} />
+                  <ActivityIndicator style={{ marginVertical: 8 }} color={colors.text} />
                 ) : null}
                 {!loading && items.length > 0 ? (
                   <Text style={styles.listFooterText}>
@@ -685,20 +686,21 @@ export default function WrongBookScreen({ navigation }) {
                 {statusTarget?.question?.questionText || 'Choose how this question is tagged'}
               </Text>
               {STATUS_CHOICES.map((opt) => {
-                const color = opt.color || colors.primary;
+                const tone = colors.tones[opt.tone];
+                const color = tone.fg;
                 const selected = statusTarget?.status === opt.value;
                 return (
                   <TouchableOpacity
                     key={opt.value}
                     style={[
                       styles.statusOption,
-                      selected && { borderColor: color, backgroundColor: color + '12' },
+                      selected && { borderColor: color, backgroundColor: tone.bg },
                     ]}
                     onPress={() => applyStatus(opt.value)}
                     disabled={updatingStatus}
                     activeOpacity={0.75}
                   >
-                    <View style={[styles.statusIconWrap, { backgroundColor: color + '18' }]}>
+                    <View style={[styles.statusIconWrap, { backgroundColor: tone.bg }]}>
                       <Ionicons name={opt.icon} size={20} color={color} />
                     </View>
                     <View style={styles.statusOptionText}>
@@ -716,7 +718,7 @@ export default function WrongBookScreen({ navigation }) {
                 );
               })}
               {updatingStatus && (
-                <ActivityIndicator style={{ marginTop: 12 }} color={colors.primary} />
+                <ActivityIndicator style={{ marginTop: 12 }} color={colors.text} />
               )}
               <TouchableOpacity style={styles.sheetCancel} onPress={() => setStatusTarget(null)}>
                 <Text style={styles.sheetCancelText}>Cancel</Text>
@@ -740,8 +742,8 @@ export default function WrongBookScreen({ navigation }) {
             <View style={[styles.modalSheet, styles.practiceModalSheet]}>
               <View style={styles.sheetHandle} />
               <View style={styles.practiceSheetHeader}>
-                <View style={[styles.practiceIconBadge, { backgroundColor: colors.primary + '18' }]}>
-                  <Ionicons name="flash" size={22} color={colors.primary} />
+                <View style={[styles.practiceIconBadge, { backgroundColor: colors.tones.orange.bg }]}>
+                  <Ionicons name="flash" size={22} color={colors.tones.orange.fg} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.modalTitle}>Build your drill</Text>
@@ -762,14 +764,15 @@ export default function WrongBookScreen({ navigation }) {
                 <View style={styles.chipWrap}>
                   {PRACTICE_STATUS_OPTIONS.map((opt) => {
                     const active = practiceOpts.statuses.includes(opt.value);
-                    const tint = opt.color || colors.primary;
+                    const tone = colors.tones[opt.tone];
+                    const tint = tone.fg;
                     return (
                       <TouchableOpacity
                         key={opt.value}
                         style={[
                           styles.statusToggleChip,
                           active && {
-                            backgroundColor: tint + '22',
+                            backgroundColor: tone.bg,
                             borderColor: tint,
                           },
                         ]}
@@ -912,7 +915,7 @@ export default function WrongBookScreen({ navigation }) {
                     size={22}
                     color={
                       practiceOpts.revisitOnly
-                        ? colors.primary
+                        ? colors.text
                         : colors.textSecondary
                     }
                   />
@@ -947,7 +950,7 @@ export default function WrongBookScreen({ navigation }) {
                         <Ionicons
                           name={mode.icon}
                           size={18}
-                          color={active ? '#fff' : colors.primary}
+                          color={active ? colors.heroText : colors.text}
                         />
                         <Text
                           style={[
@@ -998,7 +1001,7 @@ export default function WrongBookScreen({ navigation }) {
                   <Ionicons
                     name="information-circle-outline"
                     size={18}
-                    color={colors.primary}
+                    color={colors.text}
                   />
                   <Text style={styles.practiceSummaryText}>
                     {practiceCount} Q · {practiceStatusSummary} · {practicePickLabel}
@@ -1063,7 +1066,7 @@ export default function WrongBookScreen({ navigation }) {
                 returnKeyType="search"
               />
               {pickerLoading ? (
-                <ActivityIndicator style={{ marginVertical: 24 }} color={colors.primary} />
+                <ActivityIndicator style={{ marginVertical: 24 }} color={colors.text} />
               ) : (
                 <ScrollView style={{ maxHeight: 320 }} keyboardShouldPersistTaps="handled">
                   {pickerItems.map((sq) => {
@@ -1079,7 +1082,7 @@ export default function WrongBookScreen({ navigation }) {
                         <Ionicons
                           name={checked ? 'checkbox' : 'square-outline'}
                           size={20}
-                          color={checked ? colors.primary : colors.textSecondary}
+                          color={checked ? colors.text : colors.textSecondary}
                         />
                         <Text style={styles.pickerRowText} numberOfLines={2}>
                           {q.questionText}
@@ -1256,20 +1259,18 @@ export default function WrongBookScreen({ navigation }) {
 
 const createStyles = (colors) =>
   StyleSheet.create({
-    container: { flex: 1, backgroundColor: colors.background },
+    container: { flex: 1, backgroundColor: colors.surface },
     header: {
       flexDirection: 'row',
       alignItems: 'center',
       paddingHorizontal: 16,
       paddingTop: 12,
-      paddingBottom: 10,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
+      paddingBottom: 6,
       gap: 8,
     },
     backBtn: { padding: 6 },
     headerTextWrap: { flex: 1 },
-    headerTitle: { fontSize: 20, fontWeight: '700', color: colors.text },
+    headerTitle: { fontSize: 22, fontWeight: '800', color: colors.text },
     headerSub: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
     filterBtn: { padding: 8 },
     filterBadge: {
@@ -1279,11 +1280,11 @@ const createStyles = (colors) =>
       minWidth: 16,
       height: 16,
       borderRadius: 8,
-      backgroundColor: colors.primary,
+      backgroundColor: colors.hero,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    filterBadgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
+    filterBadgeText: { color: colors.heroText, fontSize: 10, fontWeight: '700' },
     statsRow: {
       flexDirection: 'row',
       gap: 8,
@@ -1292,24 +1293,24 @@ const createStyles = (colors) =>
     },
     statCard: {
       flex: 1,
-      backgroundColor: colors.surface,
-      borderRadius: 12,
+      backgroundColor: colors.card,
+      borderRadius: 18,
       borderWidth: 1,
       borderColor: colors.border,
       paddingVertical: 12,
       alignItems: 'center',
     },
-    statValue: { fontSize: 18, fontWeight: '700', color: colors.text },
+    statValue: { fontSize: 22, fontWeight: '800', color: colors.text },
     statLabel: { fontSize: 10, color: colors.textSecondary, marginTop: 2, fontWeight: '600' },
     practiceCard: {
       marginHorizontal: 16,
       marginTop: 12,
       marginBottom: 4,
       padding: 14,
-      borderRadius: 16,
+      borderRadius: 20,
       borderWidth: 1,
       borderColor: colors.border,
-      backgroundColor: colors.surface,
+      backgroundColor: colors.card,
       flexDirection: 'row',
       alignItems: 'center',
       gap: 12,
@@ -1318,8 +1319,8 @@ const createStyles = (colors) =>
     practiceCardTitle: { fontSize: 15, fontWeight: '700', color: colors.text },
     practiceCardSub: { fontSize: 12, color: colors.textSecondary, marginTop: 3, lineHeight: 16 },
     practiceBtn: {
-      backgroundColor: colors.primary,
-      borderRadius: 12,
+      backgroundColor: colors.hero,
+      borderRadius: 14,
       paddingVertical: 12,
       paddingHorizontal: 14,
       flexDirection: 'row',
@@ -1327,19 +1328,20 @@ const createStyles = (colors) =>
       gap: 6,
     },
     practiceBtnDisabled: { opacity: 0.5 },
-    practiceBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+    practiceBtnText: { color: colors.heroText, fontSize: 13, fontWeight: '700' },
     listContent: { padding: 16, paddingBottom: 40, flexGrow: 1 },
     card: {
-      backgroundColor: colors.surface,
-      borderRadius: 14,
+      backgroundColor: colors.card,
+      borderRadius: 20,
       borderWidth: 1,
       borderColor: colors.border,
       padding: 14,
       marginBottom: 12,
     },
     cardSelected: {
-      borderColor: colors.primary,
-      backgroundColor: colors.primary + '08',
+      borderColor: colors.hero,
+      borderWidth: 1.5,
+      backgroundColor: colors.surfaceMuted,
     },
     selectBar: {
       flexDirection: 'row',
@@ -1349,10 +1351,8 @@ const createStyles = (colors) =>
       marginHorizontal: 16,
       marginBottom: 8,
       padding: 10,
-      borderRadius: 12,
-      backgroundColor: colors.primary + '12',
-      borderWidth: 1,
-      borderColor: colors.primary + '30',
+      borderRadius: 14,
+      backgroundColor: colors.surfaceMuted,
     },
     selectBarText: { fontSize: 13, fontWeight: '700', color: colors.text, marginRight: 4 },
     selectBarBtn: {
@@ -1361,7 +1361,7 @@ const createStyles = (colors) =>
       borderRadius: 8,
       borderWidth: 1,
       borderColor: colors.border,
-      backgroundColor: colors.surface,
+      backgroundColor: colors.card,
     },
     selectBarBtnText: { fontSize: 12, fontWeight: '600', color: colors.text },
     exportBtn: {
@@ -1371,11 +1371,11 @@ const createStyles = (colors) =>
       marginLeft: 'auto',
       paddingHorizontal: 12,
       paddingVertical: 8,
-      borderRadius: 10,
-      backgroundColor: colors.primary,
+      borderRadius: 12,
+      backgroundColor: colors.hero,
     },
     exportBtnDisabled: { opacity: 0.5 },
-    exportBtnText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+    exportBtnText: { color: colors.heroText, fontSize: 12, fontWeight: '700' },
     pickerSearch: {
       borderWidth: 1,
       borderColor: colors.border,
@@ -1384,7 +1384,7 @@ const createStyles = (colors) =>
       paddingVertical: 10,
       marginBottom: 12,
       color: colors.text,
-      backgroundColor: colors.background,
+      backgroundColor: colors.card,
     },
     pickerRow: {
       flexDirection: 'row',
@@ -1395,11 +1395,11 @@ const createStyles = (colors) =>
       borderWidth: 1,
       borderColor: colors.border,
       marginBottom: 8,
-      backgroundColor: colors.background,
+      backgroundColor: colors.card,
     },
     pickerRowActive: {
-      borderColor: colors.primary,
-      backgroundColor: colors.primary + '10',
+      borderColor: colors.hero,
+      backgroundColor: colors.surfaceMuted,
     },
     pickerRowText: { flex: 1, fontSize: 13, color: colors.text, lineHeight: 18 },
     cardHeader: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 },
@@ -1416,13 +1416,13 @@ const createStyles = (colors) =>
       paddingHorizontal: 8,
       paddingVertical: 4,
       borderRadius: 8,
-      backgroundColor: '#ef444420',
+      backgroundColor: colors.tones.red.bg,
     },
-    wrongPillText: { fontSize: 10, fontWeight: '700', color: '#ef4444' },
-    questionText: { fontSize: 14, fontWeight: '600', color: colors.text, lineHeight: 20 },
+    wrongPillText: { fontSize: 10, fontWeight: '700', color: colors.tones.red.fg },
+    questionText: { fontSize: 15, fontWeight: '600', color: colors.text, lineHeight: 21 },
     metaRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 8, gap: 4 },
     metaText: { fontSize: 11, color: colors.textSecondary },
-    wrongAnswer: { fontSize: 12, color: '#ef4444', marginTop: 6, fontWeight: '600' },
+    wrongAnswer: { fontSize: 12, color: colors.tones.red.fg, marginTop: 6, fontWeight: '600' },
     cardActions: {
       flexDirection: 'row',
       gap: 16,
@@ -1450,7 +1450,7 @@ const createStyles = (colors) =>
       justifyContent: 'flex-end',
     },
     modalSheet: {
-      backgroundColor: colors.surface,
+      backgroundColor: colors.card,
       borderTopLeftRadius: 20,
       borderTopRightRadius: 20,
       maxHeight: '85%',
@@ -1483,7 +1483,7 @@ const createStyles = (colors) =>
       borderWidth: 1,
       borderColor: colors.border,
       marginBottom: 10,
-      backgroundColor: colors.background,
+      backgroundColor: colors.card,
     },
     statusIconWrap: {
       width: 40,
@@ -1528,7 +1528,7 @@ const createStyles = (colors) =>
       borderRadius: 12,
       borderWidth: 1,
       borderColor: colors.border,
-      backgroundColor: colors.background,
+      backgroundColor: colors.card,
       minWidth: '47%',
       flexGrow: 1,
     },
@@ -1542,12 +1542,12 @@ const createStyles = (colors) =>
       borderRadius: 12,
       borderWidth: 1,
       borderColor: colors.border,
-      backgroundColor: colors.background,
+      backgroundColor: colors.card,
       marginBottom: 4,
     },
     focusRowActive: {
-      borderColor: colors.primary,
-      backgroundColor: colors.primary + '10',
+      borderColor: colors.hero,
+      backgroundColor: colors.surfaceMuted,
     },
     focusRowTitle: { fontSize: 14, fontWeight: '700', color: colors.text },
     focusRowHint: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
@@ -1558,17 +1558,17 @@ const createStyles = (colors) =>
       borderRadius: 12,
       borderWidth: 1,
       borderColor: colors.border,
-      backgroundColor: colors.background,
+      backgroundColor: colors.card,
       gap: 4,
     },
     modeCardActive: {
-      backgroundColor: colors.primary,
-      borderColor: colors.primary,
+      backgroundColor: colors.hero,
+      borderColor: colors.hero,
     },
     modeCardLabel: { fontSize: 14, fontWeight: '700', color: colors.text },
-    modeCardLabelActive: { color: '#fff' },
+    modeCardLabelActive: { color: colors.heroText },
     modeCardHint: { fontSize: 11, color: colors.textSecondary },
-    modeCardHintActive: { color: 'rgba(255,255,255,0.85)' },
+    modeCardHintActive: { color: colors.heroTextSecondary },
     listFooter: { paddingVertical: 16, alignItems: 'center' },
     listFooterText: { fontSize: 12, color: colors.textSecondary },
     countRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
@@ -1578,25 +1578,25 @@ const createStyles = (colors) =>
       borderRadius: 12,
       borderWidth: 1,
       borderColor: colors.border,
-      backgroundColor: colors.background,
+      backgroundColor: colors.card,
       alignItems: 'center',
     },
-    countChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+    countChipActive: { backgroundColor: colors.hero, borderColor: colors.hero },
     countChipMuted: { opacity: 0.55 },
     countChipText: { fontSize: 16, fontWeight: '700', color: colors.text },
-    countChipTextActive: { color: '#fff' },
+    countChipTextActive: { color: colors.heroText },
     practiceSummary: {
       flexDirection: 'row',
       alignItems: 'flex-start',
       gap: 8,
       padding: 12,
-      borderRadius: 12,
-      backgroundColor: colors.primary + '10',
+      borderRadius: 14,
+      backgroundColor: colors.surfaceMuted,
       marginBottom: 14,
     },
     practiceSummaryText: { flex: 1, fontSize: 13, color: colors.text, lineHeight: 18 },
     startPracticeBtn: {
-      backgroundColor: colors.primary,
+      backgroundColor: colors.hero,
       borderRadius: 14,
       paddingVertical: 14,
       flexDirection: 'row',
@@ -1604,7 +1604,7 @@ const createStyles = (colors) =>
       justifyContent: 'center',
       gap: 8,
     },
-    startPracticeBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+    startPracticeBtnText: { color: colors.heroText, fontSize: 15, fontWeight: '700' },
     filterLabel: {
       fontSize: 12,
       fontWeight: '700',
@@ -1620,11 +1620,11 @@ const createStyles = (colors) =>
       borderRadius: 20,
       borderWidth: 1,
       borderColor: colors.border,
-      backgroundColor: colors.background,
+      backgroundColor: colors.card,
     },
-    chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+    chipActive: { backgroundColor: colors.hero, borderColor: colors.hero },
     chipText: { fontSize: 12, fontWeight: '600', color: colors.textSecondary },
-    chipTextActive: { color: '#fff' },
+    chipTextActive: { color: colors.heroText },
     modalFooter: { flexDirection: 'row', gap: 10, marginTop: 16 },
     clearBtn: {
       flex: 1,
@@ -1639,8 +1639,8 @@ const createStyles = (colors) =>
       flex: 1,
       paddingVertical: 12,
       borderRadius: 12,
-      backgroundColor: colors.primary,
+      backgroundColor: colors.hero,
       alignItems: 'center',
     },
-    applyBtnText: { fontWeight: '700', color: '#fff' },
+    applyBtnText: { fontWeight: '700', color: colors.heroText },
   });
