@@ -293,11 +293,12 @@ export function examFilterCounts(exams) {
   };
 }
 
-export function ExamSearchBar({ value, onChangeText, colors, placeholder = 'Search exams...', rightAccessory }) {
+export function ExamSearchBar({ value, onChangeText, colors, placeholder = 'Search exams...', rightAccessory, compact }) {
   const field = (
     <View
       style={[
-        tw`flex-1 flex-row items-center rounded-2xl px-3.5 h-12`,
+        tw`flex-1 flex-row items-center rounded-2xl px-3.5`,
+        compact ? tw`h-11` : tw`h-12`,
         { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
       ]}
     >
@@ -320,7 +321,7 @@ export function ExamSearchBar({ value, onChangeText, colors, placeholder = 'Sear
 
   if (rightAccessory) {
     return (
-      <View style={tw`flex-row items-center gap-2 mb-3`}>
+      <View style={[tw`flex-row items-center gap-2`, compact ? tw`mb-2.5` : tw`mb-3`]}>
         {field}
         {rightAccessory}
       </View>

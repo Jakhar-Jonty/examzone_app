@@ -13,11 +13,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
-import ExamCard, {
-  ExamSearchBar,
-  ExamFilterChips,
-  filterExamsByChip,
-} from '../components/ExamCard';
+import ExamCard, { ExamSearchBar, filterExamsByChip } from '../components/ExamCard';
 import ExamFiltersSheet, { ActiveFilterPills } from '../components/ExamFiltersSheet';
 import { ExamHighlightsBlock } from '../components/ExamHighlights';
 import { ExamCardSkeleton, ExamCardSkeletonList } from '../components/ExamCardSkeleton';
@@ -29,11 +25,6 @@ import {
 } from '../utils/examListParams';
 
 const ItemSeparator = () => <View style={tw`h-3`} />;
-
-const EXAM_TYPE_OPTIONS = [
-  { key: '', label: 'All types' },
-  { key: 'pyq', label: 'PYQ' },
-];
 
 function deriveDifficultyLabel(difficultyDistribution) {
   if (!difficultyDistribution) return null;
@@ -335,10 +326,7 @@ export default function ExamsScreen({ navigation }) {
     return pills;
   }, [filters, sortBy, sortLabel, searchQuery, examFilter, examTypeFilter, profileCategories]);
 
-  const filterCounts = useMemo(
-    () => ({ all: pagination.totalExams }),
-    [pagination.totalExams]
-  );
+  const sheetPills = activePills.filter((p) => !['status', 'examType', 'search'].includes(p.key));
 
   const renderExam = useCallback(
     ({ item: exam }) => (
@@ -380,14 +368,9 @@ export default function ExamsScreen({ navigation }) {
               </View>
             )}
 
-        <View style={tw`flex-row items-center justify-between mb-3 mt-1`}>
-          <Text style={[tw`text-lg font-extrabold`, { color: colors.text }]}>All exams</Text>
-          {pagination.totalExams > 0 && (
-            <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>
-              {pagination.totalExams} total
-          </Text>
-          )}
-              </View>
+        {showHighlights && highlights && (
+          <Text style={[tw`text-lg font-extrabold mb-3 mt-1`, { color: colors.text }]}>All exams</Text>
+        )}
           </View>
     ),
     [
@@ -404,119 +387,92 @@ export default function ExamsScreen({ navigation }) {
     <>
     <ScreenWrapper backgroundColor={colors.surface}>
       <View style={[tw`flex-1`, { backgroundColor: colors.surface }]}>
-          <View style={tw`px-5 pt-3 pb-2`}>
-            <View style={tw`flex-row items-start justify-between`}>
-              <View style={tw`flex-1`}>
-                <Text style={[tw`text-2xl font-extrabold mb-0.5`, { color: colors.text }]}>
-                  Exams
-                </Text>
-          <Text style={[tw`text-sm`, { color: colors.textSecondary }]}>
-            Browse and attempt available exams
-          </Text>
-              </View>
-              <TouchableOpacity
-                onPress={() => navigation.navigate('ExamHistory')}
-                style={[tw`flex-row items-center px-3 py-2 rounded-full mt-1`, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="time-outline" size={14} color={colors.text} />
-                <Text style={[tw`text-xs font-bold ml-1`, { color: colors.text }]}>
-                  History
-                </Text>
-              </TouchableOpacity>
-            </View>
-        </View>
-
-          {/* Sticky search + quick filters */}
-        <View
-          style={[
-              tw`px-5 pt-2 pb-1`,
-              { backgroundColor: colors.surface },
-            ]}
-          >
-            <ExamSearchBar
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              colors={colors}
-              placeholder="Search exams by title..."
-              rightAccessory={
-          <TouchableOpacity
-            style={[
-              tw`w-12 h-12 rounded-2xl items-center justify-center relative`,
-              { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
-            ]}
-                  onPress={() => setShowFiltersSheet(true)}
-                  activeOpacity={0.75}
-                  accessibilityLabel="Filters and sort"
-          >
-                  <Ionicons name="options-outline" size={20} color={colors.text} />
-                  {sheetFiltersCount > 0 && (
-              <View
-                style={[
-                        tw`absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full items-center justify-center px-1`,
-                  { backgroundColor: colors.hero },
-                ]}
-              >
-                      <Text style={[tw`text-[9px] font-bold`, { color: colors.heroText }]}>
-                        {sheetFiltersCount}
-                      </Text>
-              </View>
-            )}
-          </TouchableOpacity>
-              }
-            />
-
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={tw`gap-2 mb-3 pr-1`}
+        {/* Compact sticky header: title, search, one chip row */}
+        <View style={tw`px-5 pt-2 pb-1`}>
+          <View style={tw`flex-row items-center justify-between mb-2.5`}>
+            <Text style={[tw`text-2xl font-extrabold`, { color: colors.text }]}>Exams</Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('ExamHistory')}
+              style={[
+                tw`w-10 h-10 rounded-full items-center justify-center`,
+                { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
+              ]}
+              activeOpacity={0.7}
+              accessibilityLabel="Exam history"
             >
-              {EXAM_TYPE_OPTIONS.map(({ key, label }) => {
-                const active = examTypeFilter === key;
-                return (
-                  <TouchableOpacity
-                    key={key || 'all-types'}
+              <Ionicons name="time-outline" size={19} color={colors.text} />
+            </TouchableOpacity>
+          </View>
+
+          <ExamSearchBar
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            colors={colors}
+            compact
+            placeholder="Search exams"
+            rightAccessory={
+              <TouchableOpacity
+                style={[
+                  tw`w-11 h-11 rounded-2xl items-center justify-center relative`,
+                  { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
+                ]}
+                onPress={() => setShowFiltersSheet(true)}
+                activeOpacity={0.75}
+                accessibilityLabel="Filters and sort"
+              >
+                <Ionicons name="options-outline" size={19} color={colors.text} />
+                {sheetFiltersCount > 0 && (
+                  <View
                     style={[
-                      tw`px-3.5 py-2 rounded-full`,
-                      active
-                        ? { backgroundColor: colors.hero }
-                        : { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
+                      tw`absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full items-center justify-center px-1`,
+                      { backgroundColor: colors.hero },
                     ]}
-                    onPress={() => setExamTypeFilter(key)}
-                    activeOpacity={0.75}
                   >
-                    <Text
-                      style={[
-                        tw`text-xs font-bold`,
-                        { color: active ? colors.heroText : colors.textSecondary },
-                      ]}
-                    >
-                      {label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
+                    <Text style={[tw`text-[9px] font-bold`, { color: colors.heroText }]}>{sheetFiltersCount}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            }
+          />
 
-            <ExamFilterChips
-              value={examFilter}
-              onChange={setExamFilter}
-          colors={colors}
-              counts={filterCounts}
-            />
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={tw`-mx-5`}
+            contentContainerStyle={tw`px-5 gap-2 pb-1.5`}
+          >
+            {[
+              { key: 'all', label: pagination.totalExams ? `All ${pagination.totalExams}` : 'All', on: examFilter === 'all', onPress: () => setExamFilter('all') },
+              { key: 'available', label: 'Available', on: examFilter === 'available', onPress: () => setExamFilter('available') },
+              { key: 'attempted', label: 'Attempted', on: examFilter === 'attempted', onPress: () => setExamFilter('attempted') },
+              { key: 'pyq', label: 'PYQ', on: examTypeFilter === 'pyq', onPress: () => setExamTypeFilter(examTypeFilter === 'pyq' ? '' : 'pyq') },
+            ].map((chip, i) => (
+              <React.Fragment key={chip.key}>
+                {i === 3 && <View style={[tw`w-px my-1.5`, { backgroundColor: colors.border }]} />}
+                <TouchableOpacity
+                  style={[
+                    tw`px-3.5 py-2 rounded-full`,
+                    chip.on
+                      ? { backgroundColor: colors.hero }
+                      : { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
+                  ]}
+                  onPress={chip.onPress}
+                  activeOpacity={0.75}
+                >
+                  <Text style={[tw`text-xs font-bold`, { color: chip.on ? colors.heroText : colors.textSecondary }]}>
+                    {chip.label}
+                  </Text>
+                </TouchableOpacity>
+              </React.Fragment>
+            ))}
+          </ScrollView>
 
-            {activePills.length > 0 && (
-              <View style={tw`mt-1`}>
-                <ActiveFilterPills
-                  items={activePills}
-                  onRemove={removeActiveFilter}
-                  onClearAll={clearFilters}
-                    colors={colors}
-                  />
+          {sheetPills.length > 0 && (
+            <View style={tw`mt-1`}>
+              <ActiveFilterPills items={sheetPills} onRemove={removeActiveFilter} onClearAll={clearFilters} colors={colors} />
             </View>
-            )}
-            </View>
-
+          )}
+        </View>
         {loading && exams.length === 0 ? (
             <View style={tw`flex-1 px-5 pt-4`}>
               <ExamCardSkeletonList count={5} colors={colors} />
