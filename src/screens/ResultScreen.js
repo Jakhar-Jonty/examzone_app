@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -35,6 +35,10 @@ import {
 } from '../utils/resultAnalysis';
 import { buildAirCopyFromPeerStats } from '../utils/airCopy';
 import { startTopicPractice } from '../utils/startTopicPractice';
+import { captureRef } from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
+import ResultShareCard from '../components/ResultShareCard';
+import { referralService, inviteMessage } from '../services/referralService';
 import { t as tr } from '../i18n';
 
 // ─── Helpers ─────────────────────────────────────────────
@@ -182,12 +186,33 @@ export default function ResultScreen({ route, navigation }) {
     }
   };
 
+  // Share an image of the result (with my referral code) — falls back to text
+  const shareCardRef = useRef(null);
+  const [shareRef, setShareRef] = useState(null); // { code, shareUrl }
   const handleShare = async () => {
     if (!result) return;
+    const air = buildAirCopyFromPeerStats(peerStats);
+    const line = tr("I scored {0}% ({1}/{2}) on \"{3}\" on ExamZone!", result.percentage?.toFixed(1), result.totalScore, result.exam?.totalMarks, result.exam?.title);
+    let ref = shareRef;
+    if (!ref) {
+      ref = await referralService.me().catch(() => null);
+      if (ref) {
+        setShareRef(ref);
+        await new Promise((r) => setTimeout(r, 150)); // let the card render the code
+      }
+    }
+    const text = [air?.full, line, ref ? inviteMessage(ref) : null].filter(Boolean).join('\n\n');
     try {
-      const air = buildAirCopyFromPeerStats(peerStats);
-      const line = tr("I scored {0}% ({1}/{2}) on \"{3}\" on ExamZone!", result.percentage?.toFixed(1), result.totalScore, result.exam?.totalMarks, result.exam?.title);
-      await Share.share({ message: air ? `${air.full}\n\n${line}` : line });
+      const uri = await captureRef(shareCardRef, { format: 'png', quality: 1 });
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: tr('Share result') });
+        return;
+      }
+    } catch {
+      // capture/share unavailable — share text instead
+    }
+    try {
+      await Share.share({ message: text });
     } catch {}
   };
 
@@ -269,6 +294,17 @@ export default function ResultScreen({ route, navigation }) {
   return (
     <ScreenWrapper backgroundColor={colors.surface}>
       <RewardCelebration rewards={rewards} visible={showCelebration} onClose={() => setShowCelebration(false)} />
+      {/* off-screen card captured for sharing */}
+      <View pointerEvents="none" style={{ position: 'absolute', left: -10000, top: 0 }}>
+        <ResultShareCard
+          ref={shareCardRef}
+          colors={colors}
+          result={result}
+          air={buildAirCopyFromPeerStats(peerStats)}
+          referralCode={shareRef?.code}
+          siteHost={shareRef?.shareUrl ? shareRef.shareUrl.replace(/^https?:\/\//, '').split('/')[0] : ''}
+        />
+      </View>
       <Header title={result.exam?.title || tr("Result")} navigation={navigation} colors={colors} onShare={handleShare} />
 
       <ScrollView

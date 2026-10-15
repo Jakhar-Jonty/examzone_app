@@ -16,6 +16,7 @@ import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import TabNavigator from './TabNavigator';
 
 // Shared screens (above tabs — tab bar hidden)
+import ReferScreen from '../screens/ReferScreen';
 import LiveMockScreen from '../screens/LiveMockScreen';
 import ExamDetailScreen from '../screens/ExamDetailScreen';
 import ExamInterfaceScreen from '../screens/ExamInterfaceScreen';
@@ -125,6 +126,7 @@ export default function AppNavigator() {
             <Stack.Screen name="Notifications" component={NotificationsScreen} />
             <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
             <Stack.Screen name="LiveMock" component={LiveMockScreen} />
+            <Stack.Screen name="Refer" component={ReferScreen} />
             <Stack.Screen name="Badges" component={BadgesScreen} />
             <Stack.Screen
               name="OmrEntry"

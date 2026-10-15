@@ -109,6 +109,8 @@ export const routeFromNotification = (navigation, data = {}) => {
   if (data.notificationId) notificationApi.markRead(data.notificationId).catch(() => {});
   if (data.screen === 'exam' && data.examId) {
     navigation.navigate('ExamDetail', { examId: data.examId });
+  } else if (data.screen === 'refer') {
+    navigation.navigate('Refer');
   } else if (data.screen === 'live-mock') {
     navigation.navigate('LiveMock');
   } else if (data.screen === 'current-affair' && data.id) {

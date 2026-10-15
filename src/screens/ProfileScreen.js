@@ -67,6 +67,11 @@ export default function ProfileScreen({ navigation }) {
       title: tr("Study"),
       items: [
         {
+          icon: 'gift-outline',
+          label: tr("Refer & earn"),
+          onPress: () => navigation.navigate('Refer'),
+        },
+        {
           icon: 'trophy-outline',
           label: tr("Leaderboard"),
           onPress: () => navigation.navigate('Leaderboard'),
