@@ -16,8 +16,8 @@ import { useTheme } from '../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
 import { formatDate } from '../utils/helpers';
-
 import { t as tr } from '../i18n';
+
 // ─── Helpers ─────────────────────────────────────────────
 // Green ≥ 80, orange ≥ 60, red below — { fg, bg } theme tone.
 const getScoreTone = (pct, colors) => {
@@ -390,7 +390,7 @@ export default function ExamHistoryScreen({ navigation }) {
                               { color: isActive ? colors.heroText : colors.text },
                             ]}
                           >
-                            {label}
+                            {tr(label)}
                           </Text>
                         </TouchableOpacity>
                       );
@@ -427,7 +427,7 @@ export default function ExamHistoryScreen({ navigation }) {
                               { color: isActive ? colors.heroText : colors.text },
                             ]}
                           >
-                            {label}
+                            {tr(label)}
                           </Text>
                         </TouchableOpacity>
                       );

@@ -7,8 +7,8 @@ import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { currentAffairsService, dayLabel, pickLang } from '../services/currentAffairsService';
-
 import { t as tr } from '../i18n';
+
 const PAGE = 20;
 
 /** Daily Haryana current affairs, newest day first, with a quiz per day. */
@@ -102,7 +102,7 @@ export default function CurrentAffairsScreen({ navigation }) {
             const on = (i === 1) === hindi;
             return (
               <View key={label} style={[tw`px-2.5 py-1.5 rounded-full`, on && { backgroundColor: colors.hero }]}>
-                <Text style={[tw`text-xs font-bold`, { color: on ? colors.heroText : colors.textSecondary }]}>{label}</Text>
+                <Text style={[tw`text-xs font-bold`, { color: on ? colors.heroText : colors.textSecondary }]}>{tr(label)}</Text>
               </View>
             );
           })}

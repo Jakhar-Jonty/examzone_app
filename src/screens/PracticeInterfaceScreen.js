@@ -21,8 +21,8 @@ import {
   getLocalizedExplanation,
   hasHindiContent,
 } from '../utils/questionLanguage';
-
 import { t as tr } from '../i18n';
+
 const SESSION_TYPE_LABELS = {
   random: 'Random',
   'subject-wise': 'Subject Wise',
@@ -389,7 +389,7 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
           {revealed && skipped && (
             <View style={styles.infoBox}>
               <Text style={styles.infoText}>
-                {tr("Skipped. Correct: {0}", correctOpt ? `${tr(correctOpt.label)}. ${correctOpt.text}` : currentQuestion.correctAnswer)}
+                {tr("Skipped. Correct: {0}", correctOpt ? `${correctOpt.label}. ${correctOpt.text}` : currentQuestion.correctAnswer)}
               </Text>
             </View>
           )}
@@ -466,7 +466,7 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
                 ].map(([label, c]) => (
                   <View key={label} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <View style={{ width: 14, height: 14, borderRadius: 3, backgroundColor: c }} />
-                    <Text style={{ color: colors.textSecondary, fontSize: 13 }}>{label}</Text>
+                    <Text style={{ color: colors.textSecondary, fontSize: 13 }}>{tr(label)}</Text>
                   </View>
                 ))}
               </View>

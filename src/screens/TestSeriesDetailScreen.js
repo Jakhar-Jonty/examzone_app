@@ -13,8 +13,8 @@ import ScreenWrapper from '../components/ScreenWrapper';
 import ReviewSection from '../components/ReviewSection';
 import { useTheme } from '../context/ThemeContext';
 import { testSeriesService } from '../services/testSeriesService';
-
 import { t as tr } from '../i18n';
+
 export default function TestSeriesDetailScreen({ route, navigation }) {
   const { id } = route.params;
   const { colors } = useTheme();
@@ -206,7 +206,7 @@ function Stat({ icon, label, value, colors }) {
     <View style={styles.stat}>
       <Ionicons name={icon} size={18} color={colors.text} />
       <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+      <Text style={styles.statLabel}>{tr(label)}</Text>
     </View>
   );
 }

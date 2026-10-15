@@ -16,8 +16,8 @@ import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/authService';
 import { API_URL } from '../services/api';
-
 import { t as tr } from '../i18n';
+
 const logo = require('../../assets/examzone_logo.png');
 
 const loginErrorMessage = (error) => {

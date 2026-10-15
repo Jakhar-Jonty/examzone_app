@@ -14,8 +14,8 @@ import {
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/authService';
-
 import { t as tr } from '../i18n';
+
 export default function ForgotPasswordScreen({ navigation }) {
   const { colors } = useTheme();
   const { login } = useAuth();
@@ -124,7 +124,7 @@ export default function ForgotPasswordScreen({ navigation }) {
           </>
         ) : (
           <>
-            {hint ? <Text style={styles.hint}>{hint}</Text> : null}
+            {hint ? <Text style={styles.hint}>{tr(hint)}</Text> : null}
             <Text style={styles.label}>{tr("OTP")}</Text>
             <TextInput
               style={styles.input}

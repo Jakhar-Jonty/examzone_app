@@ -18,8 +18,8 @@ import { useTheme } from '../context/ThemeContext';
 import { useFocusExam } from '../context/AppConfigContext';
 import api from '../services/api';
 import { practiceSessionService } from '../services/practiceSessionService';
-
 import { t as tr } from '../i18n';
+
 const SESSION_TYPES = [
   { value: 'random', label: 'Random', icon: 'shuffle' },
   { value: 'subject-wise', label: 'Subject Wise', icon: 'book-outline' },
@@ -368,7 +368,7 @@ export default function PracticeSessionsScreen({ navigation }) {
           ].map(({ label, value }) => (
             <View key={label} style={styles.statCard}>
               <Text style={styles.statValue}>{value}</Text>
-              <Text style={styles.statLabel}>{label}</Text>
+              <Text style={styles.statLabel}>{tr(label)}</Text>
             </View>
           ))}
         </View>

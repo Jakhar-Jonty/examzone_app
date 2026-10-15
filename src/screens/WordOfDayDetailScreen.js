@@ -13,8 +13,8 @@ import { useTheme } from '../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import * as Speech from 'expo-speech';
 import api from '../services/api';
-
 import { t as tr } from '../i18n';
+
 // ─── Reusable Header ────────────────────────────────────
 function ScreenHeader({ title, navigation, colors, rightAction }) {
   return (

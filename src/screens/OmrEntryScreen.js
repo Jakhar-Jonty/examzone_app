@@ -17,8 +17,8 @@ import {
   getLocalizedQuestionText,
   getLocalizedQuestionOptions,
 } from '../utils/questionLanguage';
-
 import { t as tr } from '../i18n';
+
 const OPTIONS = ['A', 'B', 'C', 'D'];
 
 function AnswerCell({ index, selected, onSelect, colors }) {
@@ -259,7 +259,7 @@ export default function OmrEntryScreen({ route, navigation }) {
                   <Text style={[tw`text-sm font-bold mb-2`, { color: colors.text }]}>
                     Q{idx + 1}
                   </Text>
-                  <Text style={[tw`text-sm mb-3`, { color: colors.text }]}>{text}</Text>
+                  <Text style={[tw`text-sm mb-3`, { color: colors.text }]}>{tr(text)}</Text>
                   {['A', 'B', 'C', 'D'].map((k) =>
                     opts[k] ? (
                       <Text key={k} style={[tw`text-xs mb-1`, { color: colors.textSecondary }]}>

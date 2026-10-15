@@ -12,8 +12,8 @@ import { Ionicons } from '@expo/vector-icons';
 import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
 import { testSeriesService } from '../services/testSeriesService';
-
 import { t as tr } from '../i18n';
+
 export default function MyTestSeriesScreen({ navigation }) {
   const { colors } = useTheme();
   const [items, setItems] = useState([]);

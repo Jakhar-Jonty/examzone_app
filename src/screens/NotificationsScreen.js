@@ -12,8 +12,8 @@ import { Ionicons } from '@expo/vector-icons';
 import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
 import { notificationApi } from '../services/notificationService';
-
 import { t as tr } from '../i18n';
+
 // Map notification type → Ionicon.
 const TYPE_ICON = {
   'exam-reminder': 'alarm',

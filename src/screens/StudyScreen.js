@@ -17,8 +17,8 @@ import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useFocusExam } from '../context/AppConfigContext';
-
 import { t as tr } from '../i18n';
+
 export default function StudyScreen({ navigation, route }) {
   const { colors } = useTheme();
   const { user } = useAuth();

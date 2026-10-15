@@ -30,8 +30,8 @@ import OmrEntryScreen from '../screens/OmrEntryScreen';
 
 // Loading
 import LoadingScreen from '../components/LoadingScreen';
-
 import { t as tr } from '../i18n';
+
 const Stack = createNativeStackNavigator();
 const navigationRef = createNavigationContainerRef();
 

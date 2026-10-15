@@ -16,8 +16,8 @@ import { useTheme } from '../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
 import { getRefLabel } from '../utils/examDisplay';
-
 import { t as tr } from '../i18n';
+
 export default function QuestionDetailScreen({ route, navigation }) {
   const { questionId, savedQuestionId } = route.params;
   const { colors } = useTheme();

@@ -4,8 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import ScreenWrapper from '../components/ScreenWrapper';
 import RewardCelebration from '../components/RewardCelebration';
 import { useTheme } from '../context/ThemeContext';
-
 import { t as tr } from '../i18n';
+
 const SESSION_TYPE_LABELS = {
   random: 'Random',
   'subject-wise': 'Subject Wise',
@@ -57,7 +57,7 @@ export default function PracticeResultScreen({ route, navigation }) {
             <View key={label} style={styles.statCard}>
               <Ionicons name={icon} size={20} color={color} />
               <Text style={[styles.statValue, { color }]}>{value}</Text>
-              <Text style={styles.statLabel}>{label}</Text>
+              <Text style={styles.statLabel}>{tr(label)}</Text>
             </View>
           ))}
         </View>

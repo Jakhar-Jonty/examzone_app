@@ -15,8 +15,8 @@ import api from '../services/api';
 import { practiceSessionService } from '../services/practiceSessionService';
 import { buildPyqPaperHtml, pyqPdfFileName } from '../utils/pyqPaperPdf';
 import { downloadPyqPdf, printPyqHtml } from '../utils/exportPyqPdf';
-
 import { t as tr } from '../i18n';
+
 const MAX_PAPER = 100;
 
 export default function PyqScreen({ navigation }) {
@@ -142,7 +142,7 @@ export default function PyqScreen({ navigation }) {
   };
 
   const handleExport = async (paper, mode) => {
-    const key = `${tr(paper.label)}-${mode}`;
+    const key = `${paper.label}-${mode}`;
     setExportingKey(key);
     try {
       const qs = await fetchPaperQuestions(paper);
@@ -231,7 +231,7 @@ export default function PyqScreen({ navigation }) {
                 disabled={!!exportingKey}
                 onPress={() => handleExport(activePaper, 'download')}
               >
-                {exportingKey === `${tr(activePaper.label)}-download` ? (
+                {exportingKey === `${activePaper.label}-download` ? (
                   <ActivityIndicator size="small" color={colors.text} />
                 ) : (
                   <Ionicons name="download-outline" size={20} color={colors.text} />
@@ -242,7 +242,7 @@ export default function PyqScreen({ navigation }) {
                 disabled={!!exportingKey}
                 onPress={() => handleExport(activePaper, 'print')}
               >
-                {exportingKey === `${tr(activePaper.label)}-print` ? (
+                {exportingKey === `${activePaper.label}-print` ? (
                   <ActivityIndicator size="small" color={colors.text} />
                 ) : (
                   <Ionicons name="print-outline" size={20} color={colors.text} />
@@ -364,7 +364,7 @@ export default function PyqScreen({ navigation }) {
                                 onPress={() => handleExport(paper, 'download')}
                                 hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
                               >
-                                {exportingKey === `${tr(paper.label)}-download` ? (
+                                {exportingKey === `${paper.label}-download` ? (
                                   <ActivityIndicator size="small" color={colors.text} />
                                 ) : (
                                   <Ionicons name="download-outline" size={18} color={colors.text} />
@@ -376,7 +376,7 @@ export default function PyqScreen({ navigation }) {
                                 onPress={() => handleExport(paper, 'print')}
                                 hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
                               >
-                                {exportingKey === `${tr(paper.label)}-print` ? (
+                                {exportingKey === `${paper.label}-print` ? (
                                   <ActivityIndicator size="small" color={colors.text} />
                                 ) : (
                                   <Ionicons name="print-outline" size={18} color={colors.text} />
@@ -425,10 +425,10 @@ export default function PyqScreen({ navigation }) {
                             style={[styles.optRow, isCorrect && styles.optRowCorrect]}
                           >
                             <Text style={[styles.optLabel, isCorrect && styles.optLabelCorrect]}>
-                              {label}.
+                              {tr(label)}.
                             </Text>
                             <Text style={[styles.optText, isCorrect && styles.optLabelCorrect]}>
-                              {text}
+                              {tr(text)}
                             </Text>
                           </View>
                         );

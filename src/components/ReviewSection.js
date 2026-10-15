@@ -13,8 +13,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { reviewService } from '../services/reviewService';
-
 import { t as tr } from '../i18n';
+
 /**
  * ReviewSection — drop-in ratings + reviews block for any target.
  * Props: targetType ('exam' | 'test-series'), targetId.

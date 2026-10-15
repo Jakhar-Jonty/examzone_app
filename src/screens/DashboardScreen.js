@@ -25,8 +25,8 @@ import { testSeriesService } from '../services/testSeriesService';
 import { notificationApi } from '../services/notificationService';
 import { practiceSessionService } from '../services/practiceSessionService';
 import { studyPlanService } from '../services/studyPlanService';
-
 import { t as tr } from '../i18n';
+
 const PRACTICE_TYPE_LABELS = {
   random: 'Random',
   'subject-wise': 'Subject Wise',
@@ -430,7 +430,7 @@ export default function DashboardScreen({ navigation }) {
                       style={[tw`px-2.5 py-1.5 rounded-full`, on && { backgroundColor: colors.hero }]}
                     >
                       <Text style={[tw`text-xs font-bold`, { color: on ? colors.heroText : colors.textSecondary }]}>
-                        {label}
+                        {tr(label)}
                       </Text>
                     </View>
                   );
@@ -898,7 +898,7 @@ function Stat({ icon, iconColor, label, value, unit, divider, colors }) {
     <View style={[tw`flex-1`, divider && { paddingLeft: 14, borderLeftWidth: 1, borderLeftColor: colors.border }]}>
       <View style={tw`flex-row items-center`}>
         <Ionicons name={icon} size={14} color={iconColor || colors.textSecondary} />
-        <Text style={[tw`text-xs ml-1`, { color: colors.textSecondary }]}>{label}</Text>
+        <Text style={[tw`text-xs ml-1`, { color: colors.textSecondary }]}>{tr(label)}</Text>
       </View>
       <Text style={[tw`text-2xl font-extrabold mt-1`, { color: value === '—' ? colors.textSecondary : colors.text }]}>
         {value}
@@ -922,7 +922,7 @@ function QuickTile({ icon, tone, label, subtitle, onPress, colors }) {
         <Ionicons name={icon} size={20} color={tone.fg} />
       </View>
       <View style={tw`flex-1`}>
-        <Text style={[tw`text-sm font-bold`, { color: colors.text }]} numberOfLines={1}>{label}</Text>
+        <Text style={[tw`text-sm font-bold`, { color: colors.text }]} numberOfLines={1}>{tr(label)}</Text>
         <Text style={[tw`text-xs`, { color: colors.textSecondary }]} numberOfLines={1}>{subtitle}</Text>
       </View>
     </TouchableOpacity>

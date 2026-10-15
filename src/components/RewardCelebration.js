@@ -12,8 +12,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
-
 import { t as tr } from '../i18n';
+
 const { width } = Dimensions.get('window');
 
 // Lightweight confetti — a burst of colored dots, no extra dependency.
@@ -145,7 +145,7 @@ export default function RewardCelebration({ rewards, visible, onClose }) {
                   {newBadges.map((b) => (
                     <View key={b.id || b.name} style={styles.badge}>
                       <Text style={styles.badgeIcon}>{b.icon || '🏅'}</Text>
-                      <Text style={styles.badgeName} numberOfLines={1}>{b.name}</Text>
+                      <Text style={styles.badgeName} numberOfLines={1}>{tr(b.name)}</Text>
                     </View>
                   ))}
                 </View>

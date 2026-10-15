@@ -12,8 +12,8 @@ import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
-
 import { t as tr } from '../i18n';
+
 export default function QuoteDetailScreen({ route, navigation }) {
   const { colors } = useTheme();
   const { quote: quoteFromParams } = route.params || {};

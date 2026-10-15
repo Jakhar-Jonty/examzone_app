@@ -14,8 +14,8 @@ import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { subscriptionService } from '../services/subscriptionService';
-
 import { t as tr } from '../i18n';
+
 /**
  * PaywallScreen — shows pricing plans and runs checkout.
  *

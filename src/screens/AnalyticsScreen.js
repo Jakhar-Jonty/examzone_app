@@ -13,8 +13,8 @@ import { useTheme } from '../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
 import { startTopicPractice } from '../utils/startTopicPractice';
-
 import { t as tr } from '../i18n';
+
 export default function AnalyticsScreen({ navigation }) {
   const { colors, isDark } = useTheme();
   const [analytics, setAnalytics] = useState(null);

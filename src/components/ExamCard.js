@@ -6,8 +6,8 @@ import { getExamStatus } from '../utils/helpers';
 import { formatAttemptCount, formatExamBreadcrumb, shortLanguageLabel } from '../utils/examDisplay';
 import { EXAM_SORT_OPTIONS } from '../utils/examSort';
 import { useAuth } from '../context/AuthContext';
-
 import { t as tr } from '../i18n';
+
 // Badge tone → theme tone pair.
 const badgeTone = (tone, colors) =>
   ({
@@ -37,7 +37,7 @@ function Meta({ icon, label, color, colors }) {
   return (
     <View style={tw`flex-row items-center mr-3`}>
       <Ionicons name={icon} size={11} color={color || colors.textSecondary} />
-      <Text style={[tw`text-[11px] font-semibold ml-1`, { color: color || colors.textSecondary }]}>{label}</Text>
+      <Text style={[tw`text-[11px] font-semibold ml-1`, { color: color || colors.textSecondary }]}>{tr(label)}</Text>
     </View>
   );
 }
@@ -60,7 +60,7 @@ function ActionButton({ label, icon, onPress, colors, variant = 'primary' }) {
       ]}
     >
       {icon ? <Ionicons name={icon} size={14} color={style.fg} /> : null}
-      <Text style={[tw`text-[13px] font-bold`, icon && tw`ml-1.5`, { color: style.fg }]}>{label}</Text>
+      <Text style={[tw`text-[13px] font-bold`, icon && tw`ml-1.5`, { color: style.fg }]}>{tr(label)}</Text>
     </TouchableOpacity>
   );
 }
@@ -267,7 +267,7 @@ export function ExamFilterChips({ value, onChange, colors, counts }) {
             onPress={() => onChange(key)}
             activeOpacity={0.8}
           >
-            <Text style={[tw`text-xs font-bold`, { color: active ? colors.text : colors.textSecondary }]}>{label}</Text>
+            <Text style={[tw`text-xs font-bold`, { color: active ? colors.text : colors.textSecondary }]}>{tr(label)}</Text>
           </TouchableOpacity>
         );
       })}
@@ -349,7 +349,7 @@ export function ExamSortChips({ value, onChange, colors }) {
             onPress={() => onChange(key)}
             activeOpacity={0.75}
           >
-            <Text style={[tw`text-xs font-bold`, { color: active ? colors.heroText : colors.textSecondary }]}>{label}</Text>
+            <Text style={[tw`text-xs font-bold`, { color: active ? colors.heroText : colors.textSecondary }]}>{tr(label)}</Text>
           </TouchableOpacity>
         );
       })}

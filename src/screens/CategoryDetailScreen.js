@@ -27,8 +27,8 @@ import {
   sortByRecentIds,
   trackRecentSubcategory,
 } from '../utils/recentSubcategories';
-
 import { t as tr } from '../i18n';
+
 // ─── Shared Header ───────────────────────────────────────
 function Header({ title, navigation, colors }) {
   return (

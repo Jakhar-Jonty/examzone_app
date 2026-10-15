@@ -15,8 +15,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import tw from 'twrnc';
 import { useTheme } from '../context/ThemeContext';
 import { authService } from '../services/authService';
-
 import { t as tr } from '../i18n';
+
 const mark = require('../../assets/examzone_mark.png');
 
 function StepDots({ current, total = 3 }) {

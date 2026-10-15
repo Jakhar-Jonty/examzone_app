@@ -9,8 +9,8 @@ import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { formatDate } from '../utils/helpers';
 import { shortLanguageLabel, formatExamBreadcrumb } from '../utils/examDisplay';
-
 import { t as tr } from '../i18n';
+
 const EXAM_TYPE_LABELS = {
   mock: 'Mock test',
   'full-length': 'Full mock',
@@ -421,7 +421,7 @@ function PrimaryButton({ label, icon, onPress, loading, colors }) {
       ) : (
         <>
           <Ionicons name={icon} size={17} color={colors.heroText} />
-          <Text style={[tw`text-sm font-bold ml-2`, { color: colors.heroText }]}>{label}</Text>
+          <Text style={[tw`text-sm font-bold ml-2`, { color: colors.heroText }]}>{tr(label)}</Text>
         </>
       )}
     </TouchableOpacity>
@@ -444,7 +444,7 @@ function SecondaryButton({ label, icon, onPress, loading, disabled, colors }) {
       ) : (
         <>
           <Ionicons name={icon} size={17} color={colors.text} />
-          <Text style={[tw`text-sm font-bold ml-2`, { color: colors.text }]}>{label}</Text>
+          <Text style={[tw`text-sm font-bold ml-2`, { color: colors.text }]}>{tr(label)}</Text>
         </>
       )}
     </TouchableOpacity>

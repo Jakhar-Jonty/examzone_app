@@ -5,8 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
 import { currentAffairsService, pickLang } from '../services/currentAffairsService';
-
 import { t as tr } from '../i18n';
+
 /** One current-affairs note: summary, exam facts and its MCQs. */
 export default function CurrentAffairDetailScreen({ navigation, route }) {
   const { id, hindi: initialHindi = false } = route.params || {};
@@ -59,7 +59,7 @@ export default function CurrentAffairDetailScreen({ navigation, route }) {
             const on = (i === 1) === hindi;
             return (
               <View key={label} style={[tw`px-2.5 py-1.5 rounded-full`, on && { backgroundColor: colors.hero }]}>
-                <Text style={[tw`text-xs font-bold`, { color: on ? colors.heroText : colors.textSecondary }]}>{label}</Text>
+                <Text style={[tw`text-xs font-bold`, { color: on ? colors.heroText : colors.textSecondary }]}>{tr(label)}</Text>
               </View>
             );
           })}

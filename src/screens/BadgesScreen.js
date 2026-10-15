@@ -11,8 +11,8 @@ import { Ionicons } from '@expo/vector-icons';
 import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
 import { gamificationService } from '../services/gamificationService';
-
 import { t as tr } from '../i18n';
+
 export default function BadgesScreen({ navigation }) {
   const { colors } = useTheme();
   const [badges, setBadges] = useState([]);
@@ -59,7 +59,7 @@ export default function BadgesScreen({ navigation }) {
             <Ionicons name="lock-closed" size={24} color={colors.textSecondary} />
           )}
         </View>
-        <Text style={styles.badgeName} numberOfLines={1}>{item.name}</Text>
+        <Text style={styles.badgeName} numberOfLines={1}>{tr(item.name)}</Text>
         <Text style={styles.badgeDesc} numberOfLines={2}>{item.description}</Text>
         {item.earned && item.earnedAt && (
           <Text style={[styles.earnedAt, { color: accent }]}>

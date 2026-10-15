@@ -3,8 +3,8 @@ import { View, Text } from 'react-native';
 import tw from 'twrnc';
 import { Ionicons } from '@expo/vector-icons';
 import ExamCard from './ExamCard';
-
 import { t as tr } from '../i18n';
+
 export function ExamHighlightSection({
   title,
   subtitle,

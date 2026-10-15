@@ -13,8 +13,8 @@ import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
 import { Ionicons } from '@expo/vector-icons';
-
 import { t as tr } from '../i18n';
+
 function Header({ navigation, colors }) {
   return (
     <View

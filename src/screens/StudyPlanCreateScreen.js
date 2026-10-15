@@ -15,8 +15,8 @@ import { useTheme } from '../context/ThemeContext';
 import { useFocusExam } from '../context/AppConfigContext';
 import api from '../services/api';
 import { studyPlanService } from '../services/studyPlanService';
-
 import { t as tr } from '../i18n';
+
 const STEPS = ['Basics', 'Curriculum', 'Milestones', 'Review'];
 
 function topicKey(subject, name) {

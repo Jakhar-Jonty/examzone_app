@@ -24,8 +24,8 @@ import {
   getLocalizedQuestionText,
   getLocalizedQuestionOptions,
 } from '../utils/questionLanguage';
-
 import { t as tr } from '../i18n';
+
 export default function ExamInterfaceScreen({ route, navigation }) {
   const { examId, attemptId, exam: initialExam, attempt: initialAttempt } = route.params;
   const { colors, isDark } = useTheme();
@@ -1558,7 +1558,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                   return (
                   <View key={label} style={tw`flex-row items-center`}>
                     <View style={[tw`w-4 h-4 rounded mr-1.5`, { backgroundColor: pc.bg }, pc.ring && { borderWidth: 2, borderColor: pc.ring }]} />
-                    <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>{label}</Text>
+                    <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>{tr(label)}</Text>
                   </View>
                   );
                 })}
@@ -1661,7 +1661,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                   activeOpacity={0.7}
                 >
                   <Ionicons name={icon} size={20} color={colors.text} />
-                  <Text style={[tw`ml-3 text-sm font-semibold`, { color: colors.text }]}>{label}</Text>
+                  <Text style={[tw`ml-3 text-sm font-semibold`, { color: colors.text }]}>{tr(label)}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -1690,7 +1690,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                   ].map(({ value, label, color }) => (
                     <View key={label} style={tw`flex-1 items-center`}>
                       <Text style={[tw`text-xl font-bold`, { color }]}>{value}</Text>
-                      <Text style={[tw`text-xs mt-0.5`, { color: colors.textSecondary }]}>{label}</Text>
+                      <Text style={[tw`text-xs mt-0.5`, { color: colors.textSecondary }]}>{tr(label)}</Text>
                     </View>
                   ))}
                 </View>
@@ -1831,7 +1831,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                     </View>
                     <View style={tw`flex-1`}>
                       <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>{title}</Text>
-                      <Text style={[tw`text-xs mt-0.5`, { color: colors.textSecondary }]}>{desc}</Text>
+                      <Text style={[tw`text-xs mt-0.5`, { color: colors.textSecondary }]}>{tr(desc)}</Text>
                     </View>
                   </View>
                 ))}

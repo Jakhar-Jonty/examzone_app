@@ -13,8 +13,8 @@ import { Ionicons } from '@expo/vector-icons';
 import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
 import { studyPlanService } from '../services/studyPlanService';
-
 import { t as tr } from '../i18n';
+
 const STATUS_CYCLE = ['not-started', 'in-progress', 'completed'];
 const STATUS_LABEL = {
   'not-started': 'Not started',

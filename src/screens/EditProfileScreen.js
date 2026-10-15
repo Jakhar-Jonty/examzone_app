@@ -21,8 +21,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import api from '../services/api';
 import { useCategories } from '../hooks/useCategories';
-
 import { t as tr } from '../i18n';
+
 // ─── Constants (outside component) ──────────────────────
 const GENDERS = [
   { label: 'Male', value: 'male' },
@@ -60,7 +60,7 @@ function ToggleRow({ label, value, onChange, colors, isLast }) {
         !isLast && { borderBottomWidth: 1, borderBottomColor: colors.border + '40' },
       ]}
     >
-      <Text style={[tw`text-sm font-medium flex-1 mr-3`, { color: colors.text }]}>{label}</Text>
+      <Text style={[tw`text-sm font-medium flex-1 mr-3`, { color: colors.text }]}>{tr(label)}</Text>
       <Switch
         value={value}
         onValueChange={onChange}
@@ -99,7 +99,7 @@ function ChipSelect({ options, selected, onSelect, multi = false, colors }) {
                 { color: isActive ? colors.heroText : colors.text },
               ]}
             >
-              {label}
+              {tr(label)}
             </Text>
             {isActive && multi && (
               <Ionicons name="checkmark" size={12} color={colors.heroText} style={tw`ml-1`} />
@@ -314,7 +314,7 @@ export default function EditProfileScreen({ navigation }) {
   const InputField = ({ label, required, ...props }) => (
     <View style={tw`mb-4`}>
       <Text style={[tw`text-xs font-semibold mb-1.5 px-0.5`, { color: colors.textSecondary }]}>
-        {label} {required && <Text style={{ color: colors.error }}>*</Text>}
+        {tr(label)} {required && <Text style={{ color: colors.error }}>*</Text>}
       </Text>
       <TextInput
         style={[

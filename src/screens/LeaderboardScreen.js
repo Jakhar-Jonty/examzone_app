@@ -16,8 +16,8 @@ import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { gamificationService } from '../services/gamificationService';
 
-
 import { t as tr } from '../i18n';
+
 export default function LeaderboardScreen({ navigation }) {
   const { colors } = useTheme();
   const { user } = useAuth();
@@ -70,7 +70,7 @@ export default function LeaderboardScreen({ navigation }) {
         )}
         <View style={{ flex: 1 }}>
           <Text style={styles.name} numberOfLines={1}>
-            {item.name}{isMe ? tr(" (You)") : ''}
+            {tr(item.name)}{isMe ? tr(" (You)") : ''}
           </Text>
           <Text style={styles.rank}>{item.rank}</Text>
         </View>

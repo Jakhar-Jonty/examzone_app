@@ -12,8 +12,8 @@ import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
-
 import { t as tr } from '../i18n';
+
 const THEME_OPTIONS = [
   { key: 'light', icon: 'sunny', label: 'Light' },
   { key: 'dark', icon: 'moon', label: 'Dark' },

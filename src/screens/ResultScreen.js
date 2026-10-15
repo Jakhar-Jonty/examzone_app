@@ -35,8 +35,8 @@ import {
 } from '../utils/resultAnalysis';
 import { buildAirCopyFromPeerStats } from '../utils/airCopy';
 import { startTopicPractice } from '../utils/startTopicPractice';
-
 import { t as tr } from '../i18n';
+
 // ─── Helpers ─────────────────────────────────────────────
 const formatTime = (seconds) => {
   if (!seconds) return '0s';
@@ -424,7 +424,7 @@ export default function ResultScreen({ route, navigation }) {
                   ].map(({ label, value }) => (
                     <View key={label} style={tw`flex-1`}>
                       <Text style={[tw`text-base font-extrabold`, { color: colors.text }]}>{value}</Text>
-                      <Text style={[tw`text-xs mt-0.5`, { color: colors.textSecondary }]}>{label}</Text>
+                      <Text style={[tw`text-xs mt-0.5`, { color: colors.textSecondary }]}>{tr(label)}</Text>
                     </View>
                   ))}
                 </View>
@@ -445,7 +445,7 @@ export default function ResultScreen({ route, navigation }) {
                 .map(({ icon, text }) => (
                   <View key={icon} style={tw`flex-row items-center py-1.5`}>
                     <Ionicons name={icon} size={16} color={colors.textSecondary} />
-                    <Text style={[tw`text-sm ml-2.5`, { color: colors.text }]}>{text}</Text>
+                    <Text style={[tw`text-sm ml-2.5`, { color: colors.text }]}>{tr(text)}</Text>
                   </View>
                 ))}
             </Card>
@@ -798,7 +798,7 @@ function BreakdownRow({ label, count, total, tone, colors, last }) {
   return (
     <View style={tw`${last ? '' : 'mb-3'}`}>
       <View style={tw`flex-row items-center justify-between mb-1.5`}>
-        <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>{label}</Text>
+        <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>{tr(label)}</Text>
         <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>
           {count} <Text style={[tw`font-normal`, { color: colors.textSecondary }]}>· {share.toFixed(0)}%</Text>
         </Text>
@@ -815,7 +815,7 @@ function ProgressRow({ label, right, detail, value, tone, colors, noMargin }) {
     <View style={tw`${noMargin ? '' : 'mb-3'}`}>
       <View style={tw`flex-row justify-between items-center mb-1`}>
         <Text style={[tw`text-sm font-bold flex-1 pr-2`, { color: colors.text }]} numberOfLines={1}>
-          {label}
+          {tr(label)}
         </Text>
         <Text style={[tw`text-xs font-bold`, { color: colors.text }]}>{right}</Text>
       </View>
@@ -874,7 +874,7 @@ function Chip({ label, on, onPress, colors }) {
       onPress={onPress}
       activeOpacity={0.8}
     >
-      <Text style={[tw`text-xs font-bold`, { color: on ? colors.heroText : colors.textSecondary }]}>{label}</Text>
+      <Text style={[tw`text-xs font-bold`, { color: on ? colors.heroText : colors.textSecondary }]}>{tr(label)}</Text>
     </TouchableOpacity>
   );
 }

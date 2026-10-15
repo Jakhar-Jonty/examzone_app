@@ -11,8 +11,8 @@ import ExamsStack from './ExamsStack';
 import SeriesStack from './SeriesStack';
 import StudyStack from './StudyStack';
 import ProfileStack from './ProfileStack';
-
 import { t as tr } from '../i18n';
+
 const Tab = createBottomTabNavigator();
 
 const TAB_ICONS = {
