@@ -5,6 +5,7 @@ import ScreenWrapper from '../components/ScreenWrapper';
 import RewardCelebration from '../components/RewardCelebration';
 import { useTheme } from '../context/ThemeContext';
 
+import { t as tr } from '../i18n';
 const SESSION_TYPE_LABELS = {
   random: 'Random',
   'subject-wise': 'Subject Wise',
@@ -21,13 +22,13 @@ export default function PracticeResultScreen({ route, navigation }) {
   const { colors } = useTheme();
   const [showCelebration, setShowCelebration] = useState(!!rewards);
   const styles = makeStyles(colors);
-  const typeLabel = SESSION_TYPE_LABELS[session.sessionType] || 'Practice';
+  const typeLabel = tr(SESSION_TYPE_LABELS[session.sessionType] || 'Practice');
 
   const stats = [
-    { label: 'Accuracy', value: `${session.accuracy}%`, color: colors.success, icon: 'trophy' },
-    { label: 'Correct', value: session.correctAnswers, color: colors.success, icon: 'checkmark-circle' },
-    { label: 'Wrong', value: session.incorrectAnswers, color: colors.error, icon: 'close-circle' },
-    { label: 'Skipped', value: session.skipped ?? 0, color: colors.textSecondary, icon: 'play-skip-forward' },
+    { label: tr("Accuracy"), value: `${session.accuracy}%`, color: colors.success, icon: 'trophy' },
+    { label: tr("Correct"), value: session.correctAnswers, color: colors.success, icon: 'checkmark-circle' },
+    { label: tr("Wrong"), value: session.incorrectAnswers, color: colors.error, icon: 'close-circle' },
+    { label: tr("Skipped"), value: session.skipped ?? 0, color: colors.textSecondary, icon: 'play-skip-forward' },
   ];
 
   return (
@@ -42,11 +43,11 @@ export default function PracticeResultScreen({ route, navigation }) {
           <View style={styles.iconCircle}>
             <Ionicons name="trophy" size={40} color={colors.success} />
           </View>
-          <Text style={styles.title}>Session Complete!</Text>
-          <Text style={styles.subtitle}>{typeLabel} · {session.totalQuestions} questions</Text>
+          <Text style={styles.title}>{tr("Session Complete!")}</Text>
+          <Text style={styles.subtitle}>{tr("{0} · {1} questions", typeLabel, session.totalQuestions)}</Text>
           {session.totalTime > 0 && (
             <Text style={styles.time}>
-              {Math.floor(session.totalTime / 60)}m {session.totalTime % 60}s total
+              {tr("{0}m {1}s total", Math.floor(session.totalTime / 60), session.totalTime % 60)}
             </Text>
           )}
         </View>
@@ -63,7 +64,7 @@ export default function PracticeResultScreen({ route, navigation }) {
 
         <TouchableOpacity style={styles.btn} onPress={() => navigation.navigate('PracticeSessions')}>
           <Ionicons name="arrow-back" size={18} color={colors.heroText} />
-          <Text style={styles.btnText}>Back to Practice</Text>
+          <Text style={styles.btnText}>{tr("Back to Practice")}</Text>
         </TouchableOpacity>
       </View>
     </ScreenWrapper>

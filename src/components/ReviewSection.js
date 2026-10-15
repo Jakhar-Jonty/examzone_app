@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { reviewService } from '../services/reviewService';
 
+import { t as tr } from '../i18n';
 /**
  * ReviewSection — drop-in ratings + reviews block for any target.
  * Props: targetType ('exam' | 'test-series'), targetId.
@@ -75,9 +76,9 @@ export default function ReviewSection({ targetType, targetId, canReview = false 
           {(summary.average || 0).toFixed(1)}
         </Text>
         <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-          ({summary.count} review{summary.count === 1 ? '' : 's'})
+          {tr("({0} review{1})", summary.count, summary.count === 1 ? '' : 's')}
         </Text>
-        <Text style={{ fontSize: 11, color: colors.textSecondary }}>· Attempt to read & write reviews</Text>
+        <Text style={{ fontSize: 11, color: colors.textSecondary }}>{tr("· Attempt to read & write reviews")}</Text>
       </View>
     );
   }
@@ -86,9 +87,9 @@ export default function ReviewSection({ targetType, targetId, canReview = false 
   return (
     <View style={styles.wrap}>
       <View style={styles.headerRow}>
-        <Text style={styles.title}>Ratings & Reviews</Text>
+        <Text style={styles.title}>{tr("Ratings & Reviews")}</Text>
         <TouchableOpacity onPress={() => setModal(true)} hitSlop={8}>
-          <Text style={styles.write}>{mine ? 'Edit yours' : 'Write a review'}</Text>
+          <Text style={styles.write}>{mine ? tr("Edit yours") : tr("Write a review")}</Text>
         </TouchableOpacity>
       </View>
 
@@ -101,7 +102,7 @@ export default function ReviewSection({ targetType, targetId, canReview = false 
             <View style={styles.avgBox}>
               <Text style={styles.avgNum}>{summary.average?.toFixed(1) || '0.0'}</Text>
               <Stars value={summary.average} size={13} />
-              <Text style={styles.count}>{summary.count} review{summary.count === 1 ? '' : 's'}</Text>
+              <Text style={styles.count}>{tr("{0} review{1}", summary.count, summary.count === 1 ? '' : 's')}</Text>
             </View>
             <View style={styles.bars}>
               {[5, 4, 3, 2, 1].map((star) => {
@@ -122,7 +123,7 @@ export default function ReviewSection({ targetType, targetId, canReview = false 
 
           {/* List */}
           {reviews.length === 0 ? (
-            <Text style={styles.empty}>No reviews yet. Be the first!</Text>
+            <Text style={styles.empty}>{tr("No reviews yet. Be the first!")}</Text>
           ) : (
             reviews.map((r) => (
               <View key={r._id} style={styles.review}>
@@ -137,7 +138,7 @@ export default function ReviewSection({ targetType, targetId, canReview = false 
                     </View>
                   )}
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.reviewName}>{r.user?.name || 'User'}</Text>
+                    <Text style={styles.reviewName}>{r.user?.name || tr("User")}</Text>
                     <Stars value={r.rating} size={12} />
                   </View>
                 </View>
@@ -160,7 +161,7 @@ export default function ReviewSection({ targetType, targetId, canReview = false 
             setModal(false);
             load();
           } catch (e) {
-            Alert.alert('Error', e?.response?.data?.message || 'Could not save review.');
+            Alert.alert(tr("Error"), e?.response?.data?.message || tr("Could not save review."));
           }
         }}
       />
@@ -196,7 +197,7 @@ function ReviewModal({ visible, onClose, existing, onSubmit, colors }) {
       <View style={styles.modalBackdrop}>
         <View style={styles.modalCard}>
           <View style={styles.modalHead}>
-            <Text style={styles.modalTitle}>{existing ? 'Edit Review' : 'Write a Review'}</Text>
+            <Text style={styles.modalTitle}>{existing ? tr("Edit Review") : tr("Write a Review")}</Text>
             <TouchableOpacity onPress={onClose} hitSlop={10}>
               <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
@@ -217,14 +218,14 @@ function ReviewModal({ visible, onClose, existing, onSubmit, colors }) {
 
           <TextInput
             style={styles.input}
-            placeholder="Title (optional)"
+            placeholder={tr("Title (optional)")}
             placeholderTextColor={colors.textSecondary}
             value={title}
             onChangeText={setTitle}
           />
           <TextInput
             style={[styles.input, styles.textarea]}
-            placeholder="Share your experience (optional)"
+            placeholder={tr("Share your experience (optional)")}
             placeholderTextColor={colors.textSecondary}
             value={comment}
             onChangeText={setComment}
@@ -240,7 +241,7 @@ function ReviewModal({ visible, onClose, existing, onSubmit, colors }) {
             {saving ? (
               <ActivityIndicator color={colors.heroText} />
             ) : (
-              <Text style={styles.modalCtaText}>{existing ? 'Update' : 'Submit'}</Text>
+              <Text style={styles.modalCtaText}>{existing ? tr("Update") : tr("Submit")}</Text>
             )}
           </TouchableOpacity>
         </View>

@@ -10,6 +10,7 @@ import api from '../services/api';
 import { formatDate } from '../utils/helpers';
 import { shortLanguageLabel, formatExamBreadcrumb } from '../utils/examDisplay';
 
+import { t as tr } from '../i18n';
 const EXAM_TYPE_LABELS = {
   mock: 'Mock test',
   'full-length': 'Full mock',
@@ -68,7 +69,7 @@ export default function ExamDetailScreen({ route, navigation }) {
       }
       setAttemptHistory(response.data.attemptHistory || []);
     } catch (error) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to load exam');
+      Alert.alert(tr("Error"), error.response?.data?.message || tr("Failed to load exam"));
       navigation.goBack();
     } finally {
       setLoading(false);
@@ -98,7 +99,7 @@ export default function ExamDetailScreen({ route, navigation }) {
       // ExamInterface is a root-stack screen (above the tabs).
       navigation.navigate('ExamInterface', params);
     } catch (error) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to start the exam');
+      Alert.alert(tr("Error"), error.response?.data?.message || tr("Failed to start the exam"));
     } finally {
       setStarting(null);
     }
@@ -109,12 +110,12 @@ export default function ExamDetailScreen({ route, navigation }) {
   if (loading || !exam) {
     return (
       <ScreenWrapper backgroundColor={colors.surface}>
-        <Header title="Exam" navigation={navigation} colors={colors} />
+        <Header title={tr("Exam")} navigation={navigation} colors={colors} />
         <View style={tw`flex-1 items-center justify-center`}>
           {loading ? (
             <ActivityIndicator size="large" color={colors.text} />
           ) : (
-            <Text style={[tw`text-sm`, { color: colors.textSecondary }]}>Exam not found</Text>
+            <Text style={[tw`text-sm`, { color: colors.textSecondary }]}>{tr("Exam not found")}</Text>
           )}
         </View>
       </ScreenWrapper>
@@ -136,13 +137,13 @@ export default function ExamDetailScreen({ route, navigation }) {
     exam.averageRating > 0 && {
       icon: 'star', tone: colors.tones.orange,
       value: Number(exam.averageRating).toFixed(1),
-      label: `Rating${exam.reviewCount ? ` · ${exam.reviewCount}` : ''}`,
+      label: tr("Rating{0}", exam.reviewCount ? ` · ${exam.reviewCount}` : ''),
     },
-    stats?.totalAttempts > 0 && { icon: 'people-outline', tone: colors.tones.blue, value: stats.totalAttempts, label: 'Attempts' },
-    stats?.topScore != null && { icon: 'trophy-outline', tone: colors.tones.green, value: `${stats.topScore}/${exam.totalMarks}`, label: 'Top score' },
-    stats?.averageScore != null && { icon: 'analytics-outline', tone: colors.tones.purple, value: stats.averageScore, label: 'Avg score' },
-    exam.difficultyLevel && { icon: 'speedometer-outline', tone: difficultyTone, value: exam.difficultyLevel, label: 'Difficulty' },
-    exam.language && { icon: 'language-outline', tone: colors.tones.blue, value: shortLanguageLabel(exam.language), label: 'Language' },
+    stats?.totalAttempts > 0 && { icon: 'people-outline', tone: colors.tones.blue, value: stats.totalAttempts, label: tr("Attempts") },
+    stats?.topScore != null && { icon: 'trophy-outline', tone: colors.tones.green, value: `${stats.topScore}/${exam.totalMarks}`, label: tr("Top score") },
+    stats?.averageScore != null && { icon: 'analytics-outline', tone: colors.tones.purple, value: stats.averageScore, label: tr("Avg score") },
+    exam.difficultyLevel && { icon: 'speedometer-outline', tone: difficultyTone, value: exam.difficultyLevel, label: tr("Difficulty") },
+    exam.language && { icon: 'language-outline', tone: colors.tones.blue, value: shortLanguageLabel(exam.language), label: tr("Language") },
   ].filter(Boolean);
 
   return (
@@ -154,12 +155,12 @@ export default function ExamDetailScreen({ route, navigation }) {
         <View style={[tw`p-5 rounded-3xl mb-4`, { backgroundColor: colors.hero }]}>
           <View style={tw`flex-row items-center justify-between`}>
             <Text style={[tw`text-[11px] font-bold tracking-widest`, { color: colors.heroMuted }]}>
-              {(EXAM_TYPE_LABELS[exam.examType] || 'Test').toUpperCase()}
+              {tr(EXAM_TYPE_LABELS[exam.examType] || 'Test').toUpperCase()}
             </Text>
             {exam.isPremium && (
               <View style={[tw`flex-row items-center px-2 py-1 rounded-md`, { backgroundColor: colors.heroRaised }]}>
                 <Ionicons name="diamond" size={11} color={colors.heroAccent} />
-                <Text style={[tw`text-[10px] font-bold ml-1`, { color: colors.heroText }]}>PRO</Text>
+                <Text style={[tw`text-[10px] font-bold ml-1`, { color: colors.heroText }]}>{tr("PRO")}</Text>
               </View>
             )}
           </View>
@@ -170,16 +171,16 @@ export default function ExamDetailScreen({ route, navigation }) {
 
           <View style={tw`flex-row mt-5`}>
             {[
-              { label: 'Questions', value: questionCount },
-              { label: 'Minutes', value: exam.duration || 0 },
-              { label: 'Marks', value: exam.totalMarks || 0 },
+              { label: tr("Questions"), value: questionCount },
+              { label: tr("Minutes"), value: exam.duration || 0 },
+              { label: tr("Marks"), value: exam.totalMarks || 0 },
             ].map((s, i) => (
               <View
                 key={s.label}
                 style={[tw`flex-1`, i > 0 && { borderLeftWidth: 1, borderLeftColor: colors.heroTrack, paddingLeft: 14 }]}
               >
                 <Text style={[tw`text-xl font-extrabold`, { color: colors.heroText }]}>{s.value}</Text>
-                <Text style={[tw`text-[11px] mt-0.5`, { color: colors.heroMuted }]}>{s.label}</Text>
+                <Text style={[tw`text-[11px] mt-0.5`, { color: colors.heroMuted }]}>{tr(s.label)}</Text>
               </View>
             ))}
           </View>
@@ -188,12 +189,12 @@ export default function ExamDetailScreen({ route, navigation }) {
             <View style={[tw`mt-4 pt-3`, { borderTopWidth: 1, borderTopColor: colors.heroTrack }]}>
               {exam.enableNegativeMarking && exam.negativeMarksPerQuestion ? (
                 <Text style={[tw`text-xs`, { color: colors.heroTextSecondary }]}>
-                  −{Math.abs(exam.negativeMarksPerQuestion)} marks for each wrong answer
+                  {tr("−{0} marks for each wrong answer", Math.abs(exam.negativeMarksPerQuestion))}
                 </Text>
               ) : null}
               {scheduledLater ? (
                 <Text style={[tw`text-xs mt-0.5`, { color: colors.heroTextSecondary }]}>
-                  Opens {formatDate(exam.scheduledTime)}
+                  {tr("Opens {0}", formatDate(exam.scheduledTime))}
                 </Text>
               ) : null}
             </View>
@@ -206,11 +207,11 @@ export default function ExamDetailScreen({ route, navigation }) {
             <View style={tw`flex-row items-center justify-between mb-3`}>
               <View style={tw`flex-row items-center`}>
                 <Ionicons name="checkmark-circle" size={18} color={colors.tones.green.fg} />
-                <Text style={[tw`text-sm font-bold ml-1.5`, { color: colors.text }]}>Completed</Text>
+                <Text style={[tw`text-sm font-bold ml-1.5`, { color: colors.text }]}>{tr("Completed")}</Text>
               </View>
               {attemptStatus?.maxAttempts ? (
                 <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>
-                  {attemptStatus.attemptCount}/{attemptStatus.maxAttempts} attempts used
+                  {tr("{0}/{1} attempts used", attemptStatus.attemptCount, attemptStatus.maxAttempts)}
                 </Text>
               ) : null}
             </View>
@@ -218,18 +219,18 @@ export default function ExamDetailScreen({ route, navigation }) {
             {attemptStatus?.bestScore != null && attemptStatus?.latestScore != null && (
               <View style={tw`flex-row gap-2.5 mb-3`}>
                 {[
-                  { label: 'Best', score: attemptStatus.bestScore, sub: pct(attemptStatus.bestScore) },
+                  { label: tr("Best"), score: attemptStatus.bestScore, sub: pct(attemptStatus.bestScore) },
                   {
-                    label: 'Latest',
+                    label: tr("Latest"),
                     score: attemptStatus.latestScore,
                     sub: attemptStatus.latestPercentage != null ? `${Math.round(attemptStatus.latestPercentage)}%` : '',
                   },
                 ].map((s) => (
                   <View key={s.label} style={[tw`flex-1 p-3 rounded-2xl`, { backgroundColor: colors.surfaceMuted }]}>
-                    <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>{s.label} score</Text>
+                    <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>{tr("{0} score", s.label)}</Text>
                     <Text style={[tw`text-lg font-extrabold mt-0.5`, { color: colors.text }]}>
                       {s.score}/{exam.totalMarks}
-                      <Text style={[tw`text-xs font-semibold`, { color: colors.textSecondary }]}>  {s.sub}</Text>
+                      <Text style={[tw`text-xs font-semibold`, { color: colors.textSecondary }]}>  {tr(s.sub)}</Text>
                     </Text>
                   </View>
                 ))}
@@ -238,14 +239,14 @@ export default function ExamDetailScreen({ route, navigation }) {
 
             <View style={tw`flex-row gap-2.5`}>
               <PrimaryButton
-                label="View result"
+                label={tr("View result")}
                 icon="eye-outline"
                 colors={colors}
                 onPress={() => completedAttemptId && navigation.navigate('Result', { attemptId: completedAttemptId })}
               />
               {attemptStatus?.canReattempt && (
                 <SecondaryButton
-                  label="Re-attempt"
+                  label={tr("Re-attempt")}
                   icon="refresh"
                   loading={starting === 'online'}
                   colors={colors}
@@ -258,13 +259,13 @@ export default function ExamDetailScreen({ route, navigation }) {
           <View style={[tw`p-4 rounded-3xl mb-4`, { backgroundColor: colors.tones.orange.bg }]}>
             <View style={tw`flex-row items-center mb-1`}>
               <Ionicons name="pause-circle" size={18} color={colors.tones.orange.fg} />
-              <Text style={[tw`text-sm font-bold ml-1.5`, { color: colors.tones.orange.fg }]}>Paused</Text>
+              <Text style={[tw`text-sm font-bold ml-1.5`, { color: colors.tones.orange.fg }]}>{tr("Paused")}</Text>
             </View>
             <Text style={[tw`text-xs mb-3`, { color: colors.text }]}>
-              Your answers are saved. Continue where you left off.
+              {tr("Your answers are saved. Continue where you left off.")}
             </Text>
             <PrimaryButton
-              label="Resume test"
+              label={tr("Resume test")}
               icon="play"
               loading={starting === 'online'}
               colors={colors}
@@ -275,7 +276,7 @@ export default function ExamDetailScreen({ route, navigation }) {
           <View style={tw`mb-4`}>
             {supportsOnline && (
               <PrimaryButton
-                label={locked ? 'Unlock with Premium' : supportsOmr ? 'Start online test' : 'Start test'}
+                label={locked ? tr("Unlock with Premium") : supportsOmr ? tr("Start online test") : tr("Start test")}
                 icon={locked ? 'lock-closed' : 'play'}
                 loading={starting === 'online'}
                 colors={colors}
@@ -286,7 +287,7 @@ export default function ExamDetailScreen({ route, navigation }) {
               <>
                 <View style={tw`h-2.5`} />
                 <SecondaryButton
-                  label="OMR mode — enter answers"
+                  label={tr("OMR mode — enter answers")}
                   icon="grid-outline"
                   loading={starting === 'omr'}
                   disabled={locked}
@@ -294,7 +295,7 @@ export default function ExamDetailScreen({ route, navigation }) {
                   onPress={() => handleStartExam('omr')}
                 />
                 <Text style={[tw`text-xs text-center mt-2 px-4`, { color: colors.textSecondary }]}>
-                  Attempt on paper, then fill the OMR grid here for instant rank and solutions.
+                  {tr("Attempt on paper, then fill the OMR grid here for instant rank and solutions.")}
                 </Text>
               </>
             )}
@@ -303,7 +304,7 @@ export default function ExamDetailScreen({ route, navigation }) {
 
         {/* ─── Attempt history ────────────────────────── */}
         {examStatus === 'completed' && attemptHistory.length > 0 && (
-          <Section title="Your attempts" colors={colors}>
+          <Section title={tr("Your attempts")} colors={colors}>
             <View style={[tw`rounded-3xl overflow-hidden`, card]}>
               {attemptHistory.map((item, i) => {
                 const p = Math.round(item.percentage || 0);
@@ -322,9 +323,9 @@ export default function ExamDetailScreen({ route, navigation }) {
                       <Text style={[tw`text-xs font-bold`, { color: tone.fg }]}>{p}%</Text>
                     </View>
                     <View style={tw`flex-1`}>
-                      <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>Attempt {item.attemptNumber}</Text>
+                      <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>{tr("Attempt {0}", item.attemptNumber)}</Text>
                       <Text style={[tw`text-xs mt-0.5`, { color: colors.textSecondary }]}>
-                        {item.score}/{exam.totalMarks} marks · {formatDate(item.date)}
+                        {tr("{0}/{1} marks · {2}", item.score, exam.totalMarks, formatDate(item.date))}
                       </Text>
                     </View>
                     <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
@@ -337,7 +338,7 @@ export default function ExamDetailScreen({ route, navigation }) {
 
         {/* ─── Insights ───────────────────────────────── */}
         {insights.length > 0 && (
-          <Section title="About this test" colors={colors}>
+          <Section title={tr("About this test")} colors={colors}>
             <View style={tw`flex-row flex-wrap justify-between`}>
               {insights.map((it) => (
                 <View
@@ -349,7 +350,7 @@ export default function ExamDetailScreen({ route, navigation }) {
                   </View>
                   <View style={tw`flex-1`}>
                     <Text style={[tw`text-sm font-extrabold`, { color: colors.text }]} numberOfLines={1}>{it.value}</Text>
-                    <Text style={[tw`text-[11px]`, { color: colors.textSecondary }]} numberOfLines={1}>{it.label}</Text>
+                    <Text style={[tw`text-[11px]`, { color: colors.textSecondary }]} numberOfLines={1}>{tr(it.label)}</Text>
                   </View>
                 </View>
               ))}
@@ -358,7 +359,7 @@ export default function ExamDetailScreen({ route, navigation }) {
         )}
 
         {/* ─── Instructions ───────────────────────────── */}
-        <Section title="Instructions" colors={colors}>
+        <Section title={tr("Instructions")} colors={colors}>
           <View style={[tw`p-4 rounded-3xl`, card]}>
             {instructions ? (
               <Text style={[tw`text-sm leading-6`, { color: colors.text }]}>{instructions}</Text>
@@ -368,7 +369,7 @@ export default function ExamDetailScreen({ route, navigation }) {
                   <View style={[tw`w-5 h-5 rounded-full items-center justify-center mr-2.5 mt-0.5`, { backgroundColor: colors.surfaceMuted }]}>
                     <Text style={[tw`text-[10px] font-bold`, { color: colors.textSecondary }]}>{i + 1}</Text>
                   </View>
-                  <Text style={[tw`flex-1 text-sm leading-5`, { color: colors.text }]}>{line}</Text>
+                  <Text style={[tw`flex-1 text-sm leading-5`, { color: colors.text }]}>{tr(line)}</Text>
                 </View>
               ))
             )}
@@ -387,7 +388,7 @@ export default function ExamDetailScreen({ route, navigation }) {
 function Header({ title, navigation, colors }) {
   return (
     <View style={tw`flex-row items-center px-3 pt-2 pb-2`}>
-      <TouchableOpacity onPress={() => navigation.goBack()} style={tw`p-2`} accessibilityLabel="Back">
+      <TouchableOpacity onPress={() => navigation.goBack()} style={tw`p-2`} accessibilityLabel={tr("Back")}>
         <Ionicons name="arrow-back" size={22} color={colors.text} />
       </TouchableOpacity>
       <Text style={[tw`flex-1 text-base font-bold text-center mx-2`, { color: colors.text }]} numberOfLines={1}>

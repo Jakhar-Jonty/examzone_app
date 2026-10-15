@@ -8,6 +8,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { currentAffairsService, dayLabel, pickLang } from '../services/currentAffairsService';
 
+import { t as tr } from '../i18n';
 const PAGE = 20;
 
 /** Daily Haryana current affairs, newest day first, with a quiz per day. */
@@ -30,7 +31,7 @@ export default function CurrentAffairsScreen({ navigation }) {
       setToday(data.today);
       setHasMore(!!data.hasMore);
     } catch {
-      Alert.alert('Current affairs', 'Could not load. Pull down to retry.');
+      Alert.alert(tr("Current affairs"), tr("Could not load. Pull down to retry."));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -65,7 +66,7 @@ export default function CurrentAffairsScreen({ navigation }) {
       const session = await currentAffairsService.startQuiz({ date });
       navigation.navigate('PracticeInterface', { sessionId: session._id, sessionType: session.sessionType });
     } catch (e) {
-      Alert.alert('Could not start', e?.response?.data?.message || 'Please try again.');
+      Alert.alert(tr("Could not start"), e?.response?.data?.message || tr("Please try again."));
     } finally {
       setStarting(null);
     }
@@ -84,17 +85,17 @@ export default function CurrentAffairsScreen({ navigation }) {
   return (
     <ScreenWrapper backgroundColor={colors.surface}>
       <View style={tw`flex-row items-center px-3 pt-2 pb-2`}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={tw`p-2`} accessibilityLabel="Back">
+        <TouchableOpacity onPress={() => navigation.goBack()} style={tw`p-2`} accessibilityLabel={tr("Back")}>
           <Ionicons name="arrow-back" size={22} color={colors.text} />
         </TouchableOpacity>
         <View style={tw`flex-1 ml-1`}>
-          <Text style={[tw`text-xl font-extrabold`, { color: colors.text }]}>Current Affairs</Text>
-          <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>हरियाणा करंट अफेयर्स · daily</Text>
+          <Text style={[tw`text-xl font-extrabold`, { color: colors.text }]}>{tr("Current Affairs")}</Text>
+          <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>{tr("हरियाणा करंट अफेयर्स · daily")}</Text>
         </View>
         <TouchableOpacity
           onPress={() => setHindi((h) => !h)}
           activeOpacity={0.8}
-          accessibilityLabel={`Language: ${hindi ? 'Hindi' : 'English'}. Tap to switch.`}
+          accessibilityLabel={tr("Language: {0}. Tap to switch.", hindi ? 'Hindi' : 'English')}
           style={[tw`flex-row rounded-full p-1 mr-2`, card]}
         >
           {['EN', 'हिन्दी'].map((label, i) => {
@@ -130,9 +131,9 @@ export default function CurrentAffairsScreen({ navigation }) {
           {!days.length && (
             <View style={[tw`items-center p-8 rounded-3xl`, card]}>
               <Ionicons name="newspaper-outline" size={28} color={colors.textSecondary} />
-              <Text style={[tw`text-sm font-bold mt-2`, { color: colors.text }]}>No current affairs yet</Text>
+              <Text style={[tw`text-sm font-bold mt-2`, { color: colors.text }]}>{tr("No current affairs yet")}</Text>
               <Text style={[tw`text-xs mt-1 text-center`, { color: colors.textSecondary }]}>
-                Daily Haryana news with MCQs will appear here.
+                {tr("Daily Haryana news with MCQs will appear here.")}
               </Text>
             </View>
           )}
@@ -155,7 +156,7 @@ export default function CurrentAffairsScreen({ navigation }) {
                       ) : (
                         <>
                           <Ionicons name="flash" size={13} color={colors.heroAccent} />
-                          <Text style={[tw`text-xs font-bold ml-1`, { color: colors.heroText }]}>Quiz · {mcqs} Q</Text>
+                          <Text style={[tw`text-xs font-bold ml-1`, { color: colors.heroText }]}>{tr("Quiz · {0} Q", mcqs)}</Text>
                         </>
                       )}
                     </TouchableOpacity>
@@ -180,7 +181,7 @@ export default function CurrentAffairsScreen({ navigation }) {
                           </Text>
                           {(it.region === 'National' || it.questionCount > 0) && (
                             <Text style={[tw`text-[11px] font-semibold mt-1.5`, { color: colors.textSecondary }]}>
-                              {[it.region === 'National' ? 'National' : null, it.questionCount ? `${it.questionCount} MCQs` : null]
+                              {[it.region === tr("National") ? tr("National") : null, it.questionCount ? tr("{0} MCQs", it.questionCount) : null]
                                 .filter(Boolean)
                                 .join(' · ')}
                             </Text>
@@ -200,7 +201,7 @@ export default function CurrentAffairsScreen({ navigation }) {
               {loadingMore ? (
                 <ActivityIndicator color={colors.text} />
               ) : (
-                <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>Load older days</Text>
+                <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>{tr("Load older days")}</Text>
               )}
             </TouchableOpacity>
           )}

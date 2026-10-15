@@ -16,6 +16,7 @@ import { practiceSessionService } from '../services/practiceSessionService';
 import { buildPyqPaperHtml, pyqPdfFileName } from '../utils/pyqPaperPdf';
 import { downloadPyqPdf, printPyqHtml } from '../utils/exportPyqPdf';
 
+import { t as tr } from '../i18n';
 const MAX_PAPER = 100;
 
 export default function PyqScreen({ navigation }) {
@@ -49,7 +50,7 @@ export default function PyqScreen({ navigation }) {
       setMeta(exams);
       setSelectedExam((prev) => prev || exams[0]?.sourceExam || null);
     } catch (err) {
-      Alert.alert('Error', err.response?.data?.message || 'Failed to load PYQ data');
+      Alert.alert(tr("Error"), err.response?.data?.message || tr("Failed to load PYQ data"));
       setMeta([]);
     } finally {
       setMetaLoading(false);
@@ -64,7 +65,7 @@ export default function PyqScreen({ navigation }) {
       const res = await api.get(`/pyq/papers?${params.toString()}`);
       setPapers(res.data.papers || []);
     } catch (err) {
-      Alert.alert('Error', err.response?.data?.message || 'Failed to load papers');
+      Alert.alert(tr("Error"), err.response?.data?.message || tr("Failed to load papers"));
       setPapers([]);
     } finally {
       setPapersLoading(false);
@@ -91,7 +92,7 @@ export default function PyqScreen({ navigation }) {
       setQuestionsPage(page);
       setExpandedIds(new Set());
     } catch (err) {
-      Alert.alert('Error', err.response?.data?.message || 'Failed to load questions');
+      Alert.alert(tr("Error"), err.response?.data?.message || tr("Failed to load questions"));
       setQuestions([]);
     } finally {
       setQuestionsLoading(false);
@@ -141,12 +142,12 @@ export default function PyqScreen({ navigation }) {
   };
 
   const handleExport = async (paper, mode) => {
-    const key = `${paper.label}-${mode}`;
+    const key = `${tr(paper.label)}-${mode}`;
     setExportingKey(key);
     try {
       const qs = await fetchPaperQuestions(paper);
       if (!qs.length) {
-        Alert.alert('Nothing to export', 'No questions found for this paper');
+        Alert.alert(tr("Nothing to export"), tr("No questions found for this paper"));
         return;
       }
       const html = buildPyqPaperHtml({ title: paper.label, questions: qs });
@@ -157,8 +158,8 @@ export default function PyqScreen({ navigation }) {
       }
     } catch (err) {
       Alert.alert(
-        mode === 'print' ? 'Print failed' : 'Download failed',
-        err.response?.data?.message || err.message || 'Could not export paper'
+        mode === 'print' ? tr("Print failed") : tr("Download failed"),
+        err.response?.data?.message || err.message || tr("Could not export paper")
       );
     } finally {
       setExportingKey(null);
@@ -187,7 +188,7 @@ export default function PyqScreen({ navigation }) {
       });
       navigation.navigate('PracticeInterface', { sessionId: session._id });
     } catch (err) {
-      Alert.alert('Error', err.response?.data?.message || 'Could not start paper');
+      Alert.alert(tr("Error"), err.response?.data?.message || tr("Could not start paper"));
     } finally {
       setPracticing(false);
     }
@@ -215,12 +216,12 @@ export default function PyqScreen({ navigation }) {
           </TouchableOpacity>
           <View style={styles.headerTextWrap}>
             <Text style={styles.headerTitle} numberOfLines={1}>
-              {view === 'solutions' && activePaper ? activePaper.label : 'Previous Year Questions'}
+              {view === 'solutions' && activePaper ? activePaper.label : tr("Previous Year Questions")}
             </Text>
             <Text style={styles.headerSub} numberOfLines={1}>
               {view === 'solutions'
-                ? `${activePaper?.questionCount || 0} Qs · Solutions`
-                : 'Attempt past papers'}
+                ? tr("{0} Qs · Solutions", activePaper?.questionCount || 0)
+                : tr("Attempt past papers")}
             </Text>
           </View>
           {view === 'solutions' && activePaper ? (
@@ -230,7 +231,7 @@ export default function PyqScreen({ navigation }) {
                 disabled={!!exportingKey}
                 onPress={() => handleExport(activePaper, 'download')}
               >
-                {exportingKey === `${activePaper.label}-download` ? (
+                {exportingKey === `${tr(activePaper.label)}-download` ? (
                   <ActivityIndicator size="small" color={colors.text} />
                 ) : (
                   <Ionicons name="download-outline" size={20} color={colors.text} />
@@ -241,7 +242,7 @@ export default function PyqScreen({ navigation }) {
                 disabled={!!exportingKey}
                 onPress={() => handleExport(activePaper, 'print')}
               >
-                {exportingKey === `${activePaper.label}-print` ? (
+                {exportingKey === `${tr(activePaper.label)}-print` ? (
                   <ActivityIndicator size="small" color={colors.text} />
                 ) : (
                   <Ionicons name="print-outline" size={20} color={colors.text} />
@@ -266,9 +267,9 @@ export default function PyqScreen({ navigation }) {
                 {meta.length === 0 ? (
                   <View style={styles.empty}>
                     <Ionicons name="document-text-outline" size={36} color={colors.textSecondary} />
-                    <Text style={styles.emptyTitle}>No PYQ yet</Text>
+                    <Text style={styles.emptyTitle}>{tr("No PYQ yet")}</Text>
                     <Text style={styles.emptySub}>
-                      Previous-year questions will appear once tagged.
+                      {tr("Previous-year questions will appear once tagged.")}
                     </Text>
                   </View>
                 ) : (
@@ -301,7 +302,7 @@ export default function PyqScreen({ navigation }) {
 
                 {!selectedExam && meta.length > 0 ? (
                   <View style={styles.promptBox}>
-                    <Text style={styles.promptText}>Select an exam to see papers</Text>
+                    <Text style={styles.promptText}>{tr("Select an exam to see papers")}</Text>
                   </View>
                 ) : null}
 
@@ -312,8 +313,8 @@ export default function PyqScreen({ navigation }) {
                     </View>
                   ) : papers.length === 0 ? (
                     <View style={styles.empty}>
-                      <Text style={styles.emptyTitle}>No papers</Text>
-                      <Text style={styles.emptySub}>No PYQ papers for {selectedExam} yet.</Text>
+                      <Text style={styles.emptyTitle}>{tr("No papers")}</Text>
+                      <Text style={styles.emptySub}>{tr("No PYQ papers for {0} yet.", selectedExam)}</Text>
                     </View>
                   ) : (
                     <View style={styles.listCard}>
@@ -330,10 +331,10 @@ export default function PyqScreen({ navigation }) {
                           </View>
                           <View style={styles.paperBody}>
                             <Text style={styles.paperTitle} numberOfLines={2}>
-                              {paper.label}
+                              {tr(paper.label)}
                             </Text>
                             <Text style={styles.paperMeta}>
-                              Previous year paper · {paper.questionCount} Qs
+                              {tr("Previous year paper · {0} Qs", paper.questionCount)}
                             </Text>
                             <View style={styles.paperActions}>
                               <TouchableOpacity
@@ -347,7 +348,7 @@ export default function PyqScreen({ navigation }) {
                                 ) : (
                                   <>
                                     <Ionicons name="play" size={14} color={colors.heroText} />
-                                    <Text style={styles.startBtnText}>Start</Text>
+                                    <Text style={styles.startBtnText}>{tr("Start")}</Text>
                                   </>
                                 )}
                               </TouchableOpacity>
@@ -355,7 +356,7 @@ export default function PyqScreen({ navigation }) {
                                 onPress={() => openSolutions(paper)}
                                 hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
                               >
-                                <Text style={styles.solutionsLink}>Solutions</Text>
+                                <Text style={styles.solutionsLink}>{tr("Solutions")}</Text>
                               </TouchableOpacity>
                               <TouchableOpacity
                                 style={styles.iconAction}
@@ -363,7 +364,7 @@ export default function PyqScreen({ navigation }) {
                                 onPress={() => handleExport(paper, 'download')}
                                 hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
                               >
-                                {exportingKey === `${paper.label}-download` ? (
+                                {exportingKey === `${tr(paper.label)}-download` ? (
                                   <ActivityIndicator size="small" color={colors.text} />
                                 ) : (
                                   <Ionicons name="download-outline" size={18} color={colors.text} />
@@ -375,7 +376,7 @@ export default function PyqScreen({ navigation }) {
                                 onPress={() => handleExport(paper, 'print')}
                                 hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
                               >
-                                {exportingKey === `${paper.label}-print` ? (
+                                {exportingKey === `${tr(paper.label)}-print` ? (
                                   <ActivityIndicator size="small" color={colors.text} />
                                 ) : (
                                   <Ionicons name="print-outline" size={18} color={colors.text} />
@@ -395,7 +396,7 @@ export default function PyqScreen({ navigation }) {
               </View>
             ) : questions.length === 0 ? (
               <View style={styles.empty}>
-                <Text style={styles.emptyTitle}>No questions</Text>
+                <Text style={styles.emptyTitle}>{tr("No questions")}</Text>
               </View>
             ) : (
               <>
@@ -442,12 +443,12 @@ export default function PyqScreen({ navigation }) {
                           color={colors.text}
                         />
                         <Text style={styles.answerBtnText}>
-                          {expanded ? 'Hide answer' : 'Show answer'}
+                          {expanded ? tr("Hide answer") : tr("Show answer")}
                         </Text>
                       </TouchableOpacity>
                       {expanded ? (
                         <View style={styles.answerBox}>
-                          <Text style={styles.answerCorrect}>Correct: {q.correctAnswer}</Text>
+                          <Text style={styles.answerCorrect}>{tr("Correct: {0}", q.correctAnswer)}</Text>
                           {q.explanation ? (
                             <Text style={styles.answerExpl}>{q.explanation}</Text>
                           ) : null}
@@ -463,7 +464,7 @@ export default function PyqScreen({ navigation }) {
                       disabled={questionsPage <= 1}
                       onPress={() => fetchQuestions(activePaper, selectedExam, questionsPage - 1)}
                     >
-                      <Text style={styles.pagerBtnText}>Previous</Text>
+                      <Text style={styles.pagerBtnText}>{tr("Previous")}</Text>
                     </TouchableOpacity>
                     <Text style={styles.pagerLabel}>
                       {questionsPage} / {questionsPagination.totalPages}
@@ -476,7 +477,7 @@ export default function PyqScreen({ navigation }) {
                       disabled={questionsPage >= questionsPagination.totalPages}
                       onPress={() => fetchQuestions(activePaper, selectedExam, questionsPage + 1)}
                     >
-                      <Text style={styles.pagerBtnText}>Next</Text>
+                      <Text style={styles.pagerBtnText}>{tr("Next")}</Text>
                     </TouchableOpacity>
                   </View>
                 ) : null}

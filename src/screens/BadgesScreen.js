@@ -12,6 +12,7 @@ import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
 import { gamificationService } from '../services/gamificationService';
 
+import { t as tr } from '../i18n';
 export default function BadgesScreen({ navigation }) {
   const { colors } = useTheme();
   const [badges, setBadges] = useState([]);
@@ -75,7 +76,7 @@ export default function BadgesScreen({ navigation }) {
         <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={10}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Badges</Text>
+        <Text style={styles.headerTitle}>{tr("Badges")}</Text>
         <View style={{ width: 24 }} />
       </View>
 
@@ -94,7 +95,7 @@ export default function BadgesScreen({ navigation }) {
           ListHeaderComponent={
             <View style={styles.summary}>
               <Text style={styles.summaryText}>
-                {summary.earnedCount} of {summary.total} earned
+                {tr("{0} of {1} earned", summary.earnedCount, summary.total)}
               </Text>
             </View>
           }

@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
 import { startTopicPractice } from '../utils/startTopicPractice';
 
+import { t as tr } from '../i18n';
 export default function AnalyticsScreen({ navigation }) {
   const { colors, isDark } = useTheme();
   const [analytics, setAnalytics] = useState(null);
@@ -88,7 +89,7 @@ export default function AnalyticsScreen({ navigation }) {
             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
               <Ionicons name="arrow-back" size={24} color={colors.text} />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Analytics</Text>
+            <Text style={styles.headerTitle}>{tr("Analytics")}</Text>
             <View style={{ width: 24 }} />
           </View>
           <View style={styles.loadingContainer}>
@@ -107,7 +108,7 @@ export default function AnalyticsScreen({ navigation }) {
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Analytics</Text>
+          <Text style={styles.headerTitle}>{tr("Analytics")}</Text>
           <View style={{ width: 24 }} />
         </View>
 
@@ -143,8 +144,8 @@ export default function AnalyticsScreen({ navigation }) {
           {!analytics || !overallStats ? (
             <View style={styles.emptyContainer}>
               <Ionicons name="analytics-outline" size={64} color={colors.textSecondary} />
-              <Text style={styles.emptyText}>No analytics data available</Text>
-              <Text style={styles.emptySubtext}>Complete some exams to see your analytics</Text>
+              <Text style={styles.emptyText}>{tr("No analytics data available")}</Text>
+              <Text style={styles.emptySubtext}>{tr("Complete some exams to see your analytics")}</Text>
             </View>
           ) : (
             <>
@@ -153,7 +154,7 @@ export default function AnalyticsScreen({ navigation }) {
                 <View style={styles.statCard}>
                   <View style={styles.statCardHeader}>
                     <Ionicons name="document-text" size={20} color={colors.text} />
-                    <Text style={styles.statCardLabel}>Total Attempts</Text>
+                    <Text style={styles.statCardLabel}>{tr("Total Attempts")}</Text>
                   </View>
                   <Text style={styles.statCardValue}>{overallStats.totalAttempts || 0}</Text>
                   {analytics.trends && (
@@ -178,7 +179,7 @@ export default function AnalyticsScreen({ navigation }) {
                 <View style={styles.statCard}>
                   <View style={styles.statCardHeader}>
                     <Ionicons name="trophy" size={20} color={colors.tones.orange.fg} />
-                    <Text style={styles.statCardLabel}>Average Score</Text>
+                    <Text style={styles.statCardLabel}>{tr("Average Score")}</Text>
                   </View>
                   <Text style={[styles.statCardValue, { color: getScoreTone(overallStats.averageScore || 0).fg }]}>
                     {overallStats.averageScore?.toFixed(1) || 0}%
@@ -205,7 +206,7 @@ export default function AnalyticsScreen({ navigation }) {
                 <View style={styles.statCard}>
                   <View style={styles.statCardHeader}>
                     <Ionicons name="star" size={20} color={colors.tones.green.fg} />
-                    <Text style={styles.statCardLabel}>Best Score</Text>
+                    <Text style={styles.statCardLabel}>{tr("Best Score")}</Text>
                   </View>
                   <Text style={[styles.statCardValue, { color: colors.tones.green.fg }]}>
                     {overallStats.bestScore?.toFixed(1) || 0}%
@@ -215,7 +216,7 @@ export default function AnalyticsScreen({ navigation }) {
                 <View style={styles.statCard}>
                   <View style={styles.statCardHeader}>
                     <Ionicons name="trending-up" size={20} color={colors.text} />
-                    <Text style={styles.statCardLabel}>Improvement</Text>
+                    <Text style={styles.statCardLabel}>{tr("Improvement")}</Text>
                   </View>
                   <Text style={[styles.statCardValue, { color: colors.text }]}>
                     {(analytics.trends?.improvementRate ?? 0).toFixed(1)}%
@@ -226,9 +227,9 @@ export default function AnalyticsScreen({ navigation }) {
               {/* Prescriptive practice */}
               {analytics.practiceRecommendations?.length > 0 && (
                 <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>Focus Areas</Text>
+                  <Text style={styles.sectionTitle}>{tr("Focus Areas")}</Text>
                   <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
-                    Weakest topics — one tap to drill
+                    {tr("Weakest topics — one tap to drill")}
                   </Text>
                   {analytics.practiceRecommendations.map((rec, index) => (
                     <View key={`${rec.topic}-${index}`} style={styles.subjectCard}>
@@ -255,7 +256,7 @@ export default function AnalyticsScreen({ navigation }) {
                       >
                         <Ionicons name="flash" size={16} color={colors.heroText} />
                         <Text style={styles.practiceButtonText}>
-                          {startingPractice === rec.topic ? 'Starting…' : rec.label || 'Start 15 Qs'}
+                          {startingPractice === rec.topic ? tr("Starting…") : rec.label || tr("Start 15 Qs")}
                         </Text>
                       </TouchableOpacity>
                     </View>
@@ -266,12 +267,12 @@ export default function AnalyticsScreen({ navigation }) {
               {/* Subject Performance */}
               {analytics.subjectPerformance && analytics.subjectPerformance.length > 0 && (
                 <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>Subject Performance</Text>
+                  <Text style={styles.sectionTitle}>{tr("Subject Performance")}</Text>
                   {analytics.subjectPerformance.map((subject, index) => (
                     <View key={index} style={styles.subjectCard}>
                       <View style={styles.subjectHeader}>
                         <Text style={styles.subjectName} numberOfLines={1}>
-                          {typeof subject.subject === 'object' ? subject.subject.name || 'General' : subject.subject || 'General'}
+                          {typeof subject.subject === 'object' ? subject.subject.name || tr("General") : subject.subject || tr("General")}
                         </Text>
                         <Text style={[styles.subjectScore, { color: getScoreTone(subject.averageScore).fg }]}>
                           {subject.averageScore.toFixed(1)}%
@@ -279,10 +280,10 @@ export default function AnalyticsScreen({ navigation }) {
                       </View>
                       <View style={styles.subjectStats}>
                         <Text style={styles.subjectStatText}>
-                          {subject.attempts} attempts
+                          {tr("{0} attempts", subject.attempts)}
                         </Text>
                         <Text style={styles.subjectStatText}>
-                          Best: {subject.bestScore.toFixed(1)}%
+                          {tr("Best: {0}%", subject.bestScore.toFixed(1))}
                         </Text>
                       </View>
                     </View>
@@ -293,7 +294,7 @@ export default function AnalyticsScreen({ navigation }) {
               {/* Recent Attempts */}
               {analytics.recentAttempts && analytics.recentAttempts.length > 0 && (
                 <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>Recent Attempts</Text>
+                  <Text style={styles.sectionTitle}>{tr("Recent Attempts")}</Text>
                   {analytics.recentAttempts.map((attempt, index) => (
                     <TouchableOpacity
                       key={index}
@@ -318,7 +319,7 @@ export default function AnalyticsScreen({ navigation }) {
                       </View>
                       <View style={styles.attemptDetails}>
                         <Text style={styles.attemptDetailText}>
-                          {attempt.score} / {attempt.totalMarks} marks
+                          {tr("{0} / {1} marks", attempt.score, attempt.totalMarks)}
                         </Text>
                         <Text style={styles.attemptDetailText}>•</Text>
                         <Text style={styles.attemptDetailText}>{attempt.date}</Text>
@@ -331,7 +332,7 @@ export default function AnalyticsScreen({ navigation }) {
               {/* Performance Insights */}
               {analytics.insights && analytics.insights.length > 0 && (
                 <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>Insights</Text>
+                  <Text style={styles.sectionTitle}>{tr("Insights")}</Text>
                   {analytics.insights.map((insight, index) => (
                     <View key={index} style={styles.insightCard}>
                       <Ionicons name="bulb-outline" size={20} color={colors.text} />

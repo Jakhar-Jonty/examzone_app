@@ -14,6 +14,7 @@ import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
 import { testSeriesService } from '../services/testSeriesService';
 
+import { t as tr } from '../i18n';
 export default function TestSeriesScreen({ navigation }) {
   const { colors } = useTheme();
   const [series, setSeries] = useState([]);
@@ -61,11 +62,11 @@ export default function TestSeriesScreen({ navigation }) {
       <View style={styles.cardBody}>
         <View style={styles.tagRow}>
           <View style={styles.typeTag}>
-            <Text style={styles.typeText}>{item.seriesType || 'mock'}</Text>
+            <Text style={styles.typeText}>{item.seriesType || tr("mock")}</Text>
           </View>
           {item.isEnrolled && (
             <View style={[styles.typeTag, { backgroundColor: colors.tones.green.bg }]}>
-              <Text style={[styles.typeText, { color: colors.success }]}>Enrolled</Text>
+              <Text style={[styles.typeText, { color: colors.success }]}>{tr("Enrolled")}</Text>
             </View>
           )}
         </View>
@@ -73,7 +74,7 @@ export default function TestSeriesScreen({ navigation }) {
         <View style={styles.metaRow}>
           <View style={styles.meta}>
             <Ionicons name="document-text-outline" size={13} color={colors.textSecondary} />
-            <Text style={styles.metaText}>{item.totalTests || 0} tests</Text>
+            <Text style={styles.metaText}>{tr("{0} tests", item.totalTests || 0)}</Text>
           </View>
           {item.estimatedDuration ? (
             <View style={styles.meta}>
@@ -90,9 +91,9 @@ export default function TestSeriesScreen({ navigation }) {
   return (
     <ScreenWrapper>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Test Series</Text>
+        <Text style={styles.headerTitle}>{tr("Test Series")}</Text>
         <TouchableOpacity onPress={() => navigation.navigate('MyTestSeries')} hitSlop={10}>
-          <Text style={styles.myLink}>My Series</Text>
+          <Text style={styles.myLink}>{tr("My Series")}</Text>
         </TouchableOpacity>
       </View>
 
@@ -116,7 +117,7 @@ export default function TestSeriesScreen({ navigation }) {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="albums-outline" size={48} color={colors.textSecondary} />
-              <Text style={styles.emptyText}>No test series available yet</Text>
+              <Text style={styles.emptyText}>{tr("No test series available yet")}</Text>
             </View>
           }
         />

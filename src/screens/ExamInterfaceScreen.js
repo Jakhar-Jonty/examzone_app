@@ -25,6 +25,7 @@ import {
   getLocalizedQuestionOptions,
 } from '../utils/questionLanguage';
 
+import { t as tr } from '../i18n';
 export default function ExamInterfaceScreen({ route, navigation }) {
   const { examId, attemptId, exam: initialExam, attempt: initialAttempt } = route.params;
   const { colors, isDark } = useTheme();
@@ -154,9 +155,9 @@ export default function ExamInterfaceScreen({ route, navigation }) {
 
           if (!allowAppSwitch) {
             Alert.alert(
-              '⚠️ App Switch Detected',
-              'App switching is not allowed. Your exam will be auto-submitted.',
-              [{ text: 'OK', onPress: () => handleAutoSubmit() }],
+              tr("⚠️ App Switch Detected"),
+              tr("App switching is not allowed. Your exam will be auto-submitted."),
+              [{ text: tr("OK"), onPress: () => handleAutoSubmit() }],
               { cancelable: false }
             );
           } else {
@@ -164,7 +165,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
               const newCount = prev + 1;
               if (newCount >= 3) {
                 handlePause();
-                Alert.alert('⚠️ Multiple App Switches', 'Your exam has been auto-paused.');
+                Alert.alert(tr("⚠️ Multiple App Switches"), tr("Your exam has been auto-paused."));
               } else if (newCount >= 1) {
                 setShowAppSwitchWarning(true);
               }
@@ -202,7 +203,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
           setExam(currentExam);
           examRef.current = currentExam;
         } catch (error) {
-          Alert.alert('Error', 'Failed to load exam data');
+          Alert.alert(tr("Error"), tr("Failed to load exam data"));
           navigation.goBack();
           return;
         }
@@ -211,13 +212,13 @@ export default function ExamInterfaceScreen({ route, navigation }) {
       }
 
       if (!currentExam.duration || currentExam.duration <= 0) {
-        Alert.alert('Error', 'Exam duration is not set.');
+        Alert.alert(tr("Error"), tr("Exam duration is not set."));
         navigation.goBack();
         return;
       }
 
       if (!currentExam.questions || currentExam.questions.length === 0) {
-        throw new Error('No questions found in exam');
+        throw new Error(tr("No questions found in exam"));
       }
 
       const questionsList = currentExam.questions
@@ -372,9 +373,9 @@ export default function ExamInterfaceScreen({ route, navigation }) {
           if (initialTime > 0) {
             setTimeout(() => startTimer(initialTime), 50);
           } else {
-            Alert.alert('Time Expired', 'The exam time has expired.', [
-              { text: 'Submit Now', onPress: () => handleAutoSubmit() },
-              { text: 'Continue', style: 'cancel' },
+            Alert.alert(tr("Time Expired"), tr("The exam time has expired."), [
+              { text: tr("Submit Now"), onPress: () => handleAutoSubmit() },
+              { text: tr("Continue"), style: 'cancel' },
             ]);
           }
         } else {
@@ -387,7 +388,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
 
       if (await examStorage.isPendingSync(attemptId)) syncAnswersToBackend();
     } catch (error) {
-      Alert.alert('Error', 'Failed to load exam questions');
+      Alert.alert(tr("Error"), tr("Failed to load exam questions"));
       navigation.goBack();
     }
   };
@@ -528,9 +529,9 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                   )
                 );
                 if (fq >= 0) {
-                  Alert.alert('Section Time Expired', `Time for ${cs.name} has expired.`, [
+                  Alert.alert(tr("Section Time Expired"), tr("Time for {0} has expired.", cs.name), [
                     {
-                      text: 'OK',
+                      text: tr("OK"),
                       onPress: () => {
                         setCompletedSections((p) => {
                           const ns2 = new Set(p);
@@ -552,9 +553,9 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                 setShowSectionExpiryDialog(false);
               }
             } else {
-              Alert.alert('Exam Time Expired', 'All section times have expired.', [
+              Alert.alert(tr("Exam Time Expired"), tr("All section times have expired."), [
                 {
-                  text: 'OK',
+                  text: tr("OK"),
                   onPress: () => {
                     setShowSectionExpiryDialog(false);
                     handleAutoSubmit();
@@ -602,7 +603,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
     if (cs.length === 0) return { accessible: true };
     const qs = questionsRef.current.length > 0 ? questionsRef.current : questions;
     const q = qs[questionIndex];
-    if (!q) return { accessible: false, reason: 'Question not found' };
+    if (!q) return { accessible: false, reason: tr("Question not found") };
     const qId = (q._id || q).toString();
     const si = cs.findIndex((s) => s.questions.some((sq) => (sq._id || sq).toString() === qId));
     if (si < 0) return { accessible: true };
@@ -611,9 +612,9 @@ export default function ExamInterfaceScreen({ route, navigation }) {
     const cps = completedSectionsRef.current.size > 0 ? completedSectionsRef.current : completedSections;
     const csi = currentSectionIndexRef.current ?? currentSectionIndex;
     if (ce?.enableSectionTiming && ls.has(si))
-      return { accessible: false, reason: 'Section time expired', sectionIndex: si };
+      return { accessible: false, reason: tr("Section time expired"), sectionIndex: si };
     if (ce?.enableSectionLocking && cps.has(si) && si !== csi)
-      return { accessible: false, reason: 'Section completed', sectionIndex: si };
+      return { accessible: false, reason: tr("Section completed"), sectionIndex: si };
     return { accessible: true, sectionIndex: si };
   };
 
@@ -622,11 +623,11 @@ export default function ExamInterfaceScreen({ route, navigation }) {
     const ac = isQuestionAccessible(targetQI);
     if (!ac.accessible) {
       Alert.alert(
-        ac.reason === 'Section time expired' ? 'Section Locked' : 'Cannot Return',
+        ac.reason === 'Section time expired' ? tr("Section Locked") : tr("Cannot Return"),
         ac.reason === 'Section time expired'
-          ? 'Time has expired for this section.'
-          : 'You cannot return to a completed section.',
-        [{ text: 'OK' }]
+          ? tr("Time has expired for this section.")
+          : tr("You cannot return to a completed section."),
+        [{ text: tr("OK") }]
       );
       return false;
     }
@@ -801,11 +802,11 @@ export default function ExamInterfaceScreen({ route, navigation }) {
               const ac = isQuestionAccessible(pi);
               if (!ac.accessible) {
                 Alert.alert(
-                  ac.reason === 'Section time expired' ? 'Section Locked' : 'Cannot Return',
+                  ac.reason === 'Section time expired' ? tr("Section Locked") : tr("Cannot Return"),
                   ac.reason === 'Section time expired'
-                    ? 'Time has expired for this section.'
-                    : 'Cannot return to completed section.',
-                  [{ text: 'OK' }]
+                    ? tr("Time has expired for this section.")
+                    : tr("Cannot return to completed section."),
+                  [{ text: tr("OK") }]
                 );
                 return;
               }
@@ -842,11 +843,11 @@ export default function ExamInterfaceScreen({ route, navigation }) {
               const ac = isQuestionAccessible(ni);
               if (!ac.accessible) {
                 Alert.alert(
-                  ac.reason === 'Section time expired' ? 'Section Locked' : 'Cannot Return',
+                  ac.reason === 'Section time expired' ? tr("Section Locked") : tr("Cannot Return"),
                   ac.reason === 'Section time expired'
-                    ? 'Time has expired for this section.'
-                    : 'Cannot return to completed section.',
-                  [{ text: 'OK' }]
+                    ? tr("Time has expired for this section.")
+                    : tr("Cannot return to completed section."),
+                  [{ text: tr("OK") }]
                 );
                 return;
               }
@@ -939,11 +940,11 @@ export default function ExamInterfaceScreen({ route, navigation }) {
       setIsPaused(true);
       setShowPauseDialog(false);
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-      Alert.alert('Exam Paused', 'Your exam has been paused.', [
-        { text: 'OK', onPress: () => navigation.goBack() },
+      Alert.alert(tr("Exam Paused"), tr("Your exam has been paused."), [
+        { text: tr("OK"), onPress: () => navigation.goBack() },
       ]);
     } catch (e) {
-      Alert.alert('Error', e.response?.data?.message || 'Failed to pause exam');
+      Alert.alert(tr("Error"), e.response?.data?.message || tr("Failed to pause exam"));
       setPausing(false);
     }
   };
@@ -977,7 +978,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
     try {
       await examStorage.saveAnswers(attemptId, final);
     } catch (e) {}
-    Alert.alert('Time Up', 'Your exam time has ended. Submitting...');
+    Alert.alert(tr("Time Up"), tr("Your exam time has ended. Submitting..."));
     await submitExam();
   };
 
@@ -1002,7 +1003,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
       let ansToUse = stateHas ? answers : refHas ? answersRef.current : answers;
 
       if (qs.length === 0) {
-        Alert.alert('Error', 'No questions found.');
+        Alert.alert(tr("Error"), tr("No questions found."));
         setSubmitting(false);
         return;
       }
@@ -1063,17 +1064,17 @@ export default function ExamInterfaceScreen({ route, navigation }) {
       } catch (submitError) {
         const sa = await examStorage.getAnswers(attemptId);
         if (sa) {
-          Alert.alert('Submission Failed', 'Answers saved locally. Retry?', [
-            { text: 'Retry', onPress: () => { setSubmitting(false); submitExam(); } },
-            { text: 'Go Back', style: 'cancel', onPress: () => { setSubmitting(false); navigation.goBack(); } },
+          Alert.alert(tr("Submission Failed"), tr("Answers saved locally. Retry?"), [
+            { text: tr("Retry"), onPress: () => { setSubmitting(false); submitExam(); } },
+            { text: tr("Go Back"), style: 'cancel', onPress: () => { setSubmitting(false); navigation.goBack(); } },
           ]);
         } else {
-          Alert.alert('Error', 'Failed to submit exam.');
+          Alert.alert(tr("Error"), tr("Failed to submit exam."));
           setSubmitting(false);
         }
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to submit exam.');
+      Alert.alert(tr("Error"), tr("Failed to submit exam."));
       setSubmitting(false);
     }
   };
@@ -1128,7 +1129,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
         <View style={tw`flex-1 justify-center items-center`}>
           <ActivityIndicator size="large" color={colors.text} />
           <Text style={[tw`mt-4 text-base`, { color: colors.textSecondary }]}>
-            {submitting ? 'Submitting exam...' : 'Loading question...'}
+            {submitting ? tr("Submitting exam...") : tr("Loading question...")}
           </Text>
         </View>
       </ScreenWrapper>
@@ -1148,7 +1149,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
             style={[tw`w-10 h-10 rounded-full items-center justify-center`, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}
             onPress={handlePause}
             activeOpacity={0.7}
-            accessibilityLabel="Pause exam"
+            accessibilityLabel={tr("Pause exam")}
           >
             <Ionicons name="pause" size={18} color={colors.text} />
           </TouchableOpacity>
@@ -1209,10 +1210,10 @@ export default function ExamInterfaceScreen({ route, navigation }) {
               style={[tw`px-2.5 h-8 rounded-full items-center justify-center mr-2`, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}
               onPress={() => setDisplayLanguage(displayLanguage === 'English' ? 'Hindi' : 'English')}
               activeOpacity={0.7}
-              accessibilityLabel={`Showing ${displayLanguage}. Tap to switch language.`}
+              accessibilityLabel={tr("Showing {0}. Tap to switch language.", displayLanguage)}
             >
               <Text style={[tw`text-xs font-bold`, { color: colors.text }]}>
-                {displayLanguage === 'English' ? 'EN' : 'हिन्दी'}
+                {displayLanguage === 'English' ? tr("EN") : 'हिन्दी'}
               </Text>
             </TouchableOpacity>
           )}
@@ -1228,7 +1229,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
             style={[tw`w-10 h-10 rounded-full items-center justify-center`, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}
             onPress={() => setShowMenu(true)}
             activeOpacity={0.7}
-            accessibilityLabel="Exam menu"
+            accessibilityLabel={tr("Exam menu")}
           >
             <Ionicons name="ellipsis-horizontal" size={18} color={colors.text} />
           </TouchableOpacity>
@@ -1269,11 +1270,11 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                         const ac = isQuestionAccessible(fqi);
                         if (!ac.accessible) {
                           Alert.alert(
-                            ac.reason === 'Section time expired' ? 'Section Locked' : 'Cannot Return',
+                            ac.reason === 'Section time expired' ? tr("Section Locked") : tr("Cannot Return"),
                             ac.reason === 'Section time expired'
-                              ? 'Time has expired for this section.'
-                              : 'Cannot return to completed section.',
-                            [{ text: 'OK' }]
+                              ? tr("Time has expired for this section.")
+                              : tr("Cannot return to completed section."),
+                            [{ text: tr("OK") }]
                           );
                           return;
                         }
@@ -1292,7 +1293,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                       ]}
                     >
                       {section.name}
-                      {isLocked ? ' · locked' : isCompleted ? ' ✓' : ''}
+                      {isLocked ? tr(" · locked") : isCompleted ? ' ✓' : ''}
                     </Text>
                   </TouchableOpacity>
                 );
@@ -1305,16 +1306,16 @@ export default function ExamInterfaceScreen({ route, navigation }) {
         <View style={tw`px-4 pb-1`}>
           <View style={tw`flex-row items-center justify-between`}>
             <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>
-              <Text style={[tw`font-bold`, { color: colors.text }]}>{answeredCount}</Text> of {totalQuestions} answered
+              <Text style={[tw`font-bold`, { color: colors.text }]}>{answeredCount}</Text> {tr("of")} {totalQuestions} {tr("answered")}
               {markedCount > 0 ? (
-                <Text style={{ color: colors.tones.purple.fg }}>{`  ·  ${markedCount} marked`}</Text>
+                <Text style={{ color: colors.tones.purple.fg }}>{tr("  ·  {0} marked", markedCount)}</Text>
               ) : null}
             </Text>
             <TouchableOpacity
               style={[tw`flex-row items-center px-3 py-1.5 rounded-full`, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}
               onPress={() => setShowQuestionPalette(true)}
               activeOpacity={0.7}
-              accessibilityLabel="Open question palette"
+              accessibilityLabel={tr("Open question palette")}
             >
               <Ionicons name="grid-outline" size={13} color={colors.text} />
               <Text style={[tw`text-xs font-bold ml-1.5`, { color: colors.text }]}>
@@ -1362,7 +1363,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                 ]}
                 onPress={handleMarkForReview}
                 activeOpacity={0.7}
-                accessibilityLabel={isMarked ? 'Unmark for review' : 'Mark for review'}
+                accessibilityLabel={isMarked ? tr("Unmark for review") : tr("Mark for review")}
               >
                 <Ionicons
                   name={isMarked ? 'bookmark' : 'bookmark-outline'}
@@ -1370,7 +1371,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                   color={isMarked ? colors.tones.purple.fg : colors.textSecondary}
                 />
                 <Text style={[tw`text-xs font-bold ml-1`, { color: isMarked ? colors.tones.purple.fg : colors.textSecondary }]}>
-                  {isMarked ? 'Marked' : 'Mark'}
+                  {isMarked ? tr("Marked") : tr("Mark")}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -1381,7 +1382,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                 source={{ uri: currentQuestion.questionImage }}
                 style={[tw`w-full h-48 rounded-2xl mb-3`, { backgroundColor: colors.surfaceMuted }]}
                 resizeMode="contain"
-                accessibilityLabel="Question image"
+                accessibilityLabel={tr("Question image")}
               />
             ) : null}
 
@@ -1449,7 +1450,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
             onPress={handlePrevious}
             disabled={currentQuestionIndex === 0}
             activeOpacity={0.7}
-            accessibilityLabel="Previous question"
+            accessibilityLabel={tr("Previous question")}
           >
             <Ionicons name="chevron-back" size={20} color={colors.text} />
           </TouchableOpacity>
@@ -1460,7 +1461,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
             activeOpacity={0.7}
           >
             <Ionicons name="close-circle-outline" size={16} color={colors.text} style={tw`mr-1`} />
-            <Text style={[tw`text-xs font-bold`, { color: colors.text }]}>Clear</Text>
+            <Text style={[tw`text-xs font-bold`, { color: colors.text }]}>{tr("Clear")}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -1478,7 +1479,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
               style={tw`mr-1`}
             />
             <Text style={[tw`text-xs font-bold`, { color: isMarked ? colors.tones.purple.fg : colors.text }]}>
-              Review
+              {tr("Review")}
             </Text>
           </TouchableOpacity>
 
@@ -1491,7 +1492,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
               }}
               activeOpacity={0.7}
             >
-              <Text style={[tw`text-sm font-bold mr-1`, { color: colors.heroText }]}>Save & Next</Text>
+              <Text style={[tw`text-sm font-bold mr-1`, { color: colors.heroText }]}>{tr("Save & Next")}</Text>
               <Ionicons name="chevron-forward" size={16} color={colors.heroText} />
             </TouchableOpacity>
           ) : (
@@ -1501,7 +1502,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
               activeOpacity={0.7}
             >
               <Ionicons name="checkmark-circle" size={16} color={colors.heroText} style={tw`mr-1.5`} />
-              <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>Submit</Text>
+              <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>{tr("Submit")}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -1515,7 +1516,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
           <View style={tw`flex-1 justify-end bg-black/50`}>
             <View style={[tw`rounded-t-3xl p-5 max-h-[80%]`, { backgroundColor: colors.card }]}>
               <View style={tw`flex-row items-center justify-between mb-4`}>
-                <Text style={[tw`text-lg font-extrabold`, { color: colors.text }]}>All questions</Text>
+                <Text style={[tw`text-lg font-extrabold`, { color: colors.text }]}>{tr("All questions")}</Text>
                 <TouchableOpacity onPress={() => setShowQuestionPalette(false)} activeOpacity={0.7}>
                   <Ionicons name="close" size={30} color={colors.text} />
                 </TouchableOpacity>
@@ -1537,7 +1538,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                       ]}
                       onPress={() => handleQuestionSelect(index)}
                       activeOpacity={0.7}
-                      accessibilityLabel={`Question ${index + 1}, ${status.replace('-', ' and ')}`}
+                      accessibilityLabel={tr("Question {0}, {1}", index + 1, status.replace('-', ' and '))}
                     >
                       <Text style={[tw`text-sm font-bold`, { color: pc.fg }]}>{index + 1}</Text>
                     </TouchableOpacity>
@@ -1548,10 +1549,10 @@ export default function ExamInterfaceScreen({ route, navigation }) {
               {/* Legend */}
               <View style={[tw`flex-row flex-wrap gap-3 pt-3 border-t`, { borderColor: colors.border }]}>
                 {[
-                  { label: 'Not answered', status: 'unanswered' },
-                  { label: 'Answered', status: 'answered' },
-                  { label: 'Marked', status: 'marked' },
-                  { label: 'Marked & answered', status: 'marked-answered' },
+                  { label: tr("Not answered"), status: 'unanswered' },
+                  { label: tr("Answered"), status: 'answered' },
+                  { label: tr("Marked"), status: 'marked' },
+                  { label: tr("Marked & answered"), status: 'marked-answered' },
                 ].map(({ label, status }) => {
                   const pc = getPaletteColor(status);
                   return (
@@ -1570,17 +1571,17 @@ export default function ExamInterfaceScreen({ route, navigation }) {
         <Modal visible={showSubmitDialog} transparent animationType="fade" onRequestClose={() => setShowSubmitDialog(false)}>
           <View style={tw`flex-1 justify-center items-center bg-black/50 px-6`}>
             <View style={[tw`w-full rounded-2xl p-6`, { backgroundColor: colors.card }]}>
-              <Text style={[tw`text-lg font-bold mb-3`, { color: colors.text }]}>Submit Exam?</Text>
+              <Text style={[tw`text-lg font-bold mb-3`, { color: colors.text }]}>{tr("Submit Exam?")}</Text>
               <Text style={[tw`text-sm leading-5 mb-1`, { color: colors.textSecondary }]}>
-                You have answered {answeredCount} out of {totalQuestions} questions.
+                {tr("You have answered {0} out of {1} questions.", answeredCount, totalQuestions)}
               </Text>
               {answeredCount < totalQuestions && (
                 <Text style={[tw`text-sm font-semibold mb-3`, { color: colors.tones.red.fg }]}>
-                  {totalQuestions - answeredCount} question{totalQuestions - answeredCount === 1 ? ' is' : 's are'} still unanswered.
+                  {tr("{0} question{1} still unanswered.", totalQuestions - answeredCount, totalQuestions - answeredCount === 1 ? ' is' : 's are')}
                 </Text>
               )}
               <Text style={[tw`text-sm mb-5`, { color: colors.textSecondary }]}>
-                Are you sure you want to submit?
+                {tr("Are you sure you want to submit?")}
               </Text>
               <View style={tw`flex-row gap-3`}>
                 <TouchableOpacity
@@ -1588,14 +1589,14 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                   onPress={() => setShowSubmitDialog(false)}
                   activeOpacity={0.7}
                 >
-                  <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>Cancel</Text>
+                  <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>{tr("Cancel")}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[tw`flex-1 py-3 rounded-xl items-center`, { backgroundColor: colors.hero }]}
                   onPress={confirmSubmit}
                   activeOpacity={0.7}
                 >
-                  <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>Submit</Text>
+                  <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>{tr("Submit")}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -1606,9 +1607,9 @@ export default function ExamInterfaceScreen({ route, navigation }) {
         <Modal visible={showPauseDialog} transparent animationType="fade" onRequestClose={() => !pausing && setShowPauseDialog(false)}>
           <View style={tw`flex-1 justify-center items-center bg-black/50 px-6`}>
             <View style={[tw`w-full rounded-2xl p-6`, { backgroundColor: colors.card }]}>
-              <Text style={[tw`text-lg font-bold mb-3`, { color: colors.text }]}>Pause Exam?</Text>
+              <Text style={[tw`text-lg font-bold mb-3`, { color: colors.text }]}>{tr("Pause Exam?")}</Text>
               <Text style={[tw`text-sm leading-5 mb-5`, { color: colors.textSecondary }]}>
-                Your progress will be saved. You can continue later from the exam details page.
+                {tr("Your progress will be saved. You can continue later from the exam details page.")}
               </Text>
               <View style={tw`flex-row gap-3`}>
                 <TouchableOpacity
@@ -1617,7 +1618,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                   activeOpacity={0.7}
                   disabled={pausing}
                 >
-                  <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>Cancel</Text>
+                  <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>{tr("Cancel")}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[tw`flex-1 py-3 rounded-xl items-center`, { backgroundColor: colors.tones.orange.bg }]}
@@ -1628,7 +1629,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                   {pausing ? (
                     <ActivityIndicator size="small" color={colors.tones.orange.fg} />
                   ) : (
-                    <Text style={[tw`text-sm font-bold`, { color: colors.tones.orange.fg }]}>Pause</Text>
+                    <Text style={[tw`text-sm font-bold`, { color: colors.tones.orange.fg }]}>{tr("Pause")}</Text>
                   )}
                 </TouchableOpacity>
               </View>
@@ -1641,17 +1642,17 @@ export default function ExamInterfaceScreen({ route, navigation }) {
           <View style={tw`flex-1 justify-end bg-black/50`}>
             <View style={[tw`rounded-t-3xl p-5`, { backgroundColor: colors.card }]}>
               <View style={tw`flex-row items-center justify-between mb-4`}>
-                <Text style={[tw`text-lg font-bold`, { color: colors.text }]}>Menu</Text>
+                <Text style={[tw`text-lg font-bold`, { color: colors.text }]}>{tr("Menu")}</Text>
                 <TouchableOpacity onPress={() => setShowMenu(false)} activeOpacity={0.7}>
                   <Ionicons name="close" size={30} color={colors.text} />
                 </TouchableOpacity>
               </View>
               {[
-                { icon: 'grid', label: 'Question Palette', action: () => { setShowMenu(false); setShowQuestionPalette(true); } },
-                { icon: 'eye', label: 'Preview Answers', action: () => { setShowMenu(false); setShowPreviewDialog(true); } },
-                { icon: 'information-circle', label: 'Gestures & Shortcuts', action: () => { setShowMenu(false); setShowShortcutsDialog(true); } },
-                { icon: 'pause', label: 'Pause Exam', action: () => { setShowMenu(false); handlePause(); } },
-                { icon: 'checkmark-circle', label: 'Submit Exam', action: () => { setShowMenu(false); handleSubmit(); } },
+                { icon: 'grid', label: tr("Question Palette"), action: () => { setShowMenu(false); setShowQuestionPalette(true); } },
+                { icon: 'eye', label: tr("Preview Answers"), action: () => { setShowMenu(false); setShowPreviewDialog(true); } },
+                { icon: 'information-circle', label: tr("Gestures & Shortcuts"), action: () => { setShowMenu(false); setShowShortcutsDialog(true); } },
+                { icon: 'pause', label: tr("Pause Exam"), action: () => { setShowMenu(false); handlePause(); } },
+                { icon: 'checkmark-circle', label: tr("Submit Exam"), action: () => { setShowMenu(false); handleSubmit(); } },
               ].map(({ icon, label, action }) => (
                 <TouchableOpacity
                   key={label}
@@ -1672,7 +1673,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
           <View style={tw`flex-1 justify-end bg-black/50`}>
             <View style={[tw`rounded-t-3xl max-h-[90%]`, { backgroundColor: colors.card }]}>
               <View style={tw`flex-row items-center justify-between p-5 pb-3`}>
-                <Text style={[tw`text-lg font-bold`, { color: colors.text }]}>Review Your Answers</Text>
+                <Text style={[tw`text-lg font-bold`, { color: colors.text }]}>{tr("Review Your Answers")}</Text>
                 <TouchableOpacity onPress={() => setShowPreviewDialog(false)} activeOpacity={0.7}>
                   <Ionicons name="close" size={30} color={colors.text} />
                 </TouchableOpacity>
@@ -1682,10 +1683,10 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                 {/* Summary Stats */}
                 <View style={[tw`flex-row rounded-2xl p-3 mb-4`, { backgroundColor: colors.surfaceMuted }]}>
                   {[
-                    { value: questions.length, label: 'Total', color: colors.text },
-                    { value: answeredCount, label: 'Attempted', color: colors.tones.green.fg },
-                    { value: totalQuestions - answeredCount, label: 'Unattempted', color: colors.tones.orange.fg },
-                    { value: markedCount, label: 'Marked', color: colors.tones.purple.fg },
+                    { value: questions.length, label: tr("Total"), color: colors.text },
+                    { value: answeredCount, label: tr("Attempted"), color: colors.tones.green.fg },
+                    { value: totalQuestions - answeredCount, label: tr("Unattempted"), color: colors.tones.orange.fg },
+                    { value: markedCount, label: tr("Marked"), color: colors.tones.purple.fg },
                   ].map(({ value, label, color }) => (
                     <View key={label} style={tw`flex-1 items-center`}>
                       <Text style={[tw`text-xl font-bold`, { color }]}>{value}</Text>
@@ -1726,7 +1727,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                           {isMarked && (
                             <View style={[tw`px-2 py-0.5 rounded-full`, { backgroundColor: colors.tones.purple.bg }]}>
                               <Text style={[tw`text-[10px] font-semibold`, { color: colors.tones.purple.fg }]}>
-                                Marked
+                                {tr("Marked")}
                               </Text>
                             </View>
                           )}
@@ -1742,7 +1743,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                                 { color: isSelected ? colors.tones.green.fg : colors.textSecondary },
                               ]}
                             >
-                              {isSelected ? 'Attempted' : 'Unattempted'}
+                              {isSelected ? tr("Attempted") : tr("Unattempted")}
                             </Text>
                           </View>
                         </View>
@@ -1752,7 +1753,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                       </Text>
                       {isSelected && (
                         <View style={[tw`mt-2 p-2 rounded-lg`, { backgroundColor: colors.surfaceMuted }]}>
-                          <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>Your Answer:</Text>
+                          <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>{tr("Your Answer:")}</Text>
                           <Text style={[tw`text-sm font-bold mt-0.5`, { color: colors.text }]}>
                             {answer.selectedAnswer}
                             {opts.find((o) => (o.optionLabel || o.option) === answer.selectedAnswer) && (
@@ -1778,7 +1779,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                   onPress={() => setShowPreviewDialog(false)}
                   activeOpacity={0.7}
                 >
-                  <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>Close</Text>
+                  <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>{tr("Close")}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[tw`flex-1 py-3 rounded-xl items-center`, { backgroundColor: colors.hero }]}
@@ -1788,7 +1789,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                   }}
                   activeOpacity={0.7}
                 >
-                  <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>Proceed to submit</Text>
+                  <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>{tr("Proceed to submit")}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -1802,7 +1803,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
               <View style={tw`flex-row items-center justify-between mb-3`}>
                 <View style={tw`flex-row items-center gap-2`}>
                   <Ionicons name="information-circle" size={26} color={colors.text} />
-                  <Text style={[tw`text-lg font-bold`, { color: colors.text }]}>Gestures & Shortcuts</Text>
+                  <Text style={[tw`text-lg font-bold`, { color: colors.text }]}>{tr("Gestures & Shortcuts")}</Text>
                 </View>
                 <TouchableOpacity onPress={() => setShowShortcutsDialog(false)} activeOpacity={0.7}>
                   <Ionicons name="close" size={30} color={colors.text} />
@@ -1810,19 +1811,19 @@ export default function ExamInterfaceScreen({ route, navigation }) {
               </View>
 
               <Text style={[tw`text-sm mb-4`, { color: colors.textSecondary }]}>
-                Use these gestures to navigate quickly
+                {tr("Use these gestures to navigate quickly")}
               </Text>
 
               <ScrollView style={tw`max-h-96`}>
                 {[
-                  { icon: 'arrow-back', title: 'Previous Question', desc: 'Swipe right or tap "Previous"' },
-                  { icon: 'arrow-forward', title: 'Next Question', desc: 'Swipe left or tap "Save & Next"' },
-                  { icon: 'menu', title: 'Open Menu', desc: 'Swipe down from top or tap menu icon' },
-                  { icon: 'bookmark', title: 'Mark for Review', desc: 'Tap "Review" button' },
-                  { icon: 'close-circle', title: 'Clear Response', desc: 'Tap "Clear" button' },
-                  { icon: 'grid', title: 'Question Palette', desc: 'Open from menu to jump to any question' },
-                  { icon: 'eye', title: 'Preview Answers', desc: 'Review all before submission' },
-                  { icon: 'pause', title: 'Pause Exam', desc: 'Pause and resume later' },
+                  { icon: 'arrow-back', title: tr("Previous Question"), desc: tr('Swipe right or tap "Previous"') },
+                  { icon: 'arrow-forward', title: tr("Next Question"), desc: tr('Swipe left or tap "Save & Next"') },
+                  { icon: 'menu', title: tr("Open Menu"), desc: tr('Swipe down from top or tap menu icon') },
+                  { icon: 'bookmark', title: tr("Mark for Review"), desc: tr('Tap "Review" button') },
+                  { icon: 'close-circle', title: tr("Clear Response"), desc: tr('Tap "Clear" button') },
+                  { icon: 'grid', title: tr("Question Palette"), desc: tr('Open from menu to jump to any question') },
+                  { icon: 'eye', title: tr("Preview Answers"), desc: tr('Review all before submission') },
+                  { icon: 'pause', title: tr("Pause Exam"), desc: tr('Pause and resume later') },
                 ].map(({ icon, title, desc }) => (
                   <View key={title} style={[tw`flex-row items-center py-3 border-b`, { borderColor: colors.border }]}>
                     <View style={[tw`w-9 h-9 rounded-full items-center justify-center mr-3`, { backgroundColor: colors.surfaceMuted }]}>
@@ -1841,7 +1842,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                 onPress={() => setShowShortcutsDialog(false)}
                 activeOpacity={0.7}
               >
-                <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>Got it</Text>
+                <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>{tr("Got it")}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1853,23 +1854,21 @@ export default function ExamInterfaceScreen({ route, navigation }) {
             <View style={[tw`w-full rounded-2xl p-6`, { backgroundColor: colors.card }]}>
               <View style={tw`flex-row items-center gap-2 mb-3`}>
                 <Ionicons name="warning" size={26} color={colors.tones.orange.fg} />
-                <Text style={[tw`text-lg font-bold`, { color: colors.text }]}>You left the exam</Text>
+                <Text style={[tw`text-lg font-bold`, { color: colors.text }]}>{tr("You left the exam")}</Text>
               </View>
               <Text style={[tw`text-sm leading-5 mb-5`, { color: colors.textSecondary }]}>
                 {appSwitchCount >= 2
-                  ? `You've switched away ${appSwitchCount} times.\n\n${
-                      appSwitchCount >= 3
+                  ? tr("You've switched away {0} times.\n\n{1}", appSwitchCount, appSwitchCount >= 3
                         ? 'Your exam has been auto-paused!'
-                        : 'One more will auto-pause your exam!'
-                    }`
-                  : `You switched to another app.\n\nPlease stay in the exam until you submit.`}
+                        : 'One more will auto-pause your exam!')
+                  : tr("You switched to another app.\n\nPlease stay in the exam until you submit.")}
               </Text>
               <TouchableOpacity
                 style={[tw`py-3 rounded-xl items-center`, { backgroundColor: colors.hero }]}
                 onPress={() => setShowAppSwitchWarning(false)}
                 activeOpacity={0.7}
               >
-                <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>I understand</Text>
+                <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>{tr("I understand")}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1881,12 +1880,10 @@ export default function ExamInterfaceScreen({ route, navigation }) {
             <View style={[tw`w-full rounded-2xl p-6`, { backgroundColor: colors.card }]}>
               <View style={tw`flex-row items-center gap-2 mb-3`}>
                 <Ionicons name="exit-outline" size={26} color={colors.text} />
-                <Text style={[tw`text-lg font-bold`, { color: colors.text }]}>Leave Exam?</Text>
+                <Text style={[tw`text-lg font-bold`, { color: colors.text }]}>{tr("Leave Exam?")}</Text>
               </View>
               <Text style={[tw`text-sm leading-5 mb-5`, { color: colors.textSecondary }]}>
-                {`You are currently attempting the exam.\n\nProgress: ${answeredCount} of ${totalQuestions} answered\nTime Remaining: ${
-                  timeRemaining !== null ? formatTime(timeRemaining) : '--:--'
-                }`}
+                {tr("You are currently attempting the exam.\n\nProgress: {0} of {1} answered\nTime Remaining: {2}", answeredCount, totalQuestions, timeRemaining !== null ? formatTime(timeRemaining) : '--:--')}
               </Text>
 
               <TouchableOpacity
@@ -1895,7 +1892,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                 activeOpacity={0.7}
                 disabled={pausing || submitting}
               >
-                <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>Cancel</Text>
+                <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>{tr("Cancel")}</Text>
               </TouchableOpacity>
 
               <View style={tw`flex-row gap-3`}>
@@ -1909,7 +1906,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                   disabled={pausing || submitting}
                 >
                   <Ionicons name="pause" size={16} color={colors.tones.orange.fg} style={tw`mr-1.5`} />
-                  <Text style={[tw`text-sm font-bold`, { color: colors.tones.orange.fg }]}>Pause</Text>
+                  <Text style={[tw`text-sm font-bold`, { color: colors.tones.orange.fg }]}>{tr("Pause")}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -1922,7 +1919,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                   disabled={pausing || submitting}
                 >
                   <Ionicons name="checkmark-circle" size={16} color={colors.heroText} style={tw`mr-1.5`} />
-                  <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>Submit</Text>
+                  <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>{tr("Submit")}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -1936,7 +1933,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
               <View style={tw`flex-row items-center justify-between mb-3`}>
                 <View style={tw`flex-row items-center gap-2`}>
                   <Ionicons name="warning" size={26} color={colors.tones.orange.fg} />
-                  <Text style={[tw`text-lg font-bold`, { color: colors.text }]}>Leave section?</Text>
+                  <Text style={[tw`text-lg font-bold`, { color: colors.text }]}>{tr("Leave section?")}</Text>
                 </View>
                 <TouchableOpacity onPress={() => setShowSectionChangeDialog(false)} activeOpacity={0.7}>
                   <Ionicons name="close" size={30} color={colors.text} />
@@ -1957,7 +1954,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                         return aId === qId && a.selectedAnswer !== null;
                       });
                     }).length;
-                    return `You are about to leave "${cs.name}".\n\nAttempted: ${attempted} questions\nUnattempted: ${csq.length - attempted} questions\n\nOnce you leave, you won't be able to return.`;
+                    return tr("You are about to leave \"{0}\".\n\nAttempted: {1} questions\nUnattempted: {2} questions\n\nOnce you leave, you won't be able to return.", cs.name, attempted, csq.length - attempted);
                   })()}
               </Text>
 
@@ -1970,7 +1967,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                   }}
                   activeOpacity={0.7}
                 >
-                  <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>Cancel</Text>
+                  <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>{tr("Cancel")}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[tw`flex-1 py-3 rounded-xl items-center`, { backgroundColor: colors.hero }]}
@@ -2004,7 +2001,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                   }}
                   activeOpacity={0.7}
                 >
-                  <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>Continue</Text>
+                  <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>{tr("Continue")}</Text>
                 </TouchableOpacity>
               </View>
             </View>

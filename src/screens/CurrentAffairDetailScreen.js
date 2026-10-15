@@ -6,6 +6,7 @@ import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
 import { currentAffairsService, pickLang } from '../services/currentAffairsService';
 
+import { t as tr } from '../i18n';
 /** One current-affairs note: summary, exam facts and its MCQs. */
 export default function CurrentAffairDetailScreen({ navigation, route }) {
   const { id, hindi: initialHindi = false } = route.params || {};
@@ -19,7 +20,7 @@ export default function CurrentAffairDetailScreen({ navigation, route }) {
       .get(id)
       .then(setItem)
       .catch(() => {
-        Alert.alert('Current affairs', 'This item is no longer available.');
+        Alert.alert(tr("Current affairs"), tr("This item is no longer available."));
         navigation.goBack();
       });
   }, [id, navigation]);
@@ -31,7 +32,7 @@ export default function CurrentAffairDetailScreen({ navigation, route }) {
       const session = await currentAffairsService.startQuiz({ id });
       navigation.navigate('PracticeInterface', { sessionId: session._id, sessionType: session.sessionType });
     } catch (e) {
-      Alert.alert('Could not start', e?.response?.data?.message || 'Please try again.');
+      Alert.alert(tr("Could not start"), e?.response?.data?.message || tr("Please try again."));
     } finally {
       setStarting(false);
     }
@@ -45,13 +46,13 @@ export default function CurrentAffairDetailScreen({ navigation, route }) {
   return (
     <ScreenWrapper backgroundColor={colors.surface}>
       <View style={tw`flex-row items-center justify-between px-3 pt-2 pb-2`}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={tw`p-2`} accessibilityLabel="Back">
+        <TouchableOpacity onPress={() => navigation.goBack()} style={tw`p-2`} accessibilityLabel={tr("Back")}>
           <Ionicons name="arrow-back" size={22} color={colors.text} />
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => setHindi((h) => !h)}
           activeOpacity={0.8}
-          accessibilityLabel={`Language: ${hindi ? 'Hindi' : 'English'}. Tap to switch.`}
+          accessibilityLabel={tr("Language: {0}. Tap to switch.", hindi ? 'Hindi' : 'English')}
           style={[tw`flex-row rounded-full p-1 mr-2`, card]}
         >
           {['EN', 'हिन्दी'].map((label, i) => {
@@ -74,7 +75,7 @@ export default function CurrentAffairDetailScreen({ navigation, route }) {
           <ScrollView contentContainerStyle={tw`px-5 pt-1 pb-8`} showsVerticalScrollIndicator={false}>
             <Text style={[tw`text-xs font-bold tracking-wider`, { color: colors.textSecondary }]}>
               {date.toUpperCase()}
-              {item.region === 'National' ? ' · NATIONAL' : ' · HARYANA'}
+              {item.region === 'National' ? tr(" · NATIONAL") : tr(" · HARYANA")}
             </Text>
             <Text style={[tw`text-2xl font-extrabold mt-1.5 leading-8`, { color: colors.text }]}>
               {pickLang(hindi, item.title, item.titleHindi)}
@@ -86,7 +87,7 @@ export default function CurrentAffairDetailScreen({ navigation, route }) {
             {item.keyPoints?.length > 0 && (
               <View style={[tw`p-4 rounded-3xl mt-5`, card]}>
                 <Text style={[tw`text-sm font-extrabold mb-2`, { color: colors.text }]}>
-                  {hindi ? 'परीक्षा के लिए मुख्य तथ्य' : 'Key facts for the exam'}
+                  {hindi ? 'परीक्षा के लिए मुख्य तथ्य' : tr("Key facts for the exam")}
                 </Text>
                 {item.keyPoints.map((k, i) => (
                   <View key={k._id || i} style={tw`flex-row mt-1.5`}>
@@ -110,7 +111,7 @@ export default function CurrentAffairDetailScreen({ navigation, route }) {
             {!!item.sourceUrl && (
               <TouchableOpacity onPress={() => Linking.openURL(item.sourceUrl)} style={tw`flex-row items-center mt-4`}>
                 <Ionicons name="open-outline" size={14} color={colors.textSecondary} />
-                <Text style={[tw`text-xs font-semibold ml-1 underline`, { color: colors.textSecondary }]}>Source</Text>
+                <Text style={[tw`text-xs font-semibold ml-1 underline`, { color: colors.textSecondary }]}>{tr("Source")}</Text>
               </TouchableOpacity>
             )}
           </ScrollView>
@@ -129,7 +130,7 @@ export default function CurrentAffairDetailScreen({ navigation, route }) {
                   <>
                     <Ionicons name="flash" size={16} color={colors.heroAccent} />
                     <Text style={[tw`text-[15px] font-bold ml-1.5`, { color: colors.heroText }]}>
-                      {hindi ? `${item.questionCount} प्रश्न हल करें` : `Practice ${item.questionCount} MCQs`}
+                      {hindi ? `${item.questionCount} प्रश्न हल करें` : tr("Practice {0} MCQs", item.questionCount)}
                     </Text>
                   </>
                 )}

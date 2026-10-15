@@ -13,6 +13,7 @@ import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
 import { notificationApi } from '../services/notificationService';
 
+import { t as tr } from '../i18n';
 // Map notification type → Ionicon.
 const TYPE_ICON = {
   'exam-reminder': 'alarm',
@@ -28,10 +29,10 @@ const TYPE_ICON = {
 
 const timeAgo = (date) => {
   const s = Math.floor((Date.now() - new Date(date)) / 1000);
-  if (s < 60) return 'just now';
-  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
-  return `${Math.floor(s / 86400)}d ago`;
+  if (s < 60) return tr("just now");
+  if (s < 3600) return tr("{0}m ago", Math.floor(s / 60));
+  if (s < 86400) return tr("{0}h ago", Math.floor(s / 3600));
+  return tr("{0}d ago", Math.floor(s / 86400));
 };
 
 export default function NotificationsScreen({ navigation }) {
@@ -109,10 +110,10 @@ export default function NotificationsScreen({ navigation }) {
         <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={10}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Notifications</Text>
+        <Text style={styles.headerTitle}>{tr("Notifications")}</Text>
         {unread > 0 ? (
           <TouchableOpacity onPress={markAll} hitSlop={10}>
-            <Text style={styles.markAll}>Mark all</Text>
+            <Text style={styles.markAll}>{tr("Mark all")}</Text>
           </TouchableOpacity>
         ) : (
           <View style={{ width: 56 }} />
@@ -139,7 +140,7 @@ export default function NotificationsScreen({ navigation }) {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="notifications-off-outline" size={48} color={colors.textSecondary} />
-              <Text style={styles.emptyText}>No notifications yet</Text>
+              <Text style={styles.emptyText}>{tr("No notifications yet")}</Text>
             </View>
           }
         />

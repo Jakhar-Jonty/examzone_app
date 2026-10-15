@@ -13,6 +13,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 
+import { t as tr } from '../i18n';
 const THEME_OPTIONS = [
   { key: 'light', icon: 'sunny', label: 'Light' },
   { key: 'dark', icon: 'moon', label: 'Dark' },
@@ -29,71 +30,71 @@ export default function ProfileScreen({ navigation }) {
   };
 
   const handleLogout = () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Logout', style: 'destructive', onPress: () => logout() },
+    Alert.alert(tr("Logout"), tr("Are you sure you want to logout?"), [
+      { text: tr("Cancel"), style: 'cancel' },
+      { text: tr("Logout"), style: 'destructive', onPress: () => logout() },
     ]);
   };
 
   const menuSections = [
     {
-      title: 'Membership',
+      title: tr("Membership"),
       items: [
         {
           icon: isPremium ? 'diamond' : 'diamond-outline',
-          label: isPremium ? 'Premium Active' : 'Go Premium',
+          label: isPremium ? tr("Premium Active") : tr("Go Premium"),
           onPress: () => navigation.navigate('Paywall'),
-          badge: isPremium ? null : 'Upgrade',
+          badge: isPremium ? null : tr("Upgrade"),
         },
       ],
     },
     {
-      title: 'Account',
+      title: tr("Account"),
       items: [
         {
           icon: 'person-outline',
-          label: 'Edit Profile',
+          label: tr("Edit Profile"),
           onPress: () => navigation.navigate('EditProfile'),
         },
         {
           icon: 'notifications-outline',
-          label: 'Notifications',
+          label: tr("Notifications"),
           onPress: () => navigation.navigate('Notifications'),
         },
       ],
     },
     {
-      title: 'Study',
+      title: tr("Study"),
       items: [
         {
           icon: 'trophy-outline',
-          label: 'Leaderboard',
+          label: tr("Leaderboard"),
           onPress: () => navigation.navigate('Leaderboard'),
         },
         {
           icon: 'ribbon-outline',
-          label: 'Badges',
+          label: tr("Badges"),
           onPress: () => navigation.navigate('Badges'),
         },
         {
           icon: 'time-outline',
-          label: 'Exam History',
+          label: tr("Exam History"),
           onPress: () => navigation.navigate('ExamHistory'),
         },
         {
           icon: 'analytics-outline',
-          label: 'Analytics',
+          label: tr("Analytics"),
           onPress: () => navigation.navigate('Analytics'),
         },
         {
           icon: 'book-outline',
-          label: 'Wrong Book',
+          label: tr("Wrong Book"),
           onPress: () =>
             navigation.navigate('StudyTab', { screen: 'WrongBook', initial: false }),
         },
         {
           icon: 'bookmark-outline',
-          label: 'Saved Questions',
+          label: tr("Saved Questions"),
           onPress: () =>
             navigation.navigate('StudyTab', {
               screen: 'StudyMain',
@@ -102,13 +103,13 @@ export default function ProfileScreen({ navigation }) {
         },
         {
           icon: 'flash-outline',
-          label: 'Practice Sessions',
+          label: tr("Practice Sessions"),
           onPress: () =>
             navigation.navigate('StudyTab', { screen: 'PracticeSessions', initial: false }),
         },
         {
           icon: 'calendar-outline',
-          label: 'Study Plans',
+          label: tr("Study Plans"),
           onPress: () =>
             navigation.navigate('StudyTab', { screen: 'StudyPlans', initial: false }),
         },
@@ -160,7 +161,7 @@ export default function ProfileScreen({ navigation }) {
           </TouchableOpacity>
 
           <Text style={[tw`text-xl font-bold`, { color: colors.text }]}>
-            {user?.name || 'User'}
+            {user?.name || tr("User")}
           </Text>
           {user?.email && (
             <Text style={[tw`text-sm mt-0.5`, { color: colors.textSecondary }]}>
@@ -182,7 +183,7 @@ export default function ProfileScreen({ navigation }) {
               { color: colors.textSecondary, letterSpacing: 0.5 },
             ]}
           >
-            Appearance
+            {tr("Appearance")}
           </Text>
           <View
             style={[
@@ -213,7 +214,7 @@ export default function ProfileScreen({ navigation }) {
                       { color: isActive ? colors.text : colors.textSecondary },
                     ]}
                   >
-                    {label}
+                    {tr(label)}
                   </Text>
                 </TouchableOpacity>
               );
@@ -260,7 +261,7 @@ export default function ProfileScreen({ navigation }) {
                     <Ionicons name={item.icon} size={18} color={colors.text} />
                   </View>
                   <Text style={[tw`flex-1 text-sm font-medium`, { color: colors.text }]}>
-                    {item.label}
+                    {tr(item.label)}
                   </Text>
                   {item.badge ? (
                     <View
@@ -287,7 +288,7 @@ export default function ProfileScreen({ navigation }) {
               { color: colors.textSecondary, letterSpacing: 0.5 },
             ]}
           >
-            About
+            {tr("About")}
           </Text>
           <View
             style={[
@@ -295,7 +296,7 @@ export default function ProfileScreen({ navigation }) {
               { backgroundColor: colors.card, borderColor: colors.border },
             ]}
           >
-            <Text style={[tw`text-sm font-medium`, { color: colors.text }]}>Version</Text>
+            <Text style={[tw`text-sm font-medium`, { color: colors.text }]}>{tr("Version")}</Text>
             <Text style={[tw`text-sm`, { color: colors.textSecondary }]}>1.0.0</Text>
           </View>
         </View>
@@ -312,7 +313,7 @@ export default function ProfileScreen({ navigation }) {
           >
             <Ionicons name="log-out-outline" size={18} color={colors.error} />
             <Text style={[tw`text-sm font-semibold ml-2`, { color: colors.error }]}>
-              Logout
+              {tr("Logout")}
             </Text>
           </TouchableOpacity>
         </View>

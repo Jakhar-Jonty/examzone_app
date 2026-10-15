@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 
+import { t as tr } from '../i18n';
 const mark = require('../../assets/examzone_mark.png');
 
 const GOALS = [
@@ -50,10 +51,10 @@ export default function OnboardingScreen({ route }) {
         <View style={tw`px-6 pt-12 pb-8 items-center`}>
           <Image source={mark} style={tw`h-16 w-16 rounded-2xl mb-4`} resizeMode="cover" />
           <Text style={[tw`text-3xl font-extrabold text-center mb-1`, { color: colors.heroText }]}>
-            Welcome{user?.name ? `, ${user.name.split(' ')[0]}` : ''}!
+            {tr("Welcome{0}!", user?.name ? `, ${user.name.split(' ')[0]}` : '')}
           </Text>
           <Text style={[tw`text-base text-center`, { color: colors.heroTextSecondary }]}>
-            You're all set. Let's make this count.
+            {tr("You're all set. Let's make this count.")}
           </Text>
         </View>
 
@@ -61,15 +62,15 @@ export default function OnboardingScreen({ route }) {
         <View style={[tw`flex-1 rounded-t-3xl px-6 pt-8 pb-10`, { backgroundColor: colors.card }]}>
           {/* Features */}
           <Text style={[tw`text-xs font-bold uppercase tracking-widest mb-3`, { color: colors.textSecondary }]}>
-            What's waiting for you
+            {tr("What's waiting for you")}
           </Text>
           <View style={tw`flex-row flex-wrap gap-3 mb-8`}>
             {FEATURES.map((f) => (
               <View key={f.label} style={[tw`flex-row items-center gap-3 p-3 rounded-2xl`, { width: '47%', backgroundColor: colors.card }]}>
                 <Text style={{ fontSize: 24 }}>{f.icon}</Text>
                 <View style={tw`flex-1`}>
-                  <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>{f.label}</Text>
-                  <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>{f.sub}</Text>
+                  <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>{tr(f.label)}</Text>
+                  <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>{tr(f.sub)}</Text>
                 </View>
               </View>
             ))}
@@ -77,10 +78,10 @@ export default function OnboardingScreen({ route }) {
 
           {/* Daily goal */}
           <Text style={[tw`text-xs font-bold uppercase tracking-widest mb-1`, { color: colors.textSecondary }]}>
-            Set your daily goal
+            {tr("Set your daily goal")}
           </Text>
           <Text style={[tw`text-xs mb-3`, { color: colors.textSecondary }]}>
-            How many practice exams per day?
+            {tr("How many practice exams per day?")}
           </Text>
           <View style={tw`gap-2 mb-8`}>
             {GOALS.map((g) => {
@@ -94,8 +95,8 @@ export default function OnboardingScreen({ route }) {
                     { borderColor: sel ? colors.hero : colors.border, backgroundColor: sel ? colors.surfaceMuted : colors.card },
                   ]}
                 >
-                  <Text style={[tw`text-sm font-bold`, { color: sel ? colors.text : colors.text }]}>{g.label}</Text>
-                  <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>{g.sub}</Text>
+                  <Text style={[tw`text-sm font-bold`, { color: sel ? colors.text : colors.text }]}>{tr(g.label)}</Text>
+                  <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>{tr(g.sub)}</Text>
                 </TouchableOpacity>
               );
             })}
@@ -108,7 +109,7 @@ export default function OnboardingScreen({ route }) {
           >
             {loading
               ? <ActivityIndicator color={colors.heroText} />
-              : <Text style={[tw`text-base font-extrabold`, { color: colors.heroText }]}>Start My Journey →</Text>
+              : <Text style={[tw`text-base font-extrabold`, { color: colors.heroText }]}>{tr("Start My Journey →")}</Text>
             }
           </TouchableOpacity>
         </View>

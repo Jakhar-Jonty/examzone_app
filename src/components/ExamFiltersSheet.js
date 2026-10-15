@@ -11,6 +11,7 @@ import tw from 'twrnc';
 import { Ionicons } from '@expo/vector-icons';
 import { EXAM_SORT_OPTIONS } from '../utils/examSort';
 
+import { t as tr } from '../i18n';
 const LANGUAGES = ['', 'English', 'Hindi', 'Both'];
 const PREMIUM_OPTIONS = [
   { key: '', label: 'All' },
@@ -51,7 +52,7 @@ function OptionPill({ label, active, onPress, colors }) {
           { color: active ? colors.heroText : colors.text },
         ]}
       >
-        {label}
+        {tr(label)}
       </Text>
     </TouchableOpacity>
   );
@@ -123,7 +124,7 @@ export default function ExamFiltersSheet({
           </View>
 
           <View style={tw`flex-row items-center justify-between px-5 pb-3`}>
-            <Text style={[tw`text-lg font-bold`, { color: colors.text }]}>Filters & sort</Text>
+            <Text style={[tw`text-lg font-bold`, { color: colors.text }]}>{tr("Filters & sort")}</Text>
             <TouchableOpacity onPress={onClose} hitSlop={12} activeOpacity={0.7}>
               <Ionicons name="close" size={22} color={colors.textSecondary} />
             </TouchableOpacity>
@@ -135,7 +136,7 @@ export default function ExamFiltersSheet({
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
-            <Section title="Sort by" colors={colors}>
+            <Section title={tr("Sort by")} colors={colors}>
               <View style={tw`flex-row flex-wrap`}>
                 {EXAM_SORT_OPTIONS.map(({ key, label }) => (
                   <OptionPill
@@ -150,10 +151,10 @@ export default function ExamFiltersSheet({
             </Section>
 
             {categories.length > 0 && (
-              <Section title="Category" colors={colors}>
+              <Section title={tr("Category")} colors={colors}>
                 <View style={tw`flex-row flex-wrap`}>
                   <OptionPill
-                    label="All categories"
+                    label={tr("All categories")}
                     active={!draftCategory}
                     onPress={() => setDraftCategory('')}
                     colors={colors}
@@ -171,12 +172,12 @@ export default function ExamFiltersSheet({
               </Section>
             )}
 
-            <Section title="Language" colors={colors}>
+            <Section title={tr("Language")} colors={colors}>
               <View style={tw`flex-row flex-wrap`}>
                 {LANGUAGES.map((lang) => (
                   <OptionPill
                     key={lang || 'all'}
-                    label={lang || 'All languages'}
+                    label={lang || tr("All languages")}
                     active={draftLanguage === lang}
                     onPress={() => setDraftLanguage(lang)}
                     colors={colors}
@@ -185,7 +186,7 @@ export default function ExamFiltersSheet({
               </View>
             </Section>
 
-            <Section title="Access" colors={colors}>
+            <Section title={tr("Access")} colors={colors}>
               <View style={tw`flex-row flex-wrap`}>
                 {PREMIUM_OPTIONS.map(({ key, label }) => (
                   <OptionPill
@@ -199,7 +200,7 @@ export default function ExamFiltersSheet({
               </View>
             </Section>
 
-            <Section title="Difficulty" colors={colors}>
+            <Section title={tr("Difficulty")} colors={colors}>
               <View style={tw`flex-row flex-wrap`}>
                 {DIFFICULTY_OPTIONS.map(({ key, label }) => (
                   <OptionPill
@@ -229,7 +230,7 @@ export default function ExamFiltersSheet({
               activeOpacity={0.75}
             >
               <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>
-                Reset{activeDraftCount > 0 ? ` (${activeDraftCount})` : ''}
+                {tr("Reset{0}", activeDraftCount > 0 ? ` (${activeDraftCount})` : '')}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -237,7 +238,7 @@ export default function ExamFiltersSheet({
               onPress={handleApply}
               activeOpacity={0.85}
             >
-              <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>Apply</Text>
+              <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>{tr("Apply")}</Text>
             </TouchableOpacity>
           </View>
         </Pressable>
@@ -264,16 +265,16 @@ export function ActiveFilterPills({ items, onRemove, onClearAll, colors }) {
             tw`flex-row items-center px-3 py-1.5 rounded-full gap-1`,
             { backgroundColor: colors.cardMuted },
           ]}
-          accessibilityLabel={`Remove filter ${label}`}
+          accessibilityLabel={tr("Remove filter {0}", label)}
         >
-          <Text style={[tw`text-[11px] font-bold`, { color: colors.text }]}>{label}</Text>
+          <Text style={[tw`text-[11px] font-bold`, { color: colors.text }]}>{tr(label)}</Text>
           <Ionicons name="close" size={14} color={colors.text} />
         </TouchableOpacity>
       ))}
       {items.length > 1 && (
         <TouchableOpacity onPress={onClearAll} activeOpacity={0.7} style={tw`justify-center px-1`}>
           <Text style={[tw`text-[11px] font-semibold`, { color: colors.textSecondary }]}>
-            Clear all
+            {tr("Clear all")}
           </Text>
         </TouchableOpacity>
       )}

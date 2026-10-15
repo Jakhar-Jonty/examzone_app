@@ -3,6 +3,7 @@ import { ScrollView, Text, TouchableOpacity } from 'react-native';
 import tw from 'twrnc';
 import { useTheme } from '../context/ThemeContext';
 import { useFocusExam, useSubExam } from '../context/AppConfigContext';
+import { t as tr } from '../i18n';
 
 const titleCase = (s) => s.replace(/\b\w/g, (c) => c.toUpperCase());
 
@@ -16,7 +17,7 @@ export default function SubExamChips({ style }) {
   const { options, selectedId, select } = useSubExam();
   if (!focus || !options.length) return null;
 
-  const chips = [{ _id: null, name: `All ${focus.name}` }, ...options];
+  const chips = [{ _id: null, name: tr('All {0}', focus.name) }, ...options];
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={style} contentContainerStyle={tw`gap-2`}>
       {chips.map((c) => {

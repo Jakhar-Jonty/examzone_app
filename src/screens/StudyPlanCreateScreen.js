@@ -16,6 +16,7 @@ import { useFocusExam } from '../context/AppConfigContext';
 import api from '../services/api';
 import { studyPlanService } from '../services/studyPlanService';
 
+import { t as tr } from '../i18n';
 const STEPS = ['Basics', 'Curriculum', 'Milestones', 'Review'];
 
 function topicKey(subject, name) {
@@ -98,12 +99,12 @@ export default function StudyPlanCreateScreen({ navigation }) {
     const subject = manualSubject.trim();
     const name = manualTopic.trim();
     if (!subject || !name) {
-      Alert.alert('Required', 'Enter subject and topic name');
+      Alert.alert(tr("Required"), tr("Enter subject and topic name"));
       return;
     }
     const key = topicKey(subject, name);
     if (selectedTopicKeys.has(key)) {
-      Alert.alert('Duplicate', 'Topic already added');
+      Alert.alert(tr("Duplicate"), tr("Topic already added"));
       return;
     }
     setSelectedTopicKeys((prev) => new Set(prev).add(key));
@@ -114,7 +115,7 @@ export default function StudyPlanCreateScreen({ navigation }) {
     const title = milestoneDraft.title.trim();
     const targetDate = milestoneDraft.targetDate;
     if (!title || !targetDate) {
-      Alert.alert('Required', 'Milestone needs a title and date');
+      Alert.alert(tr("Required"), tr("Milestone needs a title and date"));
       return;
     }
     setMilestones((prev) => [...prev, { title, targetDate }]);
@@ -124,15 +125,15 @@ export default function StudyPlanCreateScreen({ navigation }) {
   const validateStep = () => {
     if (step === 1) {
       if (!form.title.trim()) {
-        Alert.alert('Required', 'Title is required');
+        Alert.alert(tr("Required"), tr("Title is required"));
         return false;
       }
       if (!form.endDate) {
-        Alert.alert('Required', 'End date is required');
+        Alert.alert(tr("Required"), tr("End date is required"));
         return false;
       }
       if (new Date(form.endDate) <= new Date(form.startDate)) {
-        Alert.alert('Invalid', 'End date must be after start date');
+        Alert.alert(tr("Invalid"), tr("End date must be after start date"));
         return false;
       }
     }
@@ -161,7 +162,7 @@ export default function StudyPlanCreateScreen({ navigation }) {
       await studyPlanService.create(payload);
       navigation.goBack();
     } catch (err) {
-      Alert.alert('Error', err.response?.data?.message || 'Failed to create plan');
+      Alert.alert(tr("Error"), err.response?.data?.message || tr("Failed to create plan"));
     } finally {
       setSaving(false);
     }
@@ -176,8 +177,8 @@ export default function StudyPlanCreateScreen({ navigation }) {
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <View style={{ flex: 1, marginLeft: 12 }}>
-          <Text style={styles.headerTitle}>New Study Plan</Text>
-          <Text style={styles.headerSub}>Step {step} of {STEPS.length} — {STEPS[step - 1]}</Text>
+          <Text style={styles.headerTitle}>{tr("New Study Plan")}</Text>
+          <Text style={styles.headerSub}>{tr("Step {0} of {1} — {2}", step, STEPS.length, STEPS[step - 1])}</Text>
         </View>
       </View>
 
@@ -197,32 +198,32 @@ export default function StudyPlanCreateScreen({ navigation }) {
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
         {step === 1 && (
           <>
-            <Text style={styles.label}>Title *</Text>
+            <Text style={styles.label}>{tr("Title *")}</Text>
             <TextInput
               style={styles.input}
               value={form.title}
               onChangeText={(v) => setForm((f) => ({ ...f, title: v }))}
-              placeholder="e.g. SSC CGL 2025 Prep"
+              placeholder={tr("e.g. SSC CGL 2025 Prep")}
               placeholderTextColor={colors.textSecondary}
             />
-            <Text style={styles.label}>Description</Text>
+            <Text style={styles.label}>{tr("Description")}</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
               value={form.description}
               onChangeText={(v) => setForm((f) => ({ ...f, description: v }))}
-              placeholder="What are you preparing for?"
+              placeholder={tr("What are you preparing for?")}
               placeholderTextColor={colors.textSecondary}
               multiline
             />
 {!focus && (
               <>
-            <Text style={styles.label}>Target Exam (optional)</Text>
+            <Text style={styles.label}>{tr("Target Exam (optional)")}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }}>
               <TouchableOpacity
                 style={[styles.chip, !form.categoryId && styles.chipActive]}
                 onPress={() => setForm((f) => ({ ...f, categoryId: '' }))}
               >
-                <Text style={[styles.chipText, !form.categoryId && styles.chipTextActive]}>None</Text>
+                <Text style={[styles.chipText, !form.categoryId && styles.chipTextActive]}>{tr("None")}</Text>
               </TouchableOpacity>
               {categories.map((c) => (
                 <TouchableOpacity
@@ -236,11 +237,11 @@ export default function StudyPlanCreateScreen({ navigation }) {
             </ScrollView>
               </>
             )}
-            <Text style={styles.label}>Start Date</Text>
-            <TextInput style={styles.input} value={form.startDate} onChangeText={(v) => setForm((f) => ({ ...f, startDate: v }))} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textSecondary} />
-            <Text style={styles.label}>End Date *</Text>
-            <TextInput style={styles.input} value={form.endDate} onChangeText={(v) => setForm((f) => ({ ...f, endDate: v }))} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textSecondary} />
-            <Text style={styles.label}>Study Hours / Day</Text>
+            <Text style={styles.label}>{tr("Start Date")}</Text>
+            <TextInput style={styles.input} value={form.startDate} onChangeText={(v) => setForm((f) => ({ ...f, startDate: v }))} placeholder={tr("YYYY-MM-DD")} placeholderTextColor={colors.textSecondary} />
+            <Text style={styles.label}>{tr("End Date *")}</Text>
+            <TextInput style={styles.input} value={form.endDate} onChangeText={(v) => setForm((f) => ({ ...f, endDate: v }))} placeholder={tr("YYYY-MM-DD")} placeholderTextColor={colors.textSecondary} />
+            <Text style={styles.label}>{tr("Study Hours / Day")}</Text>
             <TextInput style={styles.input} value={form.studyHoursPerDay} onChangeText={(v) => setForm((f) => ({ ...f, studyHoursPerDay: v }))} keyboardType="number-pad" placeholderTextColor={colors.textSecondary} />
           </>
         )}
@@ -279,29 +280,29 @@ export default function StudyPlanCreateScreen({ navigation }) {
                 ))
               )
             ) : (
-              <Text style={styles.hint}>Select a target exam in step 1 to load subjects, or add topics manually below.</Text>
+              <Text style={styles.hint}>{tr("Select a target exam in step 1 to load subjects, or add topics manually below.")}</Text>
             )}
-            <Text style={styles.label}>Add Topic Manually</Text>
-            <TextInput style={styles.input} value={manualSubject} onChangeText={setManualSubject} placeholder="Subject" placeholderTextColor={colors.textSecondary} />
+            <Text style={styles.label}>{tr("Add Topic Manually")}</Text>
+            <TextInput style={styles.input} value={manualSubject} onChangeText={setManualSubject} placeholder={tr("Subject")} placeholderTextColor={colors.textSecondary} />
             <View style={{ flexDirection: 'row', gap: 8 }}>
-              <TextInput style={[styles.input, { flex: 1 }]} value={manualTopic} onChangeText={setManualTopic} placeholder="Topic name" placeholderTextColor={colors.textSecondary} />
+              <TextInput style={[styles.input, { flex: 1 }]} value={manualTopic} onChangeText={setManualTopic} placeholder={tr("Topic name")} placeholderTextColor={colors.textSecondary} />
               <TouchableOpacity style={styles.addBtn} onPress={addManualTopic}>
-                <Text style={styles.addBtnText}>Add</Text>
+                <Text style={styles.addBtnText}>{tr("Add")}</Text>
               </TouchableOpacity>
             </View>
             {selectedTopics.length > 0 && (
-              <Text style={styles.selectedCount}>{selectedTopics.length} topics selected</Text>
+              <Text style={styles.selectedCount}>{tr("{0} topics selected", selectedTopics.length)}</Text>
             )}
           </>
         )}
 
         {step === 3 && (
           <>
-            <Text style={styles.label}>Add Milestone</Text>
-            <TextInput style={styles.input} value={milestoneDraft.title} onChangeText={(v) => setMilestoneDraft((d) => ({ ...d, title: v }))} placeholder="Milestone title" placeholderTextColor={colors.textSecondary} />
-            <TextInput style={styles.input} value={milestoneDraft.targetDate} onChangeText={(v) => setMilestoneDraft((d) => ({ ...d, targetDate: v }))} placeholder="Target date (YYYY-MM-DD)" placeholderTextColor={colors.textSecondary} />
+            <Text style={styles.label}>{tr("Add Milestone")}</Text>
+            <TextInput style={styles.input} value={milestoneDraft.title} onChangeText={(v) => setMilestoneDraft((d) => ({ ...d, title: v }))} placeholder={tr("Milestone title")} placeholderTextColor={colors.textSecondary} />
+            <TextInput style={styles.input} value={milestoneDraft.targetDate} onChangeText={(v) => setMilestoneDraft((d) => ({ ...d, targetDate: v }))} placeholder={tr("Target date (YYYY-MM-DD)")} placeholderTextColor={colors.textSecondary} />
             <TouchableOpacity style={styles.addBtn} onPress={addMilestone}>
-              <Text style={styles.addBtnText}>Add Milestone</Text>
+              <Text style={styles.addBtnText}>{tr("Add Milestone")}</Text>
             </TouchableOpacity>
             {milestones.map((m, i) => (
               <View key={i} style={styles.milestoneItem}>
@@ -313,7 +314,7 @@ export default function StudyPlanCreateScreen({ navigation }) {
               </View>
             ))}
             {milestones.length === 0 && (
-              <Text style={styles.hint}>Milestones are optional. Skip if you prefer.</Text>
+              <Text style={styles.hint}>{tr("Milestones are optional. Skip if you prefer.")}</Text>
             )}
           </>
         )}
@@ -323,7 +324,7 @@ export default function StudyPlanCreateScreen({ navigation }) {
             <Text style={styles.reviewTitle}>{form.title}</Text>
             {form.description ? <Text style={styles.reviewDesc}>{form.description}</Text> : null}
             <Text style={styles.reviewMeta}>{form.startDate} → {form.endDate}</Text>
-            <Text style={styles.reviewMeta}>{form.studyHoursPerDay} hrs/day · {selectedTopics.length} topics · {milestones.length} milestones</Text>
+            <Text style={styles.reviewMeta}>{tr("{0} hrs/day · {1} topics · {2} milestones", form.studyHoursPerDay, selectedTopics.length, milestones.length)}</Text>
           </View>
         )}
       </ScrollView>
@@ -331,11 +332,11 @@ export default function StudyPlanCreateScreen({ navigation }) {
       <View style={styles.footer}>
         {step < STEPS.length ? (
           <TouchableOpacity style={styles.primaryBtn} onPress={nextStep}>
-            <Text style={styles.primaryBtnText}>Continue</Text>
+            <Text style={styles.primaryBtnText}>{tr("Continue")}</Text>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity style={styles.primaryBtn} onPress={submit} disabled={saving}>
-            <Text style={styles.primaryBtnText}>{saving ? 'Creating...' : 'Create Plan'}</Text>
+            <Text style={styles.primaryBtnText}>{saving ? tr("Creating...") : tr("Create Plan")}</Text>
           </TouchableOpacity>
         )}
       </View>

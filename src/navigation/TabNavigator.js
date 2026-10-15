@@ -12,6 +12,7 @@ import SeriesStack from './SeriesStack';
 import StudyStack from './StudyStack';
 import ProfileStack from './ProfileStack';
 
+import { t as tr } from '../i18n';
 const Tab = createBottomTabNavigator();
 
 const TAB_ICONS = {
@@ -185,17 +186,17 @@ export default function TabNavigator() {
       <Tab.Screen
         name="HomeTab"
         component={HomeStack}
-        options={{ tabBarLabel: 'Home' }}
+        options={{ tabBarLabel: tr("Home") }}
       />
       <Tab.Screen
         name="ExamsTab"
         component={ExamsStack}
-        options={{ tabBarLabel: 'Exams' }}
+        options={{ tabBarLabel: tr("Exams") }}
       />
       <Tab.Screen
         name="SeriesTab"
         component={SeriesStack}
-        options={{ tabBarLabel: 'Series' }}
+        options={{ tabBarLabel: tr("Series") }}
       />
       <Tab.Screen
         name="StudyTab"
@@ -203,7 +204,7 @@ export default function TabNavigator() {
         options={({ route }) => {
           const focused = getFocusedRouteNameFromRoute(route) ?? 'StudyMain';
           return {
-            tabBarLabel: 'Study',
+            tabBarLabel: tr("Study"),
             tabBarStyle: HIDE_TAB_ROUTES.has(focused) ? { display: 'none' } : undefined,
           };
         }}
@@ -211,7 +212,7 @@ export default function TabNavigator() {
       <Tab.Screen
         name="ProfileTab"
         component={ProfileStack}
-        options={{ tabBarLabel: 'Profile' }}
+        options={{ tabBarLabel: tr("Profile") }}
         listeners={({ navigation, route }) => ({
           tabPress: (e) => {
             const nestedState = route.state;

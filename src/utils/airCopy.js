@@ -1,3 +1,5 @@
+import { t as tr, isHindi } from '../i18n';
+
 export function ordinalSuffix(n) {
   const v = Math.round(Math.abs(n));
   if (v % 100 >= 11 && v % 100 <= 13) return `${v}th`;
@@ -9,16 +11,15 @@ export function ordinalSuffix(n) {
 }
 
 export function buildAirCopyFromPeerStats(peerStats) {
-  if (peerStats?.air) return peerStats.air;
+  const air = peerStats?.air;
   const marks = peerStats?.marks;
-  if (!marks?.yourRank || !marks?.totalRanked) return null;
-  const percentile = marks.betterThanPercent ?? 0;
-  return {
-    rank: marks.yourRank,
-    total: marks.totalRanked,
-    percentile,
-    headline: `All India Rank #${marks.yourRank} of ${marks.totalRanked}`,
-    subline: `${ordinalSuffix(percentile)} percentile`,
-    full: `All India Rank #${marks.yourRank} of ${marks.totalRanked} · ${ordinalSuffix(percentile)} percentile`,
-  };
+  const rank = air?.rank ?? marks?.yourRank;
+  const total = air?.total ?? marks?.totalRanked;
+  if (!rank || !total) return air || null;
+  const percentile = air?.percentile ?? marks?.betterThanPercent ?? 0;
+  // built here (not taken from the server) so it follows the UI language
+  const pct = isHindi() ? `${Math.round(percentile)}` : ordinalSuffix(percentile);
+  const headline = tr('All India Rank #{0} of {1}', rank, total);
+  const subline = tr('{0} percentile', pct);
+  return { ...(air || {}), rank, total, percentile, headline, subline, full: `${headline} · ${subline}` };
 }

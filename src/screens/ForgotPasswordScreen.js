@@ -15,6 +15,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/authService';
 
+import { t as tr } from '../i18n';
 export default function ForgotPasswordScreen({ navigation }) {
   const { colors } = useTheme();
   const { login } = useAuth();
@@ -31,7 +32,7 @@ export default function ForgotPasswordScreen({ navigation }) {
   const sendOtp = async () => {
     const value = email.trim().toLowerCase();
     if (!value || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-      Alert.alert('Error', 'Enter a valid email');
+      Alert.alert(tr("Error"), tr("Enter a valid email"));
       return;
     }
     setLoading(true);
@@ -45,9 +46,9 @@ export default function ForgotPasswordScreen({ navigation }) {
             : ''
       );
       setStep(2);
-      Alert.alert('Check your email', res.message || 'OTP sent if account exists');
+      Alert.alert(tr("Check your email"), res.message || tr("OTP sent if account exists"));
     } catch (error) {
-      Alert.alert('Error', error.response?.data?.message || 'Could not send OTP');
+      Alert.alert(tr("Error"), error.response?.data?.message || tr("Could not send OTP"));
     } finally {
       setLoading(false);
     }
@@ -55,15 +56,15 @@ export default function ForgotPasswordScreen({ navigation }) {
 
   const resetPassword = async () => {
     if (otp.trim().length !== 6) {
-      Alert.alert('Error', 'Enter the 6-digit OTP');
+      Alert.alert(tr("Error"), tr("Enter the 6-digit OTP"));
       return;
     }
     if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
+      Alert.alert(tr("Error"), tr("Password must be at least 6 characters"));
       return;
     }
     if (password !== confirm) {
-      Alert.alert('Error', 'Passwords do not match');
+      Alert.alert(tr("Error"), tr("Passwords do not match"));
       return;
     }
     setLoading(true);
@@ -75,7 +76,7 @@ export default function ForgotPasswordScreen({ navigation }) {
       });
       await login(res.token, res.user);
     } catch (error) {
-      Alert.alert('Reset failed', error.response?.data?.message || 'Invalid OTP');
+      Alert.alert(tr("Reset failed"), error.response?.data?.message || tr("Invalid OTP"));
     } finally {
       setLoading(false);
     }
@@ -88,21 +89,21 @@ export default function ForgotPasswordScreen({ navigation }) {
     >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back}>
-          <Text style={styles.backText}>← Back</Text>
+          <Text style={styles.backText}>{tr("← Back")}</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Forgot password</Text>
+        <Text style={styles.title}>{tr("Forgot password")}</Text>
         <Text style={styles.sub}>
           {step === 1
-            ? 'Enter the email on your account'
-            : `Enter OTP sent to ${email} and a new password`}
+            ? tr("Enter the email on your account")
+            : tr("Enter OTP sent to {0} and a new password", email)}
         </Text>
 
         {step === 1 ? (
           <>
-            <Text style={styles.label}>Email</Text>
+            <Text style={styles.label}>{tr("Email")}</Text>
             <TextInput
               style={styles.input}
-              placeholder="you@example.com"
+              placeholder={tr("you@example.com")}
               placeholderTextColor={colors.textSecondary}
               value={email}
               onChangeText={setEmail}
@@ -117,36 +118,36 @@ export default function ForgotPasswordScreen({ navigation }) {
               {loading ? (
                 <ActivityIndicator color={colors.heroText} />
               ) : (
-                <Text style={styles.btnText}>Send email OTP</Text>
+                <Text style={styles.btnText}>{tr("Send email OTP")}</Text>
               )}
             </TouchableOpacity>
           </>
         ) : (
           <>
             {hint ? <Text style={styles.hint}>{hint}</Text> : null}
-            <Text style={styles.label}>OTP</Text>
+            <Text style={styles.label}>{tr("OTP")}</Text>
             <TextInput
               style={styles.input}
-              placeholder="6-digit code"
+              placeholder={tr("6-digit code")}
               placeholderTextColor={colors.textSecondary}
               value={otp}
               onChangeText={setOtp}
               keyboardType="number-pad"
               maxLength={6}
             />
-            <Text style={styles.label}>New password</Text>
+            <Text style={styles.label}>{tr("New password")}</Text>
             <TextInput
               style={styles.input}
-              placeholder="Min 6 characters"
+              placeholder={tr("Min 6 characters")}
               placeholderTextColor={colors.textSecondary}
               value={password}
               onChangeText={setPassword}
               secureTextEntry
             />
-            <Text style={styles.label}>Confirm password</Text>
+            <Text style={styles.label}>{tr("Confirm password")}</Text>
             <TextInput
               style={styles.input}
-              placeholder="Repeat password"
+              placeholder={tr("Repeat password")}
               placeholderTextColor={colors.textSecondary}
               value={confirm}
               onChangeText={setConfirm}
@@ -160,14 +161,14 @@ export default function ForgotPasswordScreen({ navigation }) {
               {loading ? (
                 <ActivityIndicator color={colors.heroText} />
               ) : (
-                <Text style={styles.btnText}>Reset password</Text>
+                <Text style={styles.btnText}>{tr("Reset password")}</Text>
               )}
             </TouchableOpacity>
             <TouchableOpacity onPress={sendOtp} disabled={loading}>
-              <Text style={styles.link}>Resend OTP</Text>
+              <Text style={styles.link}>{tr("Resend OTP")}</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setStep(1)}>
-              <Text style={styles.linkMuted}>Change email</Text>
+              <Text style={styles.linkMuted}>{tr("Change email")}</Text>
             </TouchableOpacity>
           </>
         )}

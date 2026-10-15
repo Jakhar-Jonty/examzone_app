@@ -13,6 +13,7 @@ import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
+import { t as tr } from '../i18n';
 // Using simple text rendering for now - can be enhanced with HTML renderer later
 
 export default function ArticleDetailScreen({ route, navigation }) {
@@ -59,7 +60,7 @@ export default function ArticleDetailScreen({ route, navigation }) {
             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
               <Ionicons name="arrow-back" size={24} color={colors.text} />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Article</Text>
+            <Text style={styles.headerTitle}>{tr("Article")}</Text>
             <View style={{ width: 24 }} />
           </View>
           <View style={styles.loadingContainer}>
@@ -78,11 +79,11 @@ export default function ArticleDetailScreen({ route, navigation }) {
             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
               <Ionicons name="arrow-back" size={24} color={colors.text} />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Article</Text>
+            <Text style={styles.headerTitle}>{tr("Article")}</Text>
             <View style={{ width: 24 }} />
           </View>
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>Article not found</Text>
+            <Text style={styles.emptyText}>{tr("Article not found")}</Text>
           </View>
         </View>
       </ScreenWrapper>
@@ -134,7 +135,7 @@ export default function ArticleDetailScreen({ route, navigation }) {
               {article.isPremium && (
                 <View style={styles.premiumBadge}>
                   <Ionicons name="diamond" size={14} color={colors.tones.purple.fg} />
-                  <Text style={styles.premiumText}>Premium</Text>
+                  <Text style={styles.premiumText}>{tr("Premium")}</Text>
                 </View>
               )}
               {article.createdAt && (
@@ -158,14 +159,14 @@ export default function ArticleDetailScreen({ route, navigation }) {
             <Text style={styles.contentText}>
               {article.content
                 ? article.content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
-                : 'No content available.'}
+                : tr("No content available.")}
             </Text>
           </View>
 
           {/* Download Buttons */}
           {(article.docxFile || article.pdfFile) && (
             <View style={styles.downloadSection}>
-              <Text style={styles.downloadTitle}>Downloads</Text>
+              <Text style={styles.downloadTitle}>{tr("Downloads")}</Text>
               <View style={styles.downloadButtons}>
                 {article.pdfFile && (
                   <TouchableOpacity
@@ -174,7 +175,7 @@ export default function ArticleDetailScreen({ route, navigation }) {
                     activeOpacity={0.7}
                   >
                     <Ionicons name="document-text" size={20} color={colors.text} />
-                    <Text style={styles.downloadButtonText}>PDF</Text>
+                    <Text style={styles.downloadButtonText}>{tr("PDF")}</Text>
                   </TouchableOpacity>
                 )}
                 {article.docxFile && (
@@ -185,7 +186,7 @@ export default function ArticleDetailScreen({ route, navigation }) {
                   >
                     <Ionicons name="document" size={20} color={colors.text} />
                     <Text style={[styles.downloadButtonText, styles.downloadButtonTextSecondary]}>
-                      DOCX
+                      {tr("DOCX")}
                     </Text>
                   </TouchableOpacity>
                 )}

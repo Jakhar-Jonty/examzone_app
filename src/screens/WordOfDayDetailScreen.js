@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Speech from 'expo-speech';
 import api from '../services/api';
 
+import { t as tr } from '../i18n';
 // ─── Reusable Header ────────────────────────────────────
 function ScreenHeader({ title, navigation, colors, rightAction }) {
   return (
@@ -110,10 +111,10 @@ export default function WordOfDayDetailScreen({ route, navigation }) {
     return (
       <ScreenWrapper>
         <View style={[tw`flex-1`, { backgroundColor: colors.surface }]}>
-          <ScreenHeader title="Word of the Day" navigation={navigation} colors={colors} />
+          <ScreenHeader title={tr("Word of the Day")} navigation={navigation} colors={colors} />
           <View style={tw`flex-1 items-center justify-center`}>
             <ActivityIndicator size="large" color={colors.text} />
-            <Text style={[tw`mt-3 text-sm`, { color: colors.textSecondary }]}>Loading...</Text>
+            <Text style={[tw`mt-3 text-sm`, { color: colors.textSecondary }]}>{tr("Loading...")}</Text>
           </View>
         </View>
       </ScreenWrapper>
@@ -125,7 +126,7 @@ export default function WordOfDayDetailScreen({ route, navigation }) {
     return (
       <ScreenWrapper>
         <View style={[tw`flex-1`, { backgroundColor: colors.surface }]}>
-          <ScreenHeader title="Word of the Day" navigation={navigation} colors={colors} />
+          <ScreenHeader title={tr("Word of the Day")} navigation={navigation} colors={colors} />
           <View style={tw`flex-1 items-center justify-center px-10`}>
             <View
               style={[
@@ -136,14 +137,14 @@ export default function WordOfDayDetailScreen({ route, navigation }) {
               <Ionicons name="book-outline" size={32} color={colors.text} />
             </View>
             <Text style={[tw`text-base font-semibold mb-1`, { color: colors.text }]}>
-              {error || 'No word available'}
+              {error || tr("No word available")}
             </Text>
             <TouchableOpacity
               style={[tw`mt-4 px-5 py-2.5 rounded-xl`, { backgroundColor: colors.hero }]}
               onPress={fetchWordOfDay}
               activeOpacity={0.7}
             >
-              <Text style={[tw`text-sm font-semibold`, { color: colors.heroText }]}>Retry</Text>
+              <Text style={[tw`text-sm font-semibold`, { color: colors.heroText }]}>{tr("Retry")}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -156,7 +157,7 @@ export default function WordOfDayDetailScreen({ route, navigation }) {
     <ScreenWrapper>
       <View style={[tw`flex-1`, { backgroundColor: colors.surface }]}>
         <ScreenHeader
-          title="Word of the Day"
+          title={tr("Word of the Day")}
           navigation={navigation}
           colors={colors}
           rightAction={
@@ -219,7 +220,7 @@ export default function WordOfDayDetailScreen({ route, navigation }) {
           </View>
 
           {/* ─── Meaning ──────────────────────────────── */}
-          <Section title="Meaning" colors={colors}>
+          <Section title={tr("Meaning")} colors={colors}>
             <View
               style={[
                 tw`p-4 rounded-2xl border`,
@@ -234,7 +235,7 @@ export default function WordOfDayDetailScreen({ route, navigation }) {
 
           {/* ─── Example ──────────────────────────────── */}
           {word.example && (
-            <Section title="Example" colors={colors}>
+            <Section title={tr("Example")} colors={colors}>
               <View
                 style={[
                   tw`p-4 rounded-2xl border-l-4`,
@@ -259,7 +260,7 @@ export default function WordOfDayDetailScreen({ route, navigation }) {
                       { color: colors.textSecondary, letterSpacing: 0.5 },
                     ]}
                   >
-                    Synonyms
+                    {tr("Synonyms")}
                   </Text>
                   <View
                     style={[
@@ -292,7 +293,7 @@ export default function WordOfDayDetailScreen({ route, navigation }) {
                       { color: colors.textSecondary, letterSpacing: 0.5 },
                     ]}
                   >
-                    Antonyms
+                    {tr("Antonyms")}
                   </Text>
                   <View
                     style={[
@@ -321,7 +322,7 @@ export default function WordOfDayDetailScreen({ route, navigation }) {
 
           {/* ─── Usage Notes ──────────────────────────── */}
           {word.usageNotes && (
-            <Section title="Usage Notes" colors={colors}>
+            <Section title={tr("Usage Notes")} colors={colors}>
               <View
                 style={[
                   tw`p-4 rounded-2xl border`,
@@ -337,7 +338,7 @@ export default function WordOfDayDetailScreen({ route, navigation }) {
 
           {/* ─── Etymology ────────────────────────────── */}
           {word.etymology && (
-            <Section title="Origin" colors={colors}>
+            <Section title={tr("Origin")} colors={colors}>
               <View
                 style={[
                   tw`p-4 rounded-2xl border`,

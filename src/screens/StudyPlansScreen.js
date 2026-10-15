@@ -14,6 +14,7 @@ import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
 import { studyPlanService } from '../services/studyPlanService';
 
+import { t as tr } from '../i18n';
 const STATUS_CYCLE = ['not-started', 'in-progress', 'completed'];
 const STATUS_LABEL = {
   'not-started': 'Not started',
@@ -63,7 +64,7 @@ function PlanCard({ plan, colors, onDelete, onTopicToggle, onMilestoneComplete }
           <Text style={styles.meta}>{fmt(plan.startDate)} → {fmt(plan.endDate)}</Text>
           {plan.description ? <Text style={styles.desc} numberOfLines={expanded ? undefined : 1}>{plan.description}</Text> : null}
           <ProgressBar value={progress} colors={colors} />
-          <Text style={styles.progressText}>{progress}% · {completedTopics}/{totalTopics} topics</Text>
+          <Text style={styles.progressText}>{tr("{0}% · {1}/{2} topics", progress, completedTopics, totalTopics)}</Text>
         </View>
         <View style={styles.headerActions}>
           <TouchableOpacity onPress={() => onDelete(plan._id)} hitSlop={8}>
@@ -100,7 +101,7 @@ function PlanCard({ plan, colors, onDelete, onTopicToggle, onMilestoneComplete }
 
           {(plan.milestones || []).length > 0 && (
             <View style={styles.milestoneBlock}>
-              <Text style={styles.sectionLabel}>Milestones</Text>
+              <Text style={styles.sectionLabel}>{tr("Milestones")}</Text>
               {plan.milestones.map((m) => (
                 <TouchableOpacity
                   key={m._id}
@@ -155,17 +156,17 @@ export default function StudyPlansScreen({ navigation }) {
   }, [navigation, load]);
 
   const handleDelete = (id) => {
-    Alert.alert('Delete Plan', 'Are you sure?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(tr("Delete Plan"), tr("Are you sure?"), [
+      { text: tr("Cancel"), style: 'cancel' },
       {
-        text: 'Delete',
+        text: tr("Delete"),
         style: 'destructive',
         onPress: async () => {
           try {
             await studyPlanService.delete(id);
             setPlans((prev) => prev.filter((p) => p._id !== id));
           } catch {
-            Alert.alert('Error', 'Could not delete plan');
+            Alert.alert(tr("Error"), tr("Could not delete plan"));
           }
         },
       },
@@ -177,7 +178,7 @@ export default function StudyPlansScreen({ navigation }) {
       const { plan } = await studyPlanService.updateTopicStatus(planId, { subjectIndex: si, topicIndex: ti, status });
       setPlans((prev) => prev.map((p) => (p._id === planId ? plan : p)));
     } catch {
-      Alert.alert('Error', 'Could not update topic');
+      Alert.alert(tr("Error"), tr("Could not update topic"));
     }
   };
 
@@ -186,7 +187,7 @@ export default function StudyPlansScreen({ navigation }) {
       const { plan } = await studyPlanService.completeMilestone(planId, milestoneId);
       setPlans((prev) => prev.map((p) => (p._id === planId ? plan : p)));
     } catch {
-      Alert.alert('Error', 'Could not update milestone');
+      Alert.alert(tr("Error"), tr("Could not update milestone"));
     }
   };
 
@@ -198,7 +199,7 @@ export default function StudyPlansScreen({ navigation }) {
         <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Study Plans</Text>
+        <Text style={styles.headerTitle}>{tr("Study Plans")}</Text>
         <TouchableOpacity onPress={() => navigation.navigate('StudyPlanCreate')} hitSlop={12}>
           <Ionicons name="add-circle" size={28} color={colors.text} />
         </TouchableOpacity>
@@ -226,10 +227,10 @@ export default function StudyPlansScreen({ navigation }) {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="calendar-outline" size={48} color={colors.textSecondary} />
-              <Text style={styles.emptyTitle}>No study plans yet</Text>
-              <Text style={styles.emptyDesc}>Create a plan to track subjects, topics, and milestones.</Text>
+              <Text style={styles.emptyTitle}>{tr("No study plans yet")}</Text>
+              <Text style={styles.emptyDesc}>{tr("Create a plan to track subjects, topics, and milestones.")}</Text>
               <TouchableOpacity style={styles.emptyBtn} onPress={() => navigation.navigate('StudyPlanCreate')}>
-                <Text style={styles.emptyBtnText}>Create Plan</Text>
+                <Text style={styles.emptyBtnText}>{tr("Create Plan")}</Text>
               </TouchableOpacity>
             </View>
           }

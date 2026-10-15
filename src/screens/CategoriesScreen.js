@@ -14,6 +14,7 @@ import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
 import { Ionicons } from '@expo/vector-icons';
 
+import { t as tr } from '../i18n';
 function Header({ navigation, colors }) {
   return (
     <View
@@ -25,7 +26,7 @@ function Header({ navigation, colors }) {
       <TouchableOpacity onPress={() => navigation.goBack()} style={tw`p-2`}>
         <Ionicons name="arrow-back" size={22} color={colors.text} />
       </TouchableOpacity>
-      <Text style={[tw`text-base font-bold`, { color: colors.text }]}>Categories</Text>
+      <Text style={[tw`text-base font-bold`, { color: colors.text }]}>{tr("Categories")}</Text>
       <View style={tw`w-10`} />
     </View>
   );
@@ -125,10 +126,10 @@ export default function CategoriesScreen({ navigation }) {
                 <Ionicons name="folder-open-outline" size={32} color={colors.text} />
               </View>
               <Text style={[tw`text-base font-semibold mb-1`, { color: colors.text }]}>
-                No categories
+                {tr("No categories")}
               </Text>
               <Text style={[tw`text-sm text-center`, { color: colors.textSecondary }]}>
-                Check back later for new categories.
+                {tr("Check back later for new categories.")}
               </Text>
             </View>
           ) : (
@@ -187,7 +188,7 @@ export default function CategoriesScreen({ navigation }) {
                       <View style={tw`flex-row items-center gap-1`}>
                         <Ionicons name="document-text-outline" size={12} color={colors.text} />
                         <Text style={[tw`text-[10px] font-semibold`, { color: colors.text }]}>
-                          {category.examCount} {category.examCount === 1 ? 'exam' : 'exams'}
+                          {category.examCount} {category.examCount === 1 ? tr("exam") : tr("exams")}
                         </Text>
                       </View>
                     )}

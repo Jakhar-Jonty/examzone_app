@@ -15,6 +15,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { subscriptionService } from '../services/subscriptionService';
 
+import { t as tr } from '../i18n';
 /**
  * PaywallScreen — shows pricing plans and runs checkout.
  *
@@ -42,7 +43,7 @@ export default function PaywallScreen({ navigation, route }) {
       const { plans: data } = await subscriptionService.getPlans();
       setPlans(data || []);
     } catch (e) {
-      Alert.alert('Error', 'Could not load plans. Please try again.');
+      Alert.alert(tr("Error"), tr("Could not load plans. Please try again."));
     } finally {
       setLoading(false);
     }
@@ -59,14 +60,14 @@ export default function PaywallScreen({ navigation, route }) {
       const result = await subscriptionService.purchaseMock(selected);
       await refreshUser();
       Alert.alert(
-        'You are Premium! 🎉',
-        result?.message || 'Subscription activated.',
-        [{ text: 'Continue', onPress: () => navigation.goBack() }]
+        tr("You are Premium! 🎉"),
+        result?.message || tr("Subscription activated."),
+        [{ text: tr("Continue"), onPress: () => navigation.goBack() }]
       );
     } catch (e) {
       Alert.alert(
-        'Payment Failed',
-        e?.response?.data?.message || 'Something went wrong. Please try again.'
+        tr("Payment Failed"),
+        e?.response?.data?.message || tr("Something went wrong. Please try again.")
       );
     } finally {
       setPurchasing(false);
@@ -80,16 +81,16 @@ export default function PaywallScreen({ navigation, route }) {
   if (isPremium) {
     return (
       <ScreenWrapper>
-        <Header colors={colors} onClose={() => navigation.goBack()} title="Premium" />
+        <Header colors={colors} onClose={() => navigation.goBack()} title={tr("Premium")} />
         <View style={styles.activeWrap}>
           <View style={styles.activeBadge}>
             <Ionicons name="diamond" size={40} color={colors.heroText} />
           </View>
-          <Text style={styles.activeTitle}>You're Premium</Text>
+          <Text style={styles.activeTitle}>{tr("You're Premium")}</Text>
           <Text style={styles.activeSub}>
             {user?.subscriptionExpiry
-              ? `Active until ${new Date(user.subscriptionExpiry).toLocaleDateString()}`
-              : 'Enjoy unlimited access.'}
+              ? tr("Active until {0}", new Date(user.subscriptionExpiry).toLocaleDateString())
+              : tr("Enjoy unlimited access.")}
           </Text>
         </View>
       </ScreenWrapper>
@@ -98,7 +99,7 @@ export default function PaywallScreen({ navigation, route }) {
 
   return (
     <ScreenWrapper>
-      <Header colors={colors} onClose={() => navigation.goBack()} title="Go Premium" />
+      <Header colors={colors} onClose={() => navigation.goBack()} title={tr("Go Premium")} />
 
       {loading ? (
         <View style={styles.center}>
@@ -117,9 +118,9 @@ export default function PaywallScreen({ navigation, route }) {
             end={{ x: 1, y: 1 }}
           >
             <Ionicons name="rocket" size={36} color={colors.heroText} />
-            <Text style={styles.heroTitle}>Unlock Everything</Text>
+            <Text style={styles.heroTitle}>{tr("Unlock Everything")}</Text>
             <Text style={styles.heroSub}>
-              {reason || 'Unlimited exams, all study material, ad-free.'}
+              {reason || tr("Unlimited exams, all study material, ad-free.")}
             </Text>
           </LinearGradient>
 
@@ -136,7 +137,7 @@ export default function PaywallScreen({ navigation, route }) {
               >
                 {isYear && (
                   <View style={styles.bestBadge}>
-                    <Text style={styles.bestText}>BEST VALUE</Text>
+                    <Text style={styles.bestText}>{tr("BEST VALUE")}</Text>
                   </View>
                 )}
                 <View style={styles.cardHeadRow}>
@@ -157,7 +158,7 @@ export default function PaywallScreen({ navigation, route }) {
 
                 {plan.savings ? (
                   <View style={styles.saveTag}>
-                    <Text style={styles.saveText}>Save ₹{plan.savings}</Text>
+                    <Text style={styles.saveText}>{tr("Save ₹{0}", plan.savings)}</Text>
                   </View>
                 ) : null}
 
@@ -178,7 +179,7 @@ export default function PaywallScreen({ navigation, route }) {
           })}
 
           <Text style={styles.fineprint}>
-            Mock checkout — no real charge. Cancel anytime.
+            {tr("Mock checkout — no real charge. Cancel anytime.")}
           </Text>
         </ScrollView>
       )}
@@ -197,8 +198,8 @@ export default function PaywallScreen({ navigation, route }) {
             ) : (
               <Text style={styles.ctaText}>
                 {selected === 'yearly'
-                  ? 'Start Yearly Premium'
-                  : 'Start Monthly Premium'}
+                  ? tr("Start Yearly Premium")
+                  : tr("Start Monthly Premium")}
               </Text>
             )}
           </TouchableOpacity>

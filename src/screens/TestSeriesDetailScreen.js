@@ -14,6 +14,7 @@ import ReviewSection from '../components/ReviewSection';
 import { useTheme } from '../context/ThemeContext';
 import { testSeriesService } from '../services/testSeriesService';
 
+import { t as tr } from '../i18n';
 export default function TestSeriesDetailScreen({ route, navigation }) {
   const { id } = route.params;
   const { colors } = useTheme();
@@ -26,7 +27,7 @@ export default function TestSeriesDetailScreen({ route, navigation }) {
       const res = await testSeriesService.detail(id);
       setData(res);
     } catch (e) {
-      Alert.alert('Error', 'Could not load this series.');
+      Alert.alert(tr("Error"), tr("Could not load this series."));
       navigation.goBack();
     } finally {
       setLoading(false);
@@ -53,16 +54,16 @@ export default function TestSeriesDetailScreen({ route, navigation }) {
   const isPaid = series.accessType === 'paid' || series.isPremium || series.price > 0;
   const priceText = isPaid
     ? `₹${series.discountPrice && series.discountPrice < series.price ? series.discountPrice : series.price}`
-    : 'Free';
+    : tr("Free");
 
   const doEnroll = async (payment = {}) => {
     try {
       setEnrolling(true);
       await testSeriesService.enroll(id, payment);
       await load();
-      Alert.alert('Enrolled 🎉', 'You can now take all tests in this series.');
+      Alert.alert(tr("Enrolled 🎉"), tr("You can now take all tests in this series."));
     } catch (e) {
-      Alert.alert('Failed', e?.response?.data?.message || 'Could not enroll.');
+      Alert.alert(tr("Failed"), e?.response?.data?.message || tr("Could not enroll."));
     } finally {
       setEnrolling(false);
     }
@@ -71,11 +72,11 @@ export default function TestSeriesDetailScreen({ route, navigation }) {
   const handleEnroll = () => {
     if (isPaid) {
       Alert.alert(
-        'Enroll',
-        `This series costs ${priceText}. Continue? (mock payment)`,
+        tr("Enroll"),
+        tr("This series costs {0}. Continue? (mock payment)", priceText),
         [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Pay & Enroll', onPress: () => doEnroll({ isMock: true }) },
+          { text: tr("Cancel"), style: 'cancel' },
+          { text: tr("Pay & Enroll"), onPress: () => doEnroll({ isMock: true }) },
         ]
       );
     } else {
@@ -86,10 +87,10 @@ export default function TestSeriesDetailScreen({ route, navigation }) {
   const openTest = (entry) => {
     if (entry.locked) {
       Alert.alert(
-        'Locked',
+        tr("Locked"),
         isEnrolled
-          ? 'Complete the previous test to unlock this one.'
-          : 'Enroll in this series to access its tests.'
+          ? tr("Complete the previous test to unlock this one.")
+          : tr("Enroll in this series to access its tests.")
       );
       return;
     }
@@ -103,7 +104,7 @@ export default function TestSeriesDetailScreen({ route, navigation }) {
         <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={10}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>Test Series</Text>
+        <Text style={styles.headerTitle} numberOfLines={1}>{tr("Test Series")}</Text>
         <View style={{ width: 24 }} />
       </View>
 
@@ -115,31 +116,31 @@ export default function TestSeriesDetailScreen({ route, navigation }) {
 
         {/* Stats */}
         <View style={styles.statsRow}>
-          <Stat icon="document-text" label="Tests" value={series.totalTests || (series.exams || []).length} colors={colors} />
+          <Stat icon="document-text" label={tr("Tests")} value={series.totalTests || (series.exams || []).length} colors={colors} />
           {series.estimatedDuration ? (
-            <Stat icon="time" label="Hours" value={series.estimatedDuration} colors={colors} />
+            <Stat icon="time" label={tr("Hours")} value={series.estimatedDuration} colors={colors} />
           ) : null}
-          <Stat icon="people" label="Enrolled" value={series.enrollments || 0} colors={colors} />
+          <Stat icon="people" label={tr("Enrolled")} value={series.enrollments || 0} colors={colors} />
         </View>
 
         {/* Progress when enrolled */}
         {isEnrolled && (
           <View style={styles.progressCard}>
             <View style={styles.progressTop}>
-              <Text style={styles.progressLabel}>Your Progress</Text>
+              <Text style={styles.progressLabel}>{tr("Your Progress")}</Text>
               <Text style={styles.progressPct}>{progress.progressPercentage}%</Text>
             </View>
             <View style={styles.bar}>
               <View style={[styles.barFill, { width: `${progress.progressPercentage}%` }]} />
             </View>
             <Text style={styles.progressSub}>
-              {progress.testsCompleted}/{progress.totalTests} done · avg {progress.averageScore}%
+              {tr("{0}/{1} done · avg {2}%", progress.testsCompleted, progress.totalTests, progress.averageScore)}
             </Text>
           </View>
         )}
 
         {/* Tests list */}
-        <Text style={styles.sectionTitle}>Tests</Text>
+        <Text style={styles.sectionTitle}>{tr("Tests")}</Text>
         {(series.exams || []).map((entry, idx) => {
           const exam = entry.exam || {};
           return (
@@ -157,10 +158,10 @@ export default function TestSeriesDetailScreen({ route, navigation }) {
                 )}
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.testTitle} numberOfLines={1}>{exam.title || 'Test'}</Text>
+                <Text style={styles.testTitle} numberOfLines={1}>{exam.title || tr("Test")}</Text>
                 <Text style={styles.testMeta}>
-                  {exam.duration ? `${exam.duration} min` : ''}
-                  {exam.totalMarks ? ` · ${exam.totalMarks} marks` : ''}
+                  {exam.duration ? tr("{0} min", exam.duration) : ''}
+                  {exam.totalMarks ? tr(" · {0} marks", exam.totalMarks) : ''}
                 </Text>
               </View>
               <Ionicons
@@ -189,7 +190,7 @@ export default function TestSeriesDetailScreen({ route, navigation }) {
               <ActivityIndicator color={colors.heroText} />
             ) : (
               <Text style={styles.ctaText}>
-                {isPaid ? `Enroll · ${priceText}` : 'Enroll for Free'}
+                {isPaid ? tr("Enroll · {0}", priceText) : tr("Enroll for Free")}
               </Text>
             )}
           </TouchableOpacity>

@@ -13,6 +13,7 @@ import { useTheme } from '../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
 
+import { t as tr } from '../i18n';
 export default function QuoteDetailScreen({ route, navigation }) {
   const { colors } = useTheme();
   const { quote: quoteFromParams } = route.params || {};
@@ -52,7 +53,7 @@ export default function QuoteDetailScreen({ route, navigation }) {
     return (
       <ScreenWrapper>
         <View style={[tw`flex-1`, { backgroundColor: colors.surface }]}>
-          <Header title="Daily Quote" navigation={navigation} colors={colors} />
+          <Header title={tr("Daily Quote")} navigation={navigation} colors={colors} />
           <View style={tw`flex-1 items-center justify-center`}>
             <ActivityIndicator size="large" color={colors.text} />
           </View>
@@ -66,7 +67,7 @@ export default function QuoteDetailScreen({ route, navigation }) {
     return (
       <ScreenWrapper>
         <View style={[tw`flex-1`, { backgroundColor: colors.surface }]}>
-          <Header title="Daily Quote" navigation={navigation} colors={colors} />
+          <Header title={tr("Daily Quote")} navigation={navigation} colors={colors} />
           <View style={tw`flex-1 items-center justify-center px-10`}>
             <View
               style={[
@@ -77,14 +78,14 @@ export default function QuoteDetailScreen({ route, navigation }) {
               <Ionicons name="chatbubble-ellipses-outline" size={32} color={colors.tones.orange.fg} />
             </View>
             <Text style={[tw`text-base font-semibold mb-1`, { color: colors.text }]}>
-              {error || 'No quote available'}
+              {error || tr("No quote available")}
             </Text>
             <TouchableOpacity
               style={[tw`mt-4 px-5 py-2.5 rounded-xl`, { backgroundColor: colors.hero }]}
               onPress={fetchQuote}
               activeOpacity={0.7}
             >
-              <Text style={[tw`text-sm font-semibold`, { color: colors.heroText }]}>Retry</Text>
+              <Text style={[tw`text-sm font-semibold`, { color: colors.heroText }]}>{tr("Retry")}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -97,7 +98,7 @@ export default function QuoteDetailScreen({ route, navigation }) {
     <ScreenWrapper>
       <View style={[tw`flex-1`, { backgroundColor: colors.surface }]}>
         <Header
-          title="Daily Quote"
+          title={tr("Daily Quote")}
           navigation={navigation}
           colors={colors}
           rightAction={
@@ -155,7 +156,7 @@ export default function QuoteDetailScreen({ route, navigation }) {
               {quote.category && (
                 <View style={tw`flex-row items-center justify-between py-2.5 border-b`} >
                   <Text style={[tw`text-xs font-semibold`, { color: colors.textSecondary }]}>
-                    Category
+                    {tr("Category")}
                   </Text>
                   <View
                     style={[
@@ -178,7 +179,7 @@ export default function QuoteDetailScreen({ route, navigation }) {
                   ]}
                 >
                   <Text style={[tw`text-xs font-semibold`, { color: colors.textSecondary }]}>
-                    Date
+                    {tr("Date")}
                   </Text>
                   <Text style={[tw`text-sm font-medium`, { color: colors.text }]}>
                     {new Date(quote.scheduledDate).toLocaleDateString('en-US', {
@@ -193,7 +194,7 @@ export default function QuoteDetailScreen({ route, navigation }) {
               {quote.description && (
                 <View style={tw`pt-3`}>
                   <Text style={[tw`text-xs font-semibold mb-1.5`, { color: colors.textSecondary }]}>
-                    About
+                    {tr("About")}
                   </Text>
                   <Text style={[tw`text-sm leading-5`, { color: colors.text }]}>
                     {quote.description}
@@ -214,7 +215,7 @@ export default function QuoteDetailScreen({ route, navigation }) {
           >
             <Ionicons name="share-outline" size={18} color={colors.text} />
             <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>
-              Share Quote
+              {tr("Share Quote")}
             </Text>
           </TouchableOpacity>
         </ScrollView>

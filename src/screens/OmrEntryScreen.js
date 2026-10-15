@@ -18,6 +18,7 @@ import {
   getLocalizedQuestionOptions,
 } from '../utils/questionLanguage';
 
+import { t as tr } from '../i18n';
 const OPTIONS = ['A', 'B', 'C', 'D'];
 
 function AnswerCell({ index, selected, onSelect, colors }) {
@@ -99,7 +100,7 @@ export default function OmrEntryScreen({ route, navigation }) {
       const res = await api.get(`/exams/${examId}/omr-paper`);
       setExam(res.data.exam);
     } catch (err) {
-      Alert.alert('Error', err.response?.data?.message || 'Failed to load question paper');
+      Alert.alert(tr("Error"), err.response?.data?.message || tr("Failed to load question paper"));
     } finally {
       setLoadingPaper(false);
     }
@@ -114,23 +115,23 @@ export default function OmrEntryScreen({ route, navigation }) {
         return `${i + 1}. ${text.slice(0, 120)}${text.length > 120 ? '…' : ''}`;
       });
       await Share.share({
-        message: `${title} — Question Paper\n\n${lines.join('\n\n')}`,
-        title: `${title} Paper`,
+        message: tr("{0} — Question Paper\n\n{1}", title, lines.join('\n\n')),
+        title: tr("{0} Paper", title),
       });
     } catch {
-      Alert.alert('Error', 'Could not share question paper');
+      Alert.alert(tr("Error"), tr("Could not share question paper"));
     }
   };
 
   const handleSubmit = async () => {
     if (submitting) return;
     Alert.alert(
-      'Submit OMR',
-      `Submit ${answeredCount}/${questions.length} marked answers?`,
+      tr("Submit OMR"),
+      tr("Submit {0}/{1} marked answers?", answeredCount, questions.length),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: tr("Cancel"), style: 'cancel' },
         {
-          text: 'Submit',
+          text: tr("Submit"),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -161,7 +162,7 @@ export default function OmrEntryScreen({ route, navigation }) {
                 rewards: response.data.rewards,
               });
             } catch (err) {
-              Alert.alert('Error', err.response?.data?.message || 'Failed to submit OMR');
+              Alert.alert(tr("Error"), err.response?.data?.message || tr("Failed to submit OMR"));
             } finally {
               setSubmitting(false);
             }
@@ -185,10 +186,10 @@ export default function OmrEntryScreen({ route, navigation }) {
           </TouchableOpacity>
           <View style={tw`flex-1`}>
             <Text style={[tw`text-base font-bold`, { color: colors.text }]} numberOfLines={1}>
-              OMR Entry
+              {tr("OMR Entry")}
             </Text>
             <Text style={[tw`text-[11px]`, { color: colors.textSecondary }]}>
-              {exam?.title || 'Exam'} · {answeredCount}/{questions.length} filled
+              {tr("{0} · {1}/{2} filled", exam?.title || 'Exam', answeredCount, questions.length)}
             </Text>
           </View>
           <TouchableOpacity onPress={handleSharePaper} style={tw`p-2`}>
@@ -198,8 +199,8 @@ export default function OmrEntryScreen({ route, navigation }) {
 
         <View style={[tw`flex-row mx-4 mt-3 mb-2`, { borderBottomWidth: 1, borderBottomColor: colors.border }]}>
           {[
-            { key: 'grid', label: 'Answer Grid' },
-            { key: 'paper', label: 'Question Paper' },
+            { key: 'grid', label: tr("Answer Grid") },
+            { key: 'paper', label: tr("Question Paper") },
           ].map((tab) => (
             <TouchableOpacity
               key={tab.key}
@@ -218,7 +219,7 @@ export default function OmrEntryScreen({ route, navigation }) {
                   { color: activeTab === tab.key ? colors.text : colors.textSecondary },
                 ]}
               >
-                {tab.label}
+                {tr(tab.label)}
               </Text>
             </TouchableOpacity>
           ))}
@@ -287,7 +288,7 @@ export default function OmrEntryScreen({ route, navigation }) {
             {submitting ? (
               <ActivityIndicator color={colors.heroText} />
             ) : (
-              <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>Submit OMR Sheet</Text>
+              <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>{tr("Submit OMR Sheet")}</Text>
             )}
           </TouchableOpacity>
         </View>

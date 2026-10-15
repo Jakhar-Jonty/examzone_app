@@ -26,6 +26,7 @@ import {
   examFilterToAttemptStatus,
 } from '../utils/examListParams';
 
+import { t as tr } from '../i18n';
 const ItemSeparator = () => <View style={tw`h-3`} />;
 
 function deriveDifficultyLabel(difficultyDistribution) {
@@ -218,7 +219,7 @@ export default function ExamsScreen({ navigation }) {
       }));
     } catch (err) {
       console.error('Failed to fetch exams:', err);
-      setError('Failed to load exams. Pull down to retry.');
+      setError(tr("Failed to load exams. Pull down to retry."));
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -307,7 +308,7 @@ export default function ExamsScreen({ navigation }) {
     (examTypeFilter ? 1 : 0);
 
   const sortLabel =
-    EXAM_SORT_OPTIONS.find((o) => o.key === sortBy)?.label || 'Newest';
+    tr(EXAM_SORT_OPTIONS.find((o) => o.key === sortBy)?.label || 'Newest');
 
   const activePills = useMemo(() => {
     const pills = [];
@@ -315,19 +316,19 @@ export default function ExamsScreen({ navigation }) {
       const cat = profileCategories.find((c) => c._id === filters.category);
       pills.push({
         key: 'category',
-        label: cat?.displayName || cat?.name || 'Category',
+        label: cat?.displayName || cat?.name || tr("Category"),
       });
     }
     if (filters.language) pills.push({ key: 'language', label: filters.language });
-    if (filters.premium === 'free') pills.push({ key: 'premium', label: 'Free' });
-    if (filters.premium === 'premium') pills.push({ key: 'premium', label: 'Pro' });
+    if (filters.premium === 'free') pills.push({ key: 'premium', label: tr("Free") });
+    if (filters.premium === 'premium') pills.push({ key: 'premium', label: tr("Pro") });
     if (filters.difficulty) pills.push({ key: 'difficulty', label: filters.difficulty });
     if (sortBy !== 'newest') pills.push({ key: 'sort', label: sortLabel });
     if (searchQuery.trim()) pills.push({ key: 'search', label: `"${searchQuery.trim()}"` });
     if (examFilter !== 'all') {
       pills.push({
         key: 'status',
-        label: examFilter === 'available' ? 'Available' : 'Attempted',
+        label: examFilter === 'available' ? tr("Available") : tr("Attempted"),
       });
     }
     if (examTypeFilter === 'pyq') pills.push({ key: 'examType', label: 'PYQ' });
@@ -371,13 +372,13 @@ export default function ExamsScreen({ navigation }) {
             <Ionicons name="alert-circle" size={20} color={colors.tones.red.fg} style={tw`mr-2`} />
             <Text style={[tw`flex-1 text-sm`, { color: colors.tones.red.fg }]}>{error}</Text>
             <TouchableOpacity onPress={() => fetchExams(1, false)} activeOpacity={0.7}>
-              <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>Retry</Text>
+              <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>{tr("Retry")}</Text>
             </TouchableOpacity>
               </View>
             )}
 
         {showHighlights && highlights && (
-          <Text style={[tw`text-lg font-extrabold mb-3 mt-1`, { color: colors.text }]}>All exams</Text>
+          <Text style={[tw`text-lg font-extrabold mb-3 mt-1`, { color: colors.text }]}>{tr("All exams")}</Text>
         )}
           </View>
     ),
@@ -398,7 +399,7 @@ export default function ExamsScreen({ navigation }) {
         {/* Compact sticky header: title, search, one chip row */}
         <View style={tw`px-5 pt-2 pb-1`}>
           <View style={tw`flex-row items-center justify-between mb-2.5`}>
-            <Text style={[tw`text-2xl font-extrabold`, { color: colors.text }]}>Exams</Text>
+            <Text style={[tw`text-2xl font-extrabold`, { color: colors.text }]}>{tr("Exams")}</Text>
             <TouchableOpacity
               onPress={() => navigation.navigate('ExamHistory')}
               style={[
@@ -406,7 +407,7 @@ export default function ExamsScreen({ navigation }) {
                 { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
               ]}
               activeOpacity={0.7}
-              accessibilityLabel="Exam history"
+              accessibilityLabel={tr("Exam history")}
             >
               <Ionicons name="time-outline" size={19} color={colors.text} />
             </TouchableOpacity>
@@ -417,7 +418,7 @@ export default function ExamsScreen({ navigation }) {
             onChangeText={setSearchQuery}
             colors={colors}
             compact
-            placeholder="Search exams"
+            placeholder={tr("Search exams")}
             rightAccessory={
               <TouchableOpacity
                 style={[
@@ -426,7 +427,7 @@ export default function ExamsScreen({ navigation }) {
                 ]}
                 onPress={() => setShowFiltersSheet(true)}
                 activeOpacity={0.75}
-                accessibilityLabel="Filters and sort"
+                accessibilityLabel={tr("Filters and sort")}
               >
                 <Ionicons name="options-outline" size={19} color={colors.text} />
                 {sheetFiltersCount > 0 && (
@@ -451,9 +452,9 @@ export default function ExamsScreen({ navigation }) {
             contentContainerStyle={tw`px-5 gap-2 pb-1.5`}
           >
             {[
-              { key: 'all', label: pagination.totalExams ? `All ${pagination.totalExams}` : 'All', on: examFilter === 'all', onPress: () => setExamFilter('all') },
-              { key: 'available', label: 'Available', on: examFilter === 'available', onPress: () => setExamFilter('available') },
-              { key: 'attempted', label: 'Attempted', on: examFilter === 'attempted', onPress: () => setExamFilter('attempted') },
+              { key: 'all', label: pagination.totalExams ? tr("All {0}", pagination.totalExams) : tr("All"), on: examFilter === 'all', onPress: () => setExamFilter('all') },
+              { key: 'available', label: tr("Available"), on: examFilter === 'available', onPress: () => setExamFilter('available') },
+              { key: 'attempted', label: tr("Attempted"), on: examFilter === 'attempted', onPress: () => setExamFilter('attempted') },
               { key: 'pyq', label: 'PYQ', on: examTypeFilter === 'pyq', onPress: () => setExamTypeFilter(examTypeFilter === 'pyq' ? '' : 'pyq') },
             ].map((chip, i) => (
               <React.Fragment key={chip.key}>
@@ -469,7 +470,7 @@ export default function ExamsScreen({ navigation }) {
                   activeOpacity={0.75}
                 >
                   <Text style={[tw`text-xs font-bold`, { color: chip.on ? colors.heroText : colors.textSecondary }]}>
-                    {chip.label}
+                    {tr(chip.label)}
                   </Text>
                 </TouchableOpacity>
               </React.Fragment>
@@ -512,7 +513,7 @@ export default function ExamsScreen({ navigation }) {
                 </View>
               ) : exams.length > 0 && pagination.currentPage >= pagination.totalPages ? (
                 <Text style={[tw`text-center text-xs py-5`, { color: colors.textSecondary }]}>
-                  You're all caught up
+                  {tr("You're all caught up")}
                 </Text>
               ) : null
             }
@@ -521,18 +522,18 @@ export default function ExamsScreen({ navigation }) {
                   <View style={tw`items-center justify-center py-12`}>
                     <Ionicons name="document-outline" size={56} color={colors.textSecondary} />
                     <Text style={[tw`text-base font-semibold mt-4 mb-2`, { color: colors.text }]}>
-                    No exams found
+                    {tr("No exams found")}
                   </Text>
                     <Text
                       style={[tw`text-sm text-center mb-6 px-4`, { color: colors.textSecondary }]}
                     >
                     {searchQuery || activeFiltersCount > 0
-                        ? 'Try adjusting your filters or search.'
+                        ? tr("Try adjusting your filters or search.")
                         : focus
-                          ? `No ${focus.name} exams are available yet.`
+                          ? tr("No {0} exams are available yet.", focus.name)
                           : user?.examPreparations?.length
-                          ? 'No exams are available for your categories yet.'
-                          : 'Add exam categories in your profile to see exams here.'}
+                          ? tr("No exams are available for your categories yet.")
+                          : tr("Add exam categories in your profile to see exams here.")}
                   </Text>
                   {(searchQuery || activeFiltersCount > 0) && (
                     <TouchableOpacity
@@ -540,7 +541,7 @@ export default function ExamsScreen({ navigation }) {
                       onPress={clearFilters}
                       activeOpacity={0.7}
                     >
-                        <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>Clear filters</Text>
+                        <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>{tr("Clear filters")}</Text>
                     </TouchableOpacity>
                   )}
                 </View>

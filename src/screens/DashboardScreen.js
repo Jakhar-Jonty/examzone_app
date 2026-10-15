@@ -26,6 +26,7 @@ import { notificationApi } from '../services/notificationService';
 import { practiceSessionService } from '../services/practiceSessionService';
 import { studyPlanService } from '../services/studyPlanService';
 
+import { t as tr } from '../i18n';
 const PRACTICE_TYPE_LABELS = {
   random: 'Random',
   'subject-wise': 'Subject Wise',
@@ -83,29 +84,29 @@ const idOf = (v) => String(v?._id || v || '');
 
 function greeting() {
   const h = new Date().getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 17) return 'Good afternoon';
-  return 'Good evening';
+  if (h < 12) return tr('Good morning');
+  if (h < 17) return tr('Good afternoon');
+  return tr('Good evening');
 }
 
 function startsIn(date) {
   const ms = new Date(date) - new Date();
-  if (ms <= 0) return 'Starting now';
+  if (ms <= 0) return tr("Starting now");
   const mins = Math.round(ms / 60000);
-  if (mins < 60) return `Starts in ${mins}m`;
+  if (mins < 60) return tr("Starts in {0}m", mins);
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `Starts in ${hrs}h ${mins % 60}m`;
+  if (hrs < 24) return tr("Starts in {0}h {1}m", hrs, mins % 60);
   const days = Math.floor(hrs / 24);
-  return `Starts in ${days} day${days === 1 ? '' : 's'}`;
+  return tr("Starts in {0} day{1}", days, days === 1 ? '' : 's');
 }
 
 function timeAgo(date) {
   const mins = Math.round((new Date() - new Date(date)) / 60000);
-  if (mins < 60) return `${Math.max(1, mins)}m ago`;
+  if (mins < 60) return tr("{0}m ago", Math.max(1, mins));
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
+  if (hrs < 24) return tr("{0}h ago", hrs);
   const days = Math.floor(hrs / 24);
-  return `${days}d ago`;
+  return tr("{0}d ago", days);
 }
 
 export default function DashboardScreen({ navigation }) {
@@ -179,9 +180,9 @@ export default function DashboardScreen({ navigation }) {
         setActivePractice(null);
       }
 
-      if (!statsRes.data) setError('Unable to load your dashboard. Pull down to retry.');
+      if (!statsRes.data) setError(tr("Unable to load your dashboard. Pull down to retry."));
     } catch {
-      setError('Something went wrong. Pull down to retry.');
+      setError(tr("Something went wrong. Pull down to retry."));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -266,7 +267,7 @@ export default function DashboardScreen({ navigation }) {
       });
       openPracticeSession(session);
     } catch (e) {
-      Alert.alert('Daily quiz', e?.response?.data?.message || 'Could not start today’s quiz. Try again.');
+      Alert.alert(tr("Daily quiz"), e?.response?.data?.message || tr("Could not start today’s quiz. Try again."));
     } finally {
       setBusy(null);
     }
@@ -280,7 +281,7 @@ export default function DashboardScreen({ navigation }) {
       const res = await api.put('/user/profile', { preferredLanguage: next });
       if (res.data?.user) await updateUser(res.data.user);
     } catch {
-      Alert.alert('Language', 'Could not change language. Try again.');
+      Alert.alert(tr("Language"), tr("Could not change language. Try again."));
     } finally {
       setBusy(null);
     }
@@ -291,13 +292,13 @@ export default function DashboardScreen({ navigation }) {
       navigation.navigate('EditProfile');
       return;
     }
-    Alert.alert('Preparing for', 'Show content for:', [
+    Alert.alert(tr("Preparing for"), tr("Show content for:"), [
       ...targetExams.slice(0, 3).map((t) => ({
         text: t.name,
         onPress: () => setSelectedTargetId(idOf(t.category)),
       })),
-      { text: 'Edit exams', onPress: () => navigation.navigate('EditProfile') },
-      { text: 'Cancel', style: 'cancel' },
+      { text: tr("Edit exams"), onPress: () => navigation.navigate('EditProfile') },
+      { text: tr("Cancel"), style: 'cancel' },
     ]);
   };
 
@@ -305,11 +306,11 @@ export default function DashboardScreen({ navigation }) {
   const hero = (() => {
     if (activeAttempt) {
       return {
-        label: activeAttempt.isPaused ? 'PAUSED EXAM' : 'CONTINUE EXAM',
-        title: activeAttempt.examTitle || 'Your mock test',
-        subtitle: `${activeAttempt.answeredCount || 0} questions answered`,
+        label: activeAttempt.isPaused ? tr("PAUSED EXAM") : tr("CONTINUE EXAM"),
+        title: activeAttempt.examTitle || tr("Your mock test"),
+        subtitle: tr("{0} questions answered", activeAttempt.answeredCount || 0),
         icon: 'play',
-        cta: 'Resume',
+        cta: tr("Resume"),
         pct: activeAttempt.totalQuestions
           ? (activeAttempt.answeredCount || 0) / activeAttempt.totalQuestions
           : null,
@@ -324,10 +325,10 @@ export default function DashboardScreen({ navigation }) {
       return {
         isDailyQuiz: isQuiz,
         label: isQuiz ? 'TODAY' : 'CONTINUE',
-        title: isQuiz ? 'Daily quiz' : `${PRACTICE_TYPE_LABELS[activePractice.sessionType] || 'Practice'} session`,
-        subtitle: total ? `${answered} of ${total} questions answered` : `${answered} answered`,
+        title: isQuiz ? tr("Daily quiz") : tr("{0} session", tr(PRACTICE_TYPE_LABELS[activePractice.sessionType] || 'Practice')),
+        subtitle: total ? tr("{0} of {1} questions answered", answered, total) : tr("{0} answered", answered),
         icon: 'flash',
-        cta: 'Resume',
+        cta: tr("Resume"),
         pct: total ? answered / total : null,
         onPress: () => openPracticeSession(activePractice),
       };
@@ -336,10 +337,10 @@ export default function DashboardScreen({ navigation }) {
       return {
         isDailyQuiz: true,
         label: 'TODAY',
-        title: 'Daily quiz',
-        subtitle: `10 questions${target ? ` · ${target.name}` : ''} · about 5 min`,
+        title: tr("Daily quiz"),
+        subtitle: tr("10 questions{0} · about 5 min", target ? ` · ${target.name}` : ''),
         icon: 'today',
-        cta: 'Start quiz',
+        cta: tr("Start quiz"),
         pct: null,
         loading: busy === 'quiz',
         onPress: openDailyQuiz,
@@ -347,21 +348,21 @@ export default function DashboardScreen({ navigation }) {
     }
     if (recommended[0]) {
       return {
-        label: 'UP NEXT',
+        label: tr("UP NEXT"),
         title: recommended[0].title,
-        subtitle: `${EXAM_TYPE_LABELS[recommended[0].examType] || 'Test'} · ${recommended[0].duration || 0} min`,
+        subtitle: tr("{0} · {1} min", tr(EXAM_TYPE_LABELS[recommended[0].examType] || 'Test'), recommended[0].duration || 0),
         icon: 'play-circle',
-        cta: 'View test',
+        cta: tr("View test"),
         pct: null,
         onPress: () => navigation.navigate('ExamDetail', { examId: recommended[0]._id }),
       };
     }
     return {
-      label: 'GET STARTED',
-      title: 'Find your next mock test',
-      subtitle: 'Browse tests for your exam',
+      label: tr("GET STARTED"),
+      title: tr("Find your next mock test"),
+      subtitle: tr("Browse tests for your exam"),
       icon: 'search',
-      cta: 'Browse exams',
+      cta: tr("Browse exams"),
       pct: null,
       onPress: () => navigation.navigate('ExamsTab'),
     };
@@ -397,7 +398,7 @@ export default function DashboardScreen({ navigation }) {
               style={tw`flex-row items-center flex-1`}
               onPress={() => navigation.navigate('ProfileTab')}
               activeOpacity={0.8}
-              accessibilityLabel="Open profile"
+              accessibilityLabel={tr("Open profile")}
             >
               {user?.profileImage ? (
                 <Image source={{ uri: user.profileImage }} style={tw`w-11 h-11 rounded-full`} />
@@ -418,7 +419,7 @@ export default function DashboardScreen({ navigation }) {
               <TouchableOpacity
                 onPress={toggleLanguage}
                 activeOpacity={0.8}
-                accessibilityLabel={`Question language: ${isHindi ? 'Hindi' : 'English'}. Tap to switch.`}
+                accessibilityLabel={tr("Question language: {0}. Tap to switch.", isHindi ? 'Hindi' : 'English')}
                 style={[tw`flex-row rounded-full p-1`, card]}
               >
                 {['EN', 'हिन्दी'].map((label, i) => {
@@ -438,7 +439,7 @@ export default function DashboardScreen({ navigation }) {
               <TouchableOpacity
                 onPress={() => navigation.navigate('Notifications')}
                 activeOpacity={0.8}
-                accessibilityLabel="Notifications"
+                accessibilityLabel={tr("Notifications")}
                 style={[tw`w-11 h-11 rounded-full items-center justify-center`, card]}
               >
                 <Ionicons name="notifications-outline" size={20} color={colors.text} />
@@ -470,16 +471,16 @@ export default function DashboardScreen({ navigation }) {
               </View>
               <View style={tw`flex-1`}>
                 <Text style={[tw`text-[11px]`, { color: colors.textSecondary }]}>
-                  {target ? 'Preparing for' : 'Set your goal'}
+                  {target ? tr("Preparing for") : tr("Set your goal")}
                 </Text>
                 <Text style={[tw`text-sm font-bold`, { color: colors.text }]} numberOfLines={1}>
-                  {target ? target.name : 'Choose the exam you’re preparing for'}
+                  {target ? target.name : tr("Choose the exam you’re preparing for")}
                 </Text>
               </View>
             </View>
             <View style={tw`flex-row items-center`}>
               <Text style={[tw`text-xs font-semibold mr-1`, { color: colors.textSecondary }]}>
-                {target ? 'Change' : 'Choose'}
+                {target ? tr("Change") : tr("Choose")}
               </Text>
               <Ionicons name="chevron-down" size={16} color={colors.textSecondary} />
             </View>
@@ -501,7 +502,7 @@ export default function DashboardScreen({ navigation }) {
           <View style={[tw`p-5 rounded-3xl mb-4`, { backgroundColor: colors.hero }]}>
             <View style={tw`flex-row justify-between items-start`}>
               <View style={tw`flex-1 pr-3`}>
-                <Text style={[tw`text-[11px] font-bold tracking-widest`, { color: colors.heroMuted }]}>{hero.label}</Text>
+                <Text style={[tw`text-[11px] font-bold tracking-widest`, { color: colors.heroMuted }]}>{tr(hero.label)}</Text>
                 <Text style={[tw`text-xl font-extrabold mt-1`, { color: colors.heroText }]} numberOfLines={2}>
                   {hero.title}
                 </Text>
@@ -540,11 +541,11 @@ export default function DashboardScreen({ navigation }) {
           {/* ─── Stats + rank ─────────────────────────── */}
           <View style={[tw`p-4 rounded-3xl mb-4`, card]}>
             <View style={tw`flex-row`}>
-              <Stat icon="flame" iconColor={colors.tones.orange.fg} label="Streak" colors={colors}
-                value={String(currentStreak)} unit={currentStreak === 1 ? 'day' : 'days'} />
-              <Stat icon="document-text-outline" label="Exams" colors={colors} divider
+              <Stat icon="flame" iconColor={colors.tones.orange.fg} label={tr("Streak")} colors={colors}
+                value={String(currentStreak)} unit={currentStreak === 1 ? tr('day') : tr('days')} />
+              <Stat icon="document-text-outline" label={tr("Exams")} colors={colors} divider
                 value={String(totalAttempts)} />
-              <Stat icon="trending-up" label="Average" colors={colors} divider
+              <Stat icon="trending-up" label={tr("Average")} colors={colors} divider
                 value={totalAttempts > 0 && !Number.isNaN(averageScore) ? averageScore.toFixed(0) : '—'}
                 unit={totalAttempts > 0 && !Number.isNaN(averageScore) ? '%' : undefined} />
             </View>
@@ -552,10 +553,10 @@ export default function DashboardScreen({ navigation }) {
             <TouchableOpacity onPress={() => navigation.navigate('Leaderboard')} activeOpacity={0.8}>
               <View style={tw`flex-row justify-between items-center mb-2`}>
                 <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>
-                  {rank} <Text style={[tw`font-normal`, { color: colors.textSecondary }]}>· {xp.toLocaleString('en-IN')} XP</Text>
+                  {tr(rank)} <Text style={[tw`font-normal`, { color: colors.textSecondary }]}>{tr("· {0} XP", xp.toLocaleString('en-IN'))}</Text>
                 </Text>
                 <View style={tw`flex-row items-center`}>
-                  <Text style={[tw`text-xs font-semibold`, { color: colors.text }]}>Leaderboard</Text>
+                  <Text style={[tw`text-xs font-semibold`, { color: colors.text }]}>{tr("Leaderboard")}</Text>
                   <Ionicons name="chevron-forward" size={14} color={colors.text} />
                 </View>
               </View>
@@ -563,7 +564,7 @@ export default function DashboardScreen({ navigation }) {
                 <View style={[tw`h-full rounded-full`, { width: `${Math.round(rankProgress * 100)}%`, backgroundColor: colors.primary }]} />
               </View>
               <Text style={[tw`text-xs mt-2`, { color: colors.textSecondary }]}>
-                {nextRank ? `${xpToNext.toLocaleString('en-IN')} XP to ${nextRank}` : 'Top rank reached'}
+                {nextRank ? tr("{0} XP to {1}", xpToNext.toLocaleString('en-IN'), tr(nextRank)) : tr("Top rank reached")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -579,13 +580,13 @@ export default function DashboardScreen({ navigation }) {
                 <Ionicons name="today-outline" size={20} color={colors.tones.purple.fg} />
               </View>
               <View style={tw`flex-1`}>
-                <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>Daily quiz</Text>
+                <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>{tr("Daily quiz")}</Text>
                 <Text style={[tw`text-xs mt-0.5`, { color: colors.textSecondary }]}>
                   {dailyQuizDone
-                    ? `Done today · ${dailyQuiz.correctAnswers || 0}/${dailyQuiz.totalQuestions || 10} correct`
+                    ? tr("Done today · {0}/{1} correct", dailyQuiz.correctAnswers || 0, dailyQuiz.totalQuestions || 10)
                     : dailyQuiz
-                      ? 'In progress · tap to continue'
-                      : '10 questions · about 5 min'}
+                      ? tr("In progress · tap to continue")
+                      : tr("10 questions · about 5 min")}
                 </Text>
               </View>
               {busy === 'quiz' ? (
@@ -600,13 +601,13 @@ export default function DashboardScreen({ navigation }) {
 
           {/* ─── Quick actions ────────────────────────── */}
           <View style={tw`flex-row flex-wrap justify-between mb-2`}>
-            <QuickTile icon="play-circle-outline" tone={colors.tones.green} label="Mock test" subtitle="Full exam"
+            <QuickTile icon="play-circle-outline" tone={colors.tones.green} label={tr("Mock test")} subtitle={tr("Full exam")}
               colors={colors} onPress={() => navigation.navigate('ExamsTab')} />
-            <QuickTile icon="flash-outline" tone={colors.tones.orange} label="Practice" subtitle="Quick drill"
+            <QuickTile icon="flash-outline" tone={colors.tones.orange} label={tr("Practice")} subtitle={tr("Quick drill")}
               colors={colors} onPress={() => navigation.navigate('StudyTab', { screen: 'PracticeSessions', initial: false })} />
-            <QuickTile icon="book-outline" tone={colors.tones.blue} label="PYQ" subtitle="Past papers"
+            <QuickTile icon="book-outline" tone={colors.tones.blue} label="PYQ" subtitle={tr("Past papers")}
               colors={colors} onPress={() => navigation.navigate('StudyTab', { screen: 'Pyq', initial: false })} />
-            <QuickTile icon="close-circle-outline" tone={colors.tones.red} label="Wrong Book" subtitle="Fix mistakes"
+            <QuickTile icon="close-circle-outline" tone={colors.tones.red} label={tr("Wrong Book")} subtitle={tr("Fix mistakes")}
               colors={colors} onPress={() => navigation.navigate('StudyTab', { screen: 'WrongBook', initial: false })} />
           </View>
 
@@ -621,9 +622,9 @@ export default function DashboardScreen({ navigation }) {
                 <Ionicons name="map-outline" size={20} color={colors.heroAccent} />
               </View>
               <View style={tw`flex-1`}>
-                <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>Haryana GK</Text>
+                <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>{tr("Haryana GK")}</Text>
                 <Text style={[tw`text-xs mt-0.5`, { color: colors.heroTextSecondary }]} numberOfLines={1}>
-                  Topic tests for HSSC · हरियाणा सामान्य ज्ञान
+                  {tr("Topic tests for HSSC · हरियाणा सामान्य ज्ञान")}
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color={colors.heroTextSecondary} />
@@ -632,7 +633,7 @@ export default function DashboardScreen({ navigation }) {
 
           {/* ─── Live tests ───────────────────────────── */}
           {liveTests.length > 0 && (
-            <Section title="Live tests" colors={colors}>
+            <Section title={tr("Live tests")} colors={colors}>
               <View style={[tw`rounded-3xl overflow-hidden`, card]}>
                 {liveTests.map((exam, i) => (
                   <ListRow
@@ -642,7 +643,7 @@ export default function DashboardScreen({ navigation }) {
                     icon="radio-outline"
                     iconTone={colors.tones.red}
                     title={exam.title}
-                    subtitle={`${startsIn(exam.scheduledTime)} · ${exam.duration || 0} min`}
+                    subtitle={tr("{0} · {1} min", startsIn(exam.scheduledTime), exam.duration || 0)}
                     onPress={() => navigation.navigate('ExamDetail', { examId: exam._id })}
                   />
                 ))}
@@ -669,7 +670,7 @@ export default function DashboardScreen({ navigation }) {
                   <View style={[tw`h-full rounded-full`, { width: `${pct}%`, backgroundColor: colors.primary }]} />
                 </View>
                 <Text style={[tw`text-xs mt-2`, { color: colors.textSecondary }]}>
-                  Study plan · {completed} of {total} topics done
+                  {tr("Study plan · {0} of {1} topics done", completed, total)}
                 </Text>
               </TouchableOpacity>
             );
@@ -677,7 +678,7 @@ export default function DashboardScreen({ navigation }) {
 
           {/* ─── Recommended ──────────────────────────── */}
           <Section
-            title={target ? `Recommended for ${target.name}` : 'Recommended for you'}
+            title={target ? tr("Recommended for {0}", target.name) : tr("Recommended for you")}
             onSeeAll={() => navigation.navigate('ExamsTab')}
             colors={colors}
           >
@@ -691,9 +692,9 @@ export default function DashboardScreen({ navigation }) {
                     icon={exam.examType === 'pyq' ? 'book-outline' : 'document-text-outline'}
                     title={exam.title}
                     subtitle={[
-                      EXAM_TYPE_LABELS[exam.examType] || 'Test',
+                      tr(EXAM_TYPE_LABELS[exam.examType] || 'Test'),
                       `${exam.totalQuestions || exam.questions || 0} Qs`,
-                      `${exam.duration || 0} min`,
+                      tr("{0} min", exam.duration || 0),
                     ].join(' · ')}
                     badge={exam.isAttempted ? 'DONE' : exam.isPremium ? 'PRO' : 'FREE'}
                     badgeTone={exam.isAttempted ? null : exam.isPremium ? colors.tones.purple : colors.tones.green}
@@ -705,15 +706,15 @@ export default function DashboardScreen({ navigation }) {
               <EmptyCard
                 colors={colors}
                 icon="document-text-outline"
-                title="No tests here yet"
-                body="New tests for your exam will show up here."
+                title={tr("No tests here yet")}
+                body={tr("New tests for your exam will show up here.")}
               />
             )}
           </Section>
 
           {/* ─── Exam updates ─────────────────────────── */}
           {updates.length > 0 && (
-            <Section title="Updates" onSeeAll={() => navigation.navigate('Notifications')} colors={colors}>
+            <Section title={tr("Updates")} onSeeAll={() => navigation.navigate('Notifications')} colors={colors}>
               <View style={[tw`rounded-3xl overflow-hidden`, card]}>
                 {updates.slice(0, 2).map((n, i, arr) => (
                   <ListRow
@@ -734,7 +735,7 @@ export default function DashboardScreen({ navigation }) {
           {/* ─── Test series carousel ─────────────────── */}
           {testSeries.length > 0 && (
             <Section
-              title="Test series"
+              title={tr("Test series")}
               onSeeAll={() => navigation.navigate('SeriesTab', { screen: 'TestSeriesList' })}
               colors={colors}
             >
@@ -778,7 +779,7 @@ export default function DashboardScreen({ navigation }) {
 
           {/* ─── Recent results ───────────────────────── */}
           <Section
-            title="Recent results"
+            title={tr("Recent results")}
             onSeeAll={recentResults.length ? () => navigation.navigate('ExamHistory') : null}
             colors={colors}
           >
@@ -802,10 +803,10 @@ export default function DashboardScreen({ navigation }) {
                       </View>
                       <View style={tw`flex-1`}>
                         <Text style={[tw`text-sm font-bold`, { color: colors.text }]} numberOfLines={1}>
-                          {attempt.exam?.title || 'Exam'}
+                          {attempt.exam?.title || tr("Exam")}
                         </Text>
                         <Text style={[tw`text-xs mt-0.5`, { color: colors.textSecondary }]}>
-                          {attempt.totalScore || 0}/{attempt.exam?.totalMarks || 0} marks · {attempt.correctAnswers || 0} correct · {attempt.incorrectAnswers || 0} wrong
+                          {tr("{0}/{1} marks · {2} correct · {3} wrong", attempt.totalScore || 0, attempt.exam?.totalMarks || 0, attempt.correctAnswers || 0, attempt.incorrectAnswers || 0)}
                         </Text>
                       </View>
                       <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
@@ -817,8 +818,8 @@ export default function DashboardScreen({ navigation }) {
               <EmptyCard
                 colors={colors}
                 icon="bar-chart-outline"
-                title="No results yet"
-                body="Finish a mock test to see your score and accuracy here."
+                title={tr("No results yet")}
+                body={tr("Finish a mock test to see your score and accuracy here.")}
               />
             )}
           </Section>
@@ -834,11 +835,11 @@ export default function DashboardScreen({ navigation }) {
                 <Ionicons name="diamond-outline" size={20} color={colors.tones.purple.fg} />
               </View>
               <View style={tw`flex-1`}>
-                <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>Go Premium</Text>
-                <Text style={[tw`text-xs mt-0.5`, { color: colors.textSecondary }]}>Unlimited tests and all study material</Text>
+                <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>{tr("Go Premium")}</Text>
+                <Text style={[tw`text-xs mt-0.5`, { color: colors.textSecondary }]}>{tr("Unlimited tests and all study material")}</Text>
               </View>
               <View style={[tw`px-3.5 py-2 rounded-xl`, { backgroundColor: colors.hero }]}>
-                <Text style={[tw`text-xs font-bold`, { color: colors.heroText }]}>Upgrade</Text>
+                <Text style={[tw`text-xs font-bold`, { color: colors.heroText }]}>{tr("Upgrade")}</Text>
               </View>
             </TouchableOpacity>
           )}
@@ -851,10 +852,10 @@ export default function DashboardScreen({ navigation }) {
               style={[tw`p-4 rounded-3xl`, card]}
             >
               <View style={tw`flex-row justify-between items-center`}>
-                <Text style={[tw`text-[11px] font-bold tracking-widest`, { color: colors.textSecondary }]}>WORD OF THE DAY</Text>
+                <Text style={[tw`text-[11px] font-bold tracking-widest`, { color: colors.textSecondary }]}>{tr("WORD OF THE DAY")}</Text>
                 {quote?.quote && (
                   <TouchableOpacity onPress={() => navigation.navigate('QuoteDetail', { quote })} hitSlop={10}>
-                    <Text style={[tw`text-xs font-semibold`, { color: colors.text }]}>Quote ›</Text>
+                    <Text style={[tw`text-xs font-semibold`, { color: colors.text }]}>{tr("Quote ›")}</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -883,7 +884,7 @@ function Section({ title, onSeeAll, colors, children }) {
         </Text>
         {onSeeAll && (
           <TouchableOpacity onPress={onSeeAll} hitSlop={10}>
-            <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>See all</Text>
+            <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>{tr("See all")}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -983,7 +984,7 @@ function EmptyCard({ icon, title, body, colors }) {
 function SeriesCard({ series, onPress, colors }) {
   const paid = series.accessType === 'paid' || series.isPremium || series.price > 0;
   const price = !paid
-    ? 'Free'
+    ? tr("Free")
     : `₹${series.discountPrice && series.discountPrice < series.price ? series.discountPrice : series.price}`;
   return (
     <TouchableOpacity
@@ -1003,11 +1004,11 @@ function SeriesCard({ series, onPress, colors }) {
       <View style={tw`flex-row justify-between items-center`}>
         <View style={[tw`px-2 py-1 rounded-md`, { backgroundColor: colors.surfaceMuted }]}>
           <Text style={[tw`text-[10px] font-bold uppercase`, { color: colors.text }]}>
-            {series.seriesType || 'mock'} series
+            {tr("{0} series", series.seriesType || 'mock')}
           </Text>
         </View>
         <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>
-          {series.totalTests || 0} {series.totalTests === 1 ? 'test' : 'tests'}
+          {series.totalTests || 0} {series.totalTests === 1 ? tr("test") : tr("tests")}
         </Text>
       </View>
       <Text style={[tw`text-base font-extrabold mt-3`, { color: colors.text }]} numberOfLines={2}>
@@ -1017,7 +1018,7 @@ function SeriesCard({ series, onPress, colors }) {
         <Text style={[tw`text-xl font-extrabold`, { color: colors.text }]}>{price}</Text>
         <View style={[tw`px-4 py-2.5 rounded-xl`, { backgroundColor: colors.hero }]}>
           <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>
-            {series.isEnrolled ? 'Continue' : 'Enroll'}
+            {series.isEnrolled ? tr("Continue") : tr("Enroll")}
           </Text>
         </View>
       </View>

@@ -17,6 +17,7 @@ import { useAuth } from '../context/AuthContext';
 import { gamificationService } from '../services/gamificationService';
 
 
+import { t as tr } from '../i18n';
 export default function LeaderboardScreen({ navigation }) {
   const { colors } = useTheme();
   const { user } = useAuth();
@@ -69,13 +70,13 @@ export default function LeaderboardScreen({ navigation }) {
         )}
         <View style={{ flex: 1 }}>
           <Text style={styles.name} numberOfLines={1}>
-            {item.name}{isMe ? ' (You)' : ''}
+            {item.name}{isMe ? tr(" (You)") : ''}
           </Text>
           <Text style={styles.rank}>{item.rank}</Text>
         </View>
         <View style={styles.xpWrap}>
           <Text style={styles.xp}>{item.xp}</Text>
-          <Text style={styles.xpLabel}>XP</Text>
+          <Text style={styles.xpLabel}>{tr("XP")}</Text>
         </View>
       </View>
     );
@@ -87,7 +88,7 @@ export default function LeaderboardScreen({ navigation }) {
         <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={10}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Leaderboard</Text>
+        <Text style={styles.headerTitle}>{tr("Leaderboard")}</Text>
         <View style={{ width: 24 }} />
       </View>
 
@@ -112,7 +113,7 @@ export default function LeaderboardScreen({ navigation }) {
             />
           }
           ListEmptyComponent={
-            <Text style={styles.empty}>No rankings yet. Take an exam to get on the board!</Text>
+            <Text style={styles.empty}>{tr("No rankings yet. Take an exam to get on the board!")}</Text>
           }
         />
       )}

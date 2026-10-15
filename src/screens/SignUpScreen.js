@@ -16,6 +16,7 @@ import tw from 'twrnc';
 import { useTheme } from '../context/ThemeContext';
 import { authService } from '../services/authService';
 
+import { t as tr } from '../i18n';
 const mark = require('../../assets/examzone_mark.png');
 
 function StepDots({ current, total = 3 }) {
@@ -63,7 +64,7 @@ export default function SignUpScreen({ navigation }) {
   const handleSendOtp = async () => {
     const clean = email.trim().toLowerCase();
     if (!clean || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean)) {
-      Alert.alert('Invalid email', 'Enter a valid email address');
+      Alert.alert(tr("Invalid email"), tr("Enter a valid email address"));
       return;
     }
     setLoading(true);
@@ -72,16 +73,16 @@ export default function SignUpScreen({ navigation }) {
       setEmail(clean);
       setOtpHint(
         res.debugOtp
-          ? `Dev OTP: ${res.debugOtp}`
+          ? tr("Dev OTP: {0}", res.debugOtp)
           : res.mock
-            ? 'Check server logs for OTP'
+            ? tr("Check server logs for OTP")
             : ''
       );
       setOtp('');
       setStep(2);
-      Alert.alert('OTP sent', res.message || `Check ${clean}`);
+      Alert.alert(tr("OTP sent"), res.message || tr("Check {0}", clean));
     } catch (error) {
-      Alert.alert('Could not send OTP', error.response?.data?.message || 'Please try again.');
+      Alert.alert(tr("Could not send OTP"), error.response?.data?.message || tr("Please try again."));
     } finally {
       setLoading(false);
     }
@@ -89,7 +90,7 @@ export default function SignUpScreen({ navigation }) {
 
   const handleVerifyOtp = async () => {
     if (otp.trim().length !== 6) {
-      Alert.alert('Error', 'Enter the 6-digit OTP');
+      Alert.alert(tr("Error"), tr("Enter the 6-digit OTP"));
       return;
     }
     setLoading(true);
@@ -98,7 +99,7 @@ export default function SignUpScreen({ navigation }) {
       setSignupToken(res.signupToken);
       setStep(3);
     } catch (error) {
-      Alert.alert('Verification failed', error.response?.data?.message || 'Invalid OTP');
+      Alert.alert(tr("Verification failed"), error.response?.data?.message || tr("Invalid OTP"));
     } finally {
       setLoading(false);
     }
@@ -106,16 +107,16 @@ export default function SignUpScreen({ navigation }) {
 
   const handleComplete = async () => {
     if (name.trim().length < 2) {
-      Alert.alert('Error', 'Enter your full name');
+      Alert.alert(tr("Error"), tr("Enter your full name"));
       return;
     }
     if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
+      Alert.alert(tr("Error"), tr("Password must be at least 6 characters"));
       return;
     }
     const phone = phoneNumber.trim();
     if (phone && phone.length < 10) {
-      Alert.alert('Error', 'Enter a valid 10-digit phone or leave blank');
+      Alert.alert(tr("Error"), tr("Enter a valid 10-digit phone or leave blank"));
       return;
     }
     setLoading(true);
@@ -128,16 +129,16 @@ export default function SignUpScreen({ navigation }) {
       });
       navigation.replace('Onboarding', { token: response.token, user: response.user });
     } catch (error) {
-      Alert.alert('Could not create account', error.response?.data?.message || 'Please try again.');
+      Alert.alert(tr("Could not create account"), error.response?.data?.message || tr("Please try again."));
     } finally {
       setLoading(false);
     }
   };
 
   const titles = {
-    1: { h: 'Create Account', p: 'Enter your email — we’ll send a one-time code.' },
-    2: { h: 'Verify email', p: `Enter the OTP sent to ${email}` },
-    3: { h: 'Almost done', p: 'Add your name and a password to finish.' },
+    1: { h: tr("Create Account"), p: tr("Enter your email — we’ll send a one-time code.") },
+    2: { h: tr("Verify email"), p: tr("Enter the OTP sent to {0}", email) },
+    3: { h: tr("Almost done"), p: tr("Add your name and a password to finish.") },
   };
 
   return (
@@ -153,10 +154,10 @@ export default function SignUpScreen({ navigation }) {
           {step === 1 && (
             <View style={tw`gap-4`}>
               <View>
-                <Text style={labelStyle}>Email</Text>
+                <Text style={labelStyle}>{tr("Email")}</Text>
                 <TextInput
                   style={inputStyle}
-                  placeholder="you@example.com"
+                  placeholder={tr("you@example.com")}
                   placeholderTextColor={colors.textSecondary}
                   value={email}
                   onChangeText={setEmail}
@@ -173,7 +174,7 @@ export default function SignUpScreen({ navigation }) {
                 {loading ? (
                   <ActivityIndicator color={colors.heroText} />
                 ) : (
-                  <Text style={[tw` font-bold text-base`, { color: colors.heroText }]}>Send OTP</Text>
+                  <Text style={[tw` font-bold text-base`, { color: colors.heroText }]}>{tr("Send OTP")}</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -185,7 +186,7 @@ export default function SignUpScreen({ navigation }) {
                 <Text style={[tw`text-sm`, { color: colors.text }]}>{otpHint}</Text>
               ) : null}
               <View>
-                <Text style={labelStyle}>6-digit OTP</Text>
+                <Text style={labelStyle}>{tr("6-digit OTP")}</Text>
                 <TextInput
                   style={inputStyle}
                   placeholder="••••••"
@@ -204,7 +205,7 @@ export default function SignUpScreen({ navigation }) {
                 {loading ? (
                   <ActivityIndicator color={colors.heroText} />
                 ) : (
-                  <Text style={[tw` font-bold text-base`, { color: colors.heroText }]}>Verify email</Text>
+                  <Text style={[tw` font-bold text-base`, { color: colors.heroText }]}>{tr("Verify email")}</Text>
                 )}
               </TouchableOpacity>
               <View style={tw`flex-row justify-between`}>
@@ -216,10 +217,10 @@ export default function SignUpScreen({ navigation }) {
                   }}
                   disabled={loading}
                 >
-                  <Text style={[tw`text-sm font-semibold`, { color: colors.textSecondary }]}>Change email</Text>
+                  <Text style={[tw`text-sm font-semibold`, { color: colors.textSecondary }]}>{tr("Change email")}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={handleSendOtp} disabled={loading}>
-                  <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>Resend OTP</Text>
+                  <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>{tr("Resend OTP")}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -228,10 +229,10 @@ export default function SignUpScreen({ navigation }) {
           {step === 3 && (
             <View style={tw`gap-4`}>
               <View>
-                <Text style={labelStyle}>Full name</Text>
+                <Text style={labelStyle}>{tr("Full name")}</Text>
                 <TextInput
                   style={inputStyle}
-                  placeholder="Your full name"
+                  placeholder={tr("Your full name")}
                   placeholderTextColor={colors.textSecondary}
                   value={name}
                   onChangeText={setName}
@@ -239,7 +240,7 @@ export default function SignUpScreen({ navigation }) {
                 />
               </View>
               <View>
-                <Text style={labelStyle}>Password</Text>
+                <Text style={labelStyle}>{tr("Password")}</Text>
                 <View
                   style={[
                     tw`flex-row items-center rounded-2xl border px-4`,
@@ -248,7 +249,7 @@ export default function SignUpScreen({ navigation }) {
                 >
                   <TextInput
                     style={[tw`flex-1 py-3.5 text-base`, { color: colors.text }]}
-                    placeholder="Min 6 characters"
+                    placeholder={tr("Min 6 characters")}
                     placeholderTextColor={colors.textSecondary}
                     value={password}
                     onChangeText={setPassword}
@@ -261,10 +262,10 @@ export default function SignUpScreen({ navigation }) {
                 </View>
               </View>
               <View>
-                <Text style={labelStyle}>Phone (optional)</Text>
+                <Text style={labelStyle}>{tr("Phone (optional)")}</Text>
                 <TextInput
                   style={inputStyle}
-                  placeholder="10-digit mobile"
+                  placeholder={tr("10-digit mobile")}
                   placeholderTextColor={colors.textSecondary}
                   value={phoneNumber}
                   onChangeText={(v) => setPhoneNumber(v.replace(/\D/g, '').slice(0, 10))}
@@ -280,7 +281,7 @@ export default function SignUpScreen({ navigation }) {
                 {loading ? (
                   <ActivityIndicator color={colors.heroText} />
                 ) : (
-                  <Text style={[tw` font-bold text-base`, { color: colors.heroText }]}>Create account</Text>
+                  <Text style={[tw` font-bold text-base`, { color: colors.heroText }]}>{tr("Create account")}</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -289,8 +290,8 @@ export default function SignUpScreen({ navigation }) {
           {step === 1 && (
             <TouchableOpacity style={tw`mt-8 items-center`} onPress={() => navigation.navigate('Login')}>
               <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
-                Already have an account?{' '}
-                <Text style={{ color: colors.text, fontWeight: '700' }}>Sign In</Text>
+                {tr("Already have an account?")}{' '}
+                <Text style={{ color: colors.text, fontWeight: '700' }}>{tr("Sign In")}</Text>
               </Text>
             </TouchableOpacity>
           )}

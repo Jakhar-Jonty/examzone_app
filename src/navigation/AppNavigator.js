@@ -31,6 +31,7 @@ import OmrEntryScreen from '../screens/OmrEntryScreen';
 // Loading
 import LoadingScreen from '../components/LoadingScreen';
 
+import { t as tr } from '../i18n';
 const Stack = createNativeStackNavigator();
 const navigationRef = createNavigationContainerRef();
 
@@ -80,7 +81,7 @@ export default function AppNavigator() {
   const flushNotificationTap = useNotificationTaps(isAuthenticated);
 
   if (loading) {
-    return <LoadingScreen message="Initializing..." />;
+    return <LoadingScreen message={tr("Initializing...")} />;
   }
 
   return (

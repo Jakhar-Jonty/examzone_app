@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
 import { formatDate } from '../utils/helpers';
 
+import { t as tr } from '../i18n';
 // ─── Helpers ─────────────────────────────────────────────
 // Green ≥ 80, orange ≥ 60, red below — { fg, bg } theme tone.
 const getScoreTone = (pct, colors) => {
@@ -104,7 +105,7 @@ export default function ExamHistoryScreen({ navigation }) {
         response.data.pagination || { currentPage: page, totalPages: 1, totalAttempts: 0 }
       );
     } catch {
-      if (page === 1) setError('Failed to load exam history.');
+      if (page === 1) setError(tr("Failed to load exam history."));
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -160,7 +161,7 @@ export default function ExamHistoryScreen({ navigation }) {
             style={[tw`text-sm font-semibold`, { color: colors.text }]}
             numberOfLines={1}
           >
-            {attempt.exam?.title || 'Unknown Exam'}
+            {attempt.exam?.title || tr("Unknown Exam")}
           </Text>
           <View style={tw`flex-row items-center mt-1 gap-3`}>
             <View style={tw`flex-row items-center gap-1`}>
@@ -214,7 +215,7 @@ export default function ExamHistoryScreen({ navigation }) {
           <TouchableOpacity onPress={() => navigation.goBack()} style={tw`p-2`}>
             <Ionicons name="arrow-back" size={22} color={colors.text} />
           </TouchableOpacity>
-          <Text style={[tw`text-base font-bold`, { color: colors.text }]}>Exam History</Text>
+          <Text style={[tw`text-base font-bold`, { color: colors.text }]}>{tr("Exam History")}</Text>
           <TouchableOpacity onPress={() => setShowFilters(true)} style={tw`p-2`}>
             <Ionicons name="options-outline" size={20} color={colors.text} />
           </TouchableOpacity>
@@ -231,7 +232,7 @@ export default function ExamHistoryScreen({ navigation }) {
             <Ionicons name="search" size={18} color={colors.textSecondary} />
             <TextInput
               style={[tw`flex-1 text-sm`, { color: colors.text }]}
-              placeholder="Search exams..."
+              placeholder={tr("Search exams...")}
               placeholderTextColor={colors.textSecondary}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -249,7 +250,7 @@ export default function ExamHistoryScreen({ navigation }) {
         {pagination.totalAttempts > 0 && !loading && (
           <View style={tw`px-5 py-2`}>
             <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>
-              {pagination.totalAttempts} attempt{pagination.totalAttempts !== 1 ? 's' : ''} total
+              {tr("{0} attempt{1} total", pagination.totalAttempts, pagination.totalAttempts !== 1 ? 's' : '')}
             </Text>
           </View>
         )}
@@ -283,12 +284,12 @@ export default function ExamHistoryScreen({ navigation }) {
               <Ionicons name="document-text-outline" size={32} color={colors.text} />
             </View>
             <Text style={[tw`text-base font-semibold mb-1`, { color: colors.text }]}>
-              No attempts yet
+              {tr("No attempts yet")}
             </Text>
             <Text style={[tw`text-sm text-center mb-5`, { color: colors.textSecondary }]}>
               {searchQuery
-                ? 'No results match your search.'
-                : 'Start taking exams to see your history.'}
+                ? tr("No results match your search.")
+                : tr("Start taking exams to see your history.")}
             </Text>
             {searchQuery ? (
               <TouchableOpacity
@@ -296,7 +297,7 @@ export default function ExamHistoryScreen({ navigation }) {
                 onPress={() => setSearchQuery('')}
                 activeOpacity={0.7}
               >
-                <Text style={[tw`text-sm font-semibold`, { color: colors.heroText }]}>Clear Search</Text>
+                <Text style={[tw`text-sm font-semibold`, { color: colors.heroText }]}>{tr("Clear Search")}</Text>
               </TouchableOpacity>
             ) : (
               <TouchableOpacity
@@ -304,7 +305,7 @@ export default function ExamHistoryScreen({ navigation }) {
                 onPress={() => navigation.navigate('ExamsTab', { screen: 'ExamsList' })}
                 activeOpacity={0.7}
               >
-                <Text style={[tw`text-sm font-semibold`, { color: colors.heroText }]}>Browse Exams</Text>
+                <Text style={[tw`text-sm font-semibold`, { color: colors.heroText }]}>{tr("Browse Exams")}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -351,7 +352,7 @@ export default function ExamHistoryScreen({ navigation }) {
                   { borderColor: colors.border },
                 ]}
               >
-                <Text style={[tw`text-lg font-bold`, { color: colors.text }]}>Filters</Text>
+                <Text style={[tw`text-lg font-bold`, { color: colors.text }]}>{tr("Filters")}</Text>
                 <TouchableOpacity onPress={() => setShowFilters(false)} activeOpacity={0.7}>
                   <Ionicons name="close" size={24} color={colors.text} />
                 </TouchableOpacity>
@@ -362,13 +363,13 @@ export default function ExamHistoryScreen({ navigation }) {
                 {/* Sort By */}
                 <View style={tw`mb-5`}>
                   <Text style={[tw`text-sm font-semibold mb-2.5`, { color: colors.text }]}>
-                    Sort By
+                    {tr("Sort By")}
                   </Text>
                   <View style={tw`flex-row flex-wrap gap-2`}>
                     {[
-                      { key: 'date', label: 'Date' },
-                      { key: 'score', label: 'Score' },
-                      { key: 'percentage', label: 'Percentage' },
+                      { key: 'date', label: tr("Date") },
+                      { key: 'score', label: tr("Score") },
+                      { key: 'percentage', label: tr("Percentage") },
                     ].map(({ key, label }) => {
                       const isActive = filters.sortBy === key;
                       return (
@@ -400,12 +401,12 @@ export default function ExamHistoryScreen({ navigation }) {
                 {/* Order */}
                 <View style={tw`mb-5`}>
                   <Text style={[tw`text-sm font-semibold mb-2.5`, { color: colors.text }]}>
-                    Order
+                    {tr("Order")}
                   </Text>
                   <View style={tw`flex-row gap-2`}>
                     {[
-                      { key: 'desc', label: 'Newest First' },
-                      { key: 'asc', label: 'Oldest First' },
+                      { key: 'desc', label: tr("Newest First") },
+                      { key: 'asc', label: tr("Oldest First") },
                     ].map(({ key, label }) => {
                       const isActive = filters.sortOrder === key;
                       return (
@@ -453,7 +454,7 @@ export default function ExamHistoryScreen({ navigation }) {
                   }}
                   activeOpacity={0.7}
                 >
-                  <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>Reset</Text>
+                  <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>{tr("Reset")}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[
@@ -463,7 +464,7 @@ export default function ExamHistoryScreen({ navigation }) {
                   onPress={() => setShowFilters(false)}
                   activeOpacity={0.7}
                 >
-                  <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>Apply</Text>
+                  <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>{tr("Apply")}</Text>
                 </TouchableOpacity>
               </View>
             </View>

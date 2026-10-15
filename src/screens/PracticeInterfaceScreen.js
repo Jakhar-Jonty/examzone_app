@@ -22,6 +22,7 @@ import {
   hasHindiContent,
 } from '../utils/questionLanguage';
 
+import { t as tr } from '../i18n';
 const SESSION_TYPE_LABELS = {
   random: 'Random',
   'subject-wise': 'Subject Wise',
@@ -118,10 +119,11 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
   const [showPalette, setShowPalette] = useState(false);
   const [showFinishDialog, setShowFinishDialog] = useState(false);
 
-  const sessionTitle =
+  const sessionTitle = tr(
     SESSION_TYPE_LABELS[sessionMeta.sessionType] ||
     SESSION_TYPE_LABELS[sessionType] ||
-    'Practice';
+    'Practice'
+  );
 
   useEffect(() => {
     questionStartRef.current = Date.now();
@@ -155,8 +157,8 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
         setCurrentIndex(firstUnanswered >= 0 ? firstUnanswered : 0);
         if (qs[0]) visited.add(qs[0]._id);
       } catch {
-        Alert.alert('Error', 'Failed to load practice session', [
-          { text: 'OK', onPress: () => navigation.goBack() },
+        Alert.alert(tr("Error"), tr("Failed to load practice session"), [
+          { text: tr("OK"), onPress: () => navigation.goBack() },
         ]);
       } finally {
         setLoading(false);
@@ -166,9 +168,9 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
 
   useEffect(() => {
     const handler = BackHandler.addEventListener('hardwareBackPress', () => {
-      Alert.alert('Exit Practice', 'Leave this session? Progress is saved.', [
-        { text: 'Stay', style: 'cancel' },
-        { text: 'Exit', onPress: () => navigation.goBack() },
+      Alert.alert(tr("Exit Practice"), tr("Leave this session? Progress is saved."), [
+        { text: tr("Stay"), style: 'cancel' },
+        { text: tr("Exit"), onPress: () => navigation.goBack() },
       ]);
       return true;
     });
@@ -215,7 +217,7 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
         timeSpent: getTimeSpent(),
       });
     } catch {
-      Alert.alert('Error', 'Failed to save answer');
+      Alert.alert(tr("Error"), tr("Failed to save answer"));
     }
   };
 
@@ -232,7 +234,7 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
         timeSpent: getTimeSpent(),
       });
     } catch {
-      Alert.alert('Error', 'Failed to save skip');
+      Alert.alert(tr("Error"), tr("Failed to save skip"));
     }
   };
 
@@ -252,7 +254,7 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
       const { session, rewards } = await practiceSessionService.complete(sessionId);
       navigation.replace('PracticeResult', { session, rewards });
     } catch {
-      Alert.alert('Error', 'Failed to complete session');
+      Alert.alert(tr("Error"), tr("Failed to complete session"));
     } finally {
       setCompleting(false);
       setShowFinishDialog(false);
@@ -267,7 +269,7 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
       <ScreenWrapper>
         <View style={styles.center}>
           <ActivityIndicator size="large" color={colors.text} />
-          <Text style={styles.loadingText}>Loading questions...</Text>
+          <Text style={styles.loadingText}>{tr("Loading questions...")}</Text>
         </View>
       </ScreenWrapper>
     );
@@ -277,9 +279,9 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
     return (
       <ScreenWrapper>
         <View style={styles.center}>
-          <Text style={styles.emptyText}>No questions in this session</Text>
+          <Text style={styles.emptyText}>{tr("No questions in this session")}</Text>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.primaryBtn}>
-            <Text style={styles.primaryBtnText}>Go Back</Text>
+            <Text style={styles.primaryBtnText}>{tr("Go Back")}</Text>
           </TouchableOpacity>
         </View>
       </ScreenWrapper>
@@ -302,14 +304,14 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
         <View style={styles.topBarCenter}>
           <Text style={styles.topTitle} numberOfLines={1}>{sessionTitle}</Text>
           <Text style={styles.topSub}>
-            Q {currentIndex + 1}/{questions.length} · {answeredCount} done
+            {tr("Q {0}/{1} · {2} done", currentIndex + 1, questions.length, answeredCount)}
           </Text>
         </View>
         {canSwitchLanguage && (
           <TouchableOpacity
             onPress={() => setLanguage(language === 'Hindi' ? 'English' : 'Hindi')}
             hitSlop={8}
-            accessibilityLabel={`Showing ${language}. Tap to switch language.`}
+            accessibilityLabel={tr("Showing {0}. Tap to switch language.", language)}
             style={{
               marginRight: 14,
               paddingHorizontal: 10,
@@ -319,7 +321,7 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
             }}
           >
             <Text style={{ fontSize: 12, fontWeight: '700', color: colors.text }}>
-              {language === 'Hindi' ? 'हिन्दी' : 'EN'}
+              {language === 'Hindi' ? 'हिन्दी' : tr("EN")}
             </Text>
           </TouchableOpacity>
         )}
@@ -339,12 +341,12 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
           ) : null}
           {currentQuestion.difficulty ? (
             <View style={[styles.tag, styles.tagBlue]}>
-              <Text style={[styles.tagText, { color: colors.tones.blue.fg }]}>{currentQuestion.difficulty}</Text>
+              <Text style={[styles.tagText, { color: colors.tones.blue.fg }]}>{tr(currentQuestion.difficulty)}</Text>
             </View>
           ) : null}
           {isMarked ? (
             <View style={[styles.tag, styles.tagOrange]}>
-              <Text style={[styles.tagText, { color: colors.tones.purple.fg }]}>Marked</Text>
+              <Text style={[styles.tagText, { color: colors.tones.purple.fg }]}>{tr("Marked")}</Text>
             </View>
           ) : null}
         </View>
@@ -375,7 +377,7 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
                   isCorrect && { backgroundColor: colors.success },
                   isWrong && { backgroundColor: colors.error },
                 ]}>
-                  <Text style={styles.optionBadgeText}>{opt.label}</Text>
+                  <Text style={styles.optionBadgeText}>{tr(opt.label)}</Text>
                 </View>
                 <Text style={styles.optionText}>{opt.text}</Text>
                 {isCorrect && <Ionicons name="checkmark-circle" size={22} color={colors.success} />}
@@ -387,7 +389,7 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
           {revealed && skipped && (
             <View style={styles.infoBox}>
               <Text style={styles.infoText}>
-                Skipped. Correct: {correctOpt ? `${correctOpt.label}. ${correctOpt.text}` : currentQuestion.correctAnswer}
+                {tr("Skipped. Correct: {0}", correctOpt ? `${tr(correctOpt.label)}. ${correctOpt.text}` : currentQuestion.correctAnswer)}
               </Text>
             </View>
           )}
@@ -408,14 +410,14 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
             disabled={currentIndex === 0}
             onPress={() => goToQuestion(currentIndex - 1)}
           >
-            <Text style={styles.navBtnText}>Previous</Text>
+            <Text style={styles.navBtnText}>{tr("Previous")}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.navBtn} onPress={handleMarkForReview}>
-            <Text style={styles.navBtnText}>{isMarked ? 'Unmark' : 'Mark'}</Text>
+            <Text style={styles.navBtnText}>{isMarked ? tr("Unmark") : tr("Mark")}</Text>
           </TouchableOpacity>
           {!revealed && (
             <TouchableOpacity style={styles.navBtn} onPress={handleSkip}>
-              <Text style={styles.navBtnText}>Skip</Text>
+              <Text style={styles.navBtnText}>{tr("Skip")}</Text>
             </TouchableOpacity>
           )}
           <TouchableOpacity
@@ -423,7 +425,7 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
             disabled={currentIndex === questions.length - 1}
             onPress={() => goToQuestion(currentIndex + 1)}
           >
-            <Text style={styles.navBtnText}>Next</Text>
+            <Text style={styles.navBtnText}>{tr("Next")}</Text>
           </TouchableOpacity>
         </View>
         <TouchableOpacity
@@ -432,7 +434,7 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
           disabled={completing}
         >
           <Text style={styles.finishBtnText}>
-            {completing ? 'Finishing...' : 'Finish Session'}
+            {completing ? tr("Finishing...") : tr("Finish Session")}
           </Text>
         </TouchableOpacity>
       </View>
@@ -441,7 +443,7 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
         <View style={styles.modalOverlay}>
           <View style={styles.modalSheet}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Question Palette</Text>
+              <Text style={styles.modalTitle}>{tr("Question Palette")}</Text>
               <TouchableOpacity onPress={() => setShowPalette(false)}>
                 <Ionicons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
@@ -456,11 +458,11 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
               />
               <View style={{ marginTop: 16, gap: 6 }}>
                 {[
-                  ['Correct', colors.success],
-                  ['Wrong', colors.error],
-                  ['Skipped', colors.tones.orange.fg],
-                  ['Marked', colors.tones.purple.fg],
-                  ['Not visited', colors.border],
+                  [tr("Correct"), colors.success],
+                  [tr("Wrong"), colors.error],
+                  [tr("Skipped"), colors.tones.orange.fg],
+                  [tr("Marked"), colors.tones.purple.fg],
+                  [tr("Not visited"), colors.border],
                 ].map(([label, c]) => (
                   <View key={label} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <View style={{ width: 14, height: 14, borderRadius: 3, backgroundColor: c }} />
@@ -476,16 +478,16 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
       <Modal visible={showFinishDialog} animationType="fade" transparent>
         <View style={styles.dialogOverlay}>
           <View style={styles.dialog}>
-            <Text style={styles.dialogTitle}>Finish Session?</Text>
+            <Text style={styles.dialogTitle}>{tr("Finish Session?")}</Text>
             <Text style={styles.dialogDesc}>
-              {answeredCount} of {questions.length} questions attempted.
+              {tr("{0} of {1} questions attempted.", answeredCount, questions.length)}
             </Text>
             <View style={styles.dialogActions}>
               <TouchableOpacity style={styles.dialogCancel} onPress={() => setShowFinishDialog(false)}>
-                <Text style={styles.dialogCancelText}>Cancel</Text>
+                <Text style={styles.dialogCancelText}>{tr("Cancel")}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.dialogConfirm} onPress={finish} disabled={completing}>
-                <Text style={styles.dialogConfirmText}>Finish</Text>
+                <Text style={styles.dialogConfirmText}>{tr("Finish")}</Text>
               </TouchableOpacity>
             </View>
           </View>

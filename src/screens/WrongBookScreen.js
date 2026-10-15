@@ -21,6 +21,7 @@ import { practiceSessionService } from '../services/practiceSessionService';
 import { buildWrongBookAnswerKeyHtml } from '../utils/wrongBookPdf';
 import { exportWrongBookPdf } from '../utils/exportWrongBookPdf';
 
+import { t as tr } from '../i18n';
 const MAX_EXPORT = 100;
 
 const STATUS_FILTER_OPTIONS = [
@@ -105,8 +106,11 @@ function statusTone(status, colors) {
   return colors.tones.orange;
 }
 
+const STATUS_LABELS = { 'needs-review': 'Needs review', reviewed: 'Reviewed', mastered: 'Mastered' };
+
 function statusLabel(status) {
-  return (status || 'needs-review').replace('-', ' ');
+  const key = status || 'needs-review';
+  return tr(STATUS_LABELS[key] || key.replace('-', ' '));
 }
 
 export default function WrongBookScreen({ navigation }) {
@@ -179,7 +183,7 @@ export default function WrongBookScreen({ navigation }) {
       } catch (err) {
         console.error('Wrong Book fetch failed:', err);
         if (!append) setItems([]);
-        Alert.alert('Error', err.response?.data?.message || 'Failed to load Wrong Book');
+        Alert.alert(tr("Error"), err.response?.data?.message || tr("Failed to load Wrong Book"));
       } finally {
         setLoading(false);
         setLoadingMore(false);
@@ -247,7 +251,7 @@ export default function WrongBookScreen({ navigation }) {
   const handlePractice = async () => {
     if (practicing || (stats.total || 0) === 0) return;
     if (!practiceOpts.statuses.length) {
-      Alert.alert('Pick a status', 'Select at least one status to practice.');
+      Alert.alert(tr("Pick a status"), tr("Select at least one status to practice."));
       return;
     }
     setPracticing(true);
@@ -268,8 +272,8 @@ export default function WrongBookScreen({ navigation }) {
       navigation.navigate('PracticeInterface', { sessionId: session._id });
     } catch (err) {
       Alert.alert(
-        'Error',
-        err.response?.data?.message || 'Could not start practice from Wrong Book'
+        tr("Error"),
+        err.response?.data?.message || tr("Could not start practice from Wrong Book")
       );
     } finally {
       setPracticing(false);
@@ -300,7 +304,7 @@ export default function WrongBookScreen({ navigation }) {
       });
       setStatusTarget(null);
     } catch (err) {
-      Alert.alert('Error', err.response?.data?.message || 'Failed to update status');
+      Alert.alert(tr("Error"), err.response?.data?.message || tr("Failed to update status"));
     } finally {
       setUpdatingStatus(false);
     }
@@ -309,10 +313,10 @@ export default function WrongBookScreen({ navigation }) {
   const handleRemove = (item) => {
     const qId = item.question?._id;
     if (!qId) return;
-    Alert.alert('Remove', 'Remove this question from Wrong Book?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(tr("Remove"), tr("Remove this question from Wrong Book?"), [
+      { text: tr("Cancel"), style: 'cancel' },
       {
-        text: 'Remove',
+        text: tr("Remove"),
         style: 'destructive',
         onPress: async () => {
           try {
@@ -331,7 +335,7 @@ export default function WrongBookScreen({ navigation }) {
                   : prev.revisit,
             }));
           } catch (err) {
-            Alert.alert('Error', err.response?.data?.message || 'Failed to remove');
+            Alert.alert(tr("Error"), err.response?.data?.message || tr("Failed to remove"));
           }
         },
       },
@@ -349,11 +353,11 @@ export default function WrongBookScreen({ navigation }) {
     .map((s) => statusLabel(s))
     .join(', ');
   const practicePickLabel =
-    practiceOpts.pickMode === 'priority' ? 'most-wrong first' : 'random mix';
+    practiceOpts.pickMode === tr("priority") ? tr("most-wrong first") : tr("random mix");
   const practiceScopeBits = [
     practiceOpts.subject || null,
     practiceOpts.topic || null,
-    practiceOpts.revisitOnly ? 'wrong 2+ times' : null,
+    practiceOpts.revisitOnly ? tr("wrong 2+ times") : null,
   ].filter(Boolean);
 
   const toggleSelect = (id) => {
@@ -362,7 +366,7 @@ export default function WrongBookScreen({ navigation }) {
       if (next.has(id)) {
         next.delete(id);
       } else if (next.size >= MAX_EXPORT) {
-        Alert.alert('Limit reached', `Max ${MAX_EXPORT} questions per export`);
+        Alert.alert(tr("Limit reached"), tr("Max {0} questions per export", MAX_EXPORT));
         return prev;
       } else {
         next.add(id);
@@ -418,12 +422,12 @@ export default function WrongBookScreen({ navigation }) {
       const exportItems = res.data.savedQuestions || [];
       if (exportItems.length < selectedIds.size) {
         Alert.alert(
-          'Partial export',
-          `${exportItems.length} of ${selectedIds.size} questions included`
+          tr("Partial export"),
+          tr("{0} of {1} questions included", exportItems.length, selectedIds.size)
         );
       }
       if (exportItems.length === 0) {
-        Alert.alert('Nothing to export', 'No valid Wrong Book questions found');
+        Alert.alert(tr("Nothing to export"), tr("No valid Wrong Book questions found"));
         return;
       }
       const html = buildWrongBookAnswerKeyHtml({ savedQuestions: exportItems });
@@ -431,8 +435,8 @@ export default function WrongBookScreen({ navigation }) {
       await exportWrongBookPdf(html, fileName);
     } catch (err) {
       Alert.alert(
-        'Export failed',
-        err.response?.data?.message || err.message || 'Could not generate PDF'
+        tr("Export failed"),
+        err.response?.data?.message || err.message || tr("Could not generate PDF")
       );
     } finally {
       setExporting(false);
@@ -483,7 +487,7 @@ export default function WrongBookScreen({ navigation }) {
             </TouchableOpacity>
             {(item.wrongCount || 0) > 0 && (
               <View style={styles.wrongPill}>
-                <Text style={styles.wrongPillText}>Wrong ×{item.wrongCount}</Text>
+                <Text style={styles.wrongPillText}>{tr("Wrong ×{0}", item.wrongCount)}</Text>
               </View>
             )}
           </View>
@@ -499,7 +503,7 @@ export default function WrongBookScreen({ navigation }) {
           </View>
 
           {item.lastWrongAnswer ? (
-            <Text style={styles.wrongAnswer}>Your answer: {item.lastWrongAnswer}</Text>
+            <Text style={styles.wrongAnswer}>{tr("Your answer: {0}", item.lastWrongAnswer)}</Text>
           ) : null}
         </TouchableOpacity>
 
@@ -509,11 +513,11 @@ export default function WrongBookScreen({ navigation }) {
             onPress={() => setStatusTarget(item)}
           >
             <Ionicons name="swap-horizontal" size={16} color={colors.text} />
-            <Text style={[styles.actionText, { color: colors.text }]}>Change status</Text>
+            <Text style={[styles.actionText, { color: colors.text }]}>{tr("Change status")}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionBtn} onPress={() => handleRemove(item)}>
             <Ionicons name="trash-outline" size={16} color={colors.tones.red.fg} />
-            <Text style={[styles.actionText, { color: colors.tones.red.fg }]}>Remove</Text>
+            <Text style={[styles.actionText, { color: colors.tones.red.fg }]}>{tr("Remove")}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -528,8 +532,8 @@ export default function WrongBookScreen({ navigation }) {
             <Ionicons name="arrow-back" size={22} color={colors.text} />
           </TouchableOpacity>
           <View style={styles.headerTextWrap}>
-            <Text style={styles.headerTitle}>Wrong Book</Text>
-            <Text style={styles.headerSub}>Your mistakes, ready to drill</Text>
+            <Text style={styles.headerTitle}>{tr("Wrong Book")}</Text>
+            <Text style={styles.headerSub}>{tr("Your mistakes, ready to drill")}</Text>
           </View>
           <TouchableOpacity
             onPress={() => {
@@ -560,15 +564,15 @@ export default function WrongBookScreen({ navigation }) {
 
         {selectMode && (
           <View style={styles.selectBar}>
-            <Text style={styles.selectBarText}>{selectedIds.size} selected</Text>
+            <Text style={styles.selectBarText}>{tr("{0} selected", selectedIds.size)}</Text>
             <TouchableOpacity onPress={selectPage} style={styles.selectBarBtn}>
-              <Text style={styles.selectBarBtnText}>Page</Text>
+              <Text style={styles.selectBarBtnText}>{tr("Page")}</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={clearSelection} style={styles.selectBarBtn}>
-              <Text style={styles.selectBarBtnText}>Clear</Text>
+              <Text style={styles.selectBarBtnText}>{tr("Clear")}</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setShowPicker(true)} style={styles.selectBarBtn}>
-              <Text style={styles.selectBarBtnText}>More</Text>
+              <Text style={styles.selectBarBtnText}>{tr("More")}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={handleExportPdf}
@@ -580,7 +584,7 @@ export default function WrongBookScreen({ navigation }) {
               ) : (
                 <>
                   <Ionicons name="document-text" size={16} color={colors.heroText} />
-                  <Text style={styles.exportBtnText}>PDF</Text>
+                  <Text style={styles.exportBtnText}>{tr("PDF")}</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -590,25 +594,25 @@ export default function WrongBookScreen({ navigation }) {
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
             <Text style={styles.statValue}>{stats.total || 0}</Text>
-            <Text style={styles.statLabel}>Total</Text>
+            <Text style={styles.statLabel}>{tr("Total")}</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={[styles.statValue, { color: colors.tones.orange.fg }]}>{stats.needsReview || 0}</Text>
-            <Text style={styles.statLabel}>Needs review</Text>
+            <Text style={styles.statLabel}>{tr("Needs review")}</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={[styles.statValue, { color: colors.tones.red.fg }]}>{stats.revisit || 0}</Text>
-            <Text style={styles.statLabel}>Revisit 2+</Text>
+            <Text style={styles.statLabel}>{tr("Revisit 2+")}</Text>
           </View>
         </View>
 
         <View style={styles.practiceCard}>
           <View style={styles.practiceCardText}>
-            <Text style={styles.practiceCardTitle}>Drill your wrongs</Text>
+            <Text style={styles.practiceCardTitle}>{tr("Drill your wrongs")}</Text>
             <Text style={styles.practiceCardSub}>
               {(stats.total || 0) > 0
-                ? 'Pick status, subject, random or most-wrong — then start'
-                : 'Complete an exam to fill Wrong Book'}
+                ? tr("Pick status, subject, random or most-wrong — then start")
+                : tr("Complete an exam to fill Wrong Book")}
             </Text>
           </View>
           <TouchableOpacity
@@ -621,7 +625,7 @@ export default function WrongBookScreen({ navigation }) {
             activeOpacity={0.85}
           >
             <Ionicons name="flash" size={16} color={colors.heroText} />
-            <Text style={styles.practiceBtnText}>Practice</Text>
+            <Text style={styles.practiceBtnText}>{tr("Practice")}</Text>
           </TouchableOpacity>
         </View>
 
@@ -651,9 +655,7 @@ export default function WrongBookScreen({ navigation }) {
                 ) : null}
                 {!loading && items.length > 0 ? (
                   <Text style={styles.listFooterText}>
-                    Showing {items.length}
-                    {stats.total ? ` of ${stats.total}` : ''}
-                    {hasMore ? ' · scroll for more' : ''}
+                    {tr("Showing {0} {1} {2}", items.length, stats.total ? ` of ${stats.total}` : '', hasMore ? ' · scroll for more' : '')}
                   </Text>
                 ) : null}
               </View>
@@ -661,9 +663,9 @@ export default function WrongBookScreen({ navigation }) {
             ListEmptyComponent={
               <View style={styles.empty}>
                 <Ionicons name="book-outline" size={56} color={colors.textSecondary} />
-                <Text style={styles.emptyTitle}>Wrong Book is empty</Text>
+                <Text style={styles.emptyTitle}>{tr("Wrong Book is empty")}</Text>
                 <Text style={styles.emptySub}>
-                  Complete an exam — wrong answers land here automatically.
+                  {tr("Complete an exam — wrong answers land here automatically.")}
                 </Text>
               </View>
             }
@@ -681,9 +683,9 @@ export default function WrongBookScreen({ navigation }) {
             <Pressable style={StyleSheet.absoluteFill} onPress={() => setStatusTarget(null)} />
             <View style={styles.modalSheet}>
               <View style={styles.sheetHandle} />
-              <Text style={styles.modalTitle}>Update status</Text>
+              <Text style={styles.modalTitle}>{tr("Update status")}</Text>
               <Text style={styles.sheetHint} numberOfLines={2}>
-                {statusTarget?.question?.questionText || 'Choose how this question is tagged'}
+                {statusTarget?.question?.questionText || tr("Choose how this question is tagged")}
               </Text>
               {STATUS_CHOICES.map((opt) => {
                 const tone = colors.tones[opt.tone];
@@ -705,9 +707,9 @@ export default function WrongBookScreen({ navigation }) {
                     </View>
                     <View style={styles.statusOptionText}>
                       <Text style={[styles.statusOptionLabel, { color: colors.text }]}>
-                        {opt.label}
+                        {tr(opt.label)}
                       </Text>
-                      <Text style={styles.statusOptionHint}>{opt.hint}</Text>
+                      <Text style={styles.statusOptionHint}>{tr(opt.hint)}</Text>
                     </View>
                     {selected ? (
                       <Ionicons name="checkmark-circle" size={22} color={color} />
@@ -721,7 +723,7 @@ export default function WrongBookScreen({ navigation }) {
                 <ActivityIndicator style={{ marginTop: 12 }} color={colors.text} />
               )}
               <TouchableOpacity style={styles.sheetCancel} onPress={() => setStatusTarget(null)}>
-                <Text style={styles.sheetCancelText}>Cancel</Text>
+                <Text style={styles.sheetCancelText}>{tr("Cancel")}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -746,9 +748,9 @@ export default function WrongBookScreen({ navigation }) {
                   <Ionicons name="flash" size={22} color={colors.tones.orange.fg} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.modalTitle}>Build your drill</Text>
+                  <Text style={styles.modalTitle}>{tr("Build your drill")}</Text>
                   <Text style={styles.sheetHint}>
-                    Choose which Wrong Book questions to include
+                    {tr("Choose which Wrong Book questions to include")}
                   </Text>
                 </View>
               </View>
@@ -757,9 +759,9 @@ export default function WrongBookScreen({ navigation }) {
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
               >
-                <Text style={styles.filterLabel}>Include status</Text>
+                <Text style={styles.filterLabel}>{tr("Include status")}</Text>
                 <Text style={styles.sectionMicroHint}>
-                  Tap to toggle. Mastered is off by default.
+                  {tr("Tap to toggle. Mastered is off by default.")}
                 </Text>
                 <View style={styles.chipWrap}>
                   {PRACTICE_STATUS_OPTIONS.map((opt) => {
@@ -791,16 +793,16 @@ export default function WrongBookScreen({ navigation }) {
                               active && { color: tint },
                             ]}
                           >
-                            {opt.label}
+                            {tr(opt.label)}
                           </Text>
-                          <Text style={styles.statusToggleHint}>{opt.hint}</Text>
+                          <Text style={styles.statusToggleHint}>{tr(opt.hint)}</Text>
                         </View>
                       </TouchableOpacity>
                     );
                   })}
                 </View>
 
-                <Text style={styles.filterLabel}>Subject & topic</Text>
+                <Text style={styles.filterLabel}>{tr("Subject & topic")}</Text>
                 <View style={styles.chipWrap}>
                   <TouchableOpacity
                     style={[
@@ -817,7 +819,7 @@ export default function WrongBookScreen({ navigation }) {
                         !practiceOpts.subject && styles.chipTextActive,
                       ]}
                     >
-                      Any subject
+                      {tr("Any subject")}
                     </Text>
                   </TouchableOpacity>
                   {availableSubjects.map((subj) => {
@@ -845,7 +847,7 @@ export default function WrongBookScreen({ navigation }) {
                 </View>
                 {practiceOpts.subject && practiceTopics.length > 0 ? (
                   <>
-                    <Text style={[styles.filterLabel, { marginTop: 4 }]}>Topic</Text>
+                    <Text style={[styles.filterLabel, { marginTop: 4 }]}>{tr("Topic")}</Text>
                     <View style={styles.chipWrap}>
                       <TouchableOpacity
                         style={[
@@ -862,7 +864,7 @@ export default function WrongBookScreen({ navigation }) {
                             !practiceOpts.topic && styles.chipTextActive,
                           ]}
                         >
-                          Any topic
+                          {tr("Any topic")}
                         </Text>
                       </TouchableOpacity>
                       {practiceTopics.map((t) => {
@@ -890,7 +892,7 @@ export default function WrongBookScreen({ navigation }) {
                   </>
                 ) : null}
 
-                <Text style={styles.filterLabel}>Extra focus</Text>
+                <Text style={styles.filterLabel}>{tr("Extra focus")}</Text>
                 <TouchableOpacity
                   style={[
                     styles.focusRow,
@@ -905,9 +907,9 @@ export default function WrongBookScreen({ navigation }) {
                   activeOpacity={0.8}
                 >
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.focusRowTitle}>Wrong 2+ times only</Text>
+                    <Text style={styles.focusRowTitle}>{tr("Wrong 2+ times only")}</Text>
                     <Text style={styles.focusRowHint}>
-                      Skip one-offs — drill repeats
+                      {tr("Skip one-offs — drill repeats")}
                     </Text>
                   </View>
                   <Ionicons
@@ -921,20 +923,20 @@ export default function WrongBookScreen({ navigation }) {
                   />
                 </TouchableOpacity>
 
-                <Text style={styles.filterLabel}>How to pick</Text>
+                <Text style={styles.filterLabel}>{tr("How to pick")}</Text>
                 <View style={styles.modeRow}>
                   {[
                     {
                       value: 'random',
-                      label: 'Random',
+                      label: tr("Random"),
                       icon: 'shuffle',
-                      hint: 'Mixed order',
+                      hint: tr("Mixed order"),
                     },
                     {
                       value: 'priority',
-                      label: 'Most wrong',
+                      label: tr("Most wrong"),
                       icon: 'trending-up',
-                      hint: 'Highest × first',
+                      hint: tr("Highest × first"),
                     },
                   ].map((mode) => {
                     const active = practiceOpts.pickMode === mode.value;
@@ -958,7 +960,7 @@ export default function WrongBookScreen({ navigation }) {
                             active && styles.modeCardLabelActive,
                           ]}
                         >
-                          {mode.label}
+                          {tr(mode.label)}
                         </Text>
                         <Text
                           style={[
@@ -966,14 +968,14 @@ export default function WrongBookScreen({ navigation }) {
                             active && styles.modeCardHintActive,
                           ]}
                         >
-                          {mode.hint}
+                          {tr(mode.hint)}
                         </Text>
                       </TouchableOpacity>
                     );
                   })}
                 </View>
 
-                <Text style={styles.filterLabel}>How many?</Text>
+                <Text style={styles.filterLabel}>{tr("How many?")}</Text>
                 <View style={styles.countRow}>
                   {PRACTICE_COUNTS.map((n) => {
                     const active = practiceCount === n;
@@ -1024,7 +1026,7 @@ export default function WrongBookScreen({ navigation }) {
                   <>
                     <Ionicons name="play" size={18} color={colors.heroText} />
                     <Text style={styles.startPracticeBtnText}>
-                      Start {practiceCount}-question drill
+                      {tr("Start {0}-question drill", practiceCount)}
                     </Text>
                   </>
                 )}
@@ -1034,7 +1036,7 @@ export default function WrongBookScreen({ navigation }) {
                 onPress={() => setShowPracticeSheet(false)}
                 disabled={practicing}
               >
-                <Text style={styles.sheetCancelText}>Not now</Text>
+                <Text style={styles.sheetCancelText}>{tr("Not now")}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1054,11 +1056,11 @@ export default function WrongBookScreen({ navigation }) {
             />
             <View style={[styles.modalSheet, { maxHeight: '80%' }]}>
               <View style={styles.sheetHandle} />
-              <Text style={styles.modalTitle}>Choose questions</Text>
-              <Text style={styles.sheetHint}>Max {MAX_EXPORT} for answer-key PDF</Text>
+              <Text style={styles.modalTitle}>{tr("Choose questions")}</Text>
+              <Text style={styles.sheetHint}>{tr("Max {0} for answer-key PDF", MAX_EXPORT)}</Text>
               <TextInput
                 style={styles.pickerSearch}
-                placeholder="Search questions…"
+                placeholder={tr("Search questions…")}
                 placeholderTextColor={colors.textSecondary}
                 value={pickerSearch}
                 onChangeText={setPickerSearch}
@@ -1093,7 +1095,7 @@ export default function WrongBookScreen({ navigation }) {
                 </ScrollView>
               )}
               <TouchableOpacity style={styles.sheetCancel} onPress={() => setShowPicker(false)}>
-                <Text style={styles.sheetCancelText}>Done</Text>
+                <Text style={styles.sheetCancelText}>{tr("Done")}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1110,13 +1112,13 @@ export default function WrongBookScreen({ navigation }) {
             <View style={styles.modalSheet}>
               <View style={styles.sheetHandle} />
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Filters</Text>
+                <Text style={styles.modalTitle}>{tr("Filters")}</Text>
                 <TouchableOpacity onPress={() => setShowFilters(false)}>
                   <Ionicons name="close" size={24} color={colors.text} />
                 </TouchableOpacity>
               </View>
               <ScrollView showsVerticalScrollIndicator={false}>
-                <Text style={styles.filterLabel}>Status</Text>
+                <Text style={styles.filterLabel}>{tr("Status")}</Text>
                 <View style={styles.chipWrap}>
                   {STATUS_FILTER_OPTIONS.map((opt) => (
                     <TouchableOpacity
@@ -1130,20 +1132,20 @@ export default function WrongBookScreen({ navigation }) {
                           draftFilters.status === opt.value && styles.chipTextActive,
                         ]}
                       >
-                        {opt.label}
+                        {tr(opt.label)}
                       </Text>
                     </TouchableOpacity>
                   ))}
                 </View>
 
-                <Text style={styles.filterLabel}>Subject</Text>
+                <Text style={styles.filterLabel}>{tr("Subject")}</Text>
                 <View style={styles.chipWrap}>
                   <TouchableOpacity
                     style={[styles.chip, !draftFilters.subject && styles.chipActive]}
                     onPress={() => setDraftFilters((f) => ({ ...f, subject: '', topic: '' }))}
                   >
                     <Text style={[styles.chipText, !draftFilters.subject && styles.chipTextActive]}>
-                      All
+                      {tr("All")}
                     </Text>
                   </TouchableOpacity>
                   {availableSubjects.map((s) => (
@@ -1166,7 +1168,7 @@ export default function WrongBookScreen({ navigation }) {
 
                 {draftFilters.subject ? (
                   <>
-                    <Text style={styles.filterLabel}>Topic</Text>
+                    <Text style={styles.filterLabel}>{tr("Topic")}</Text>
                     <View style={styles.chipWrap}>
                       <TouchableOpacity
                         style={[styles.chip, !draftFilters.topic && styles.chipActive]}
@@ -1175,7 +1177,7 @@ export default function WrongBookScreen({ navigation }) {
                         <Text
                           style={[styles.chipText, !draftFilters.topic && styles.chipTextActive]}
                         >
-                          All
+                          {tr("All")}
                         </Text>
                       </TouchableOpacity>
                       {availableTopics.map((t) => (
@@ -1198,7 +1200,7 @@ export default function WrongBookScreen({ navigation }) {
                   </>
                 ) : null}
 
-                <Text style={styles.filterLabel}>Revisit</Text>
+                <Text style={styles.filterLabel}>{tr("Revisit")}</Text>
                 <View style={styles.chipWrap}>
                   <TouchableOpacity
                     style={[styles.chip, !draftFilters.revisitOnly && styles.chipActive]}
@@ -1207,7 +1209,7 @@ export default function WrongBookScreen({ navigation }) {
                     <Text
                       style={[styles.chipText, !draftFilters.revisitOnly && styles.chipTextActive]}
                     >
-                      All
+                      {tr("All")}
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
@@ -1223,7 +1225,7 @@ export default function WrongBookScreen({ navigation }) {
                         draftFilters.revisitOnly === 'true' && styles.chipTextActive,
                       ]}
                     >
-                      Wrong 2+ times
+                      {tr("Wrong 2+ times")}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -1236,7 +1238,7 @@ export default function WrongBookScreen({ navigation }) {
                     setDraftFilters({ status: '', subject: '', topic: '', revisitOnly: '' })
                   }
                 >
-                  <Text style={styles.clearBtnText}>Clear</Text>
+                  <Text style={styles.clearBtnText}>{tr("Clear")}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.applyBtn}
@@ -1246,7 +1248,7 @@ export default function WrongBookScreen({ navigation }) {
                     fetchList({ pageNum: 1, filterOverride: draftFilters });
                   }}
                 >
-                  <Text style={styles.applyBtnText}>Apply</Text>
+                  <Text style={styles.applyBtnText}>{tr("Apply")}</Text>
                 </TouchableOpacity>
               </View>
             </View>

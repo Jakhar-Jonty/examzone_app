@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
 
+import { t as tr } from '../i18n';
 const { width } = Dimensions.get('window');
 
 // Lightweight confetti — a burst of colored dots, no extra dependency.
@@ -111,7 +112,7 @@ export default function RewardCelebration({ rewards, visible, onClose }) {
             end={{ x: 1, y: 1 }}
           >
             <Ionicons name="trophy" size={44} color={colors.heroText} />
-            <Text style={styles.heroTitle}>Great work!</Text>
+            <Text style={styles.heroTitle}>{tr("Great work!")}</Text>
           </LinearGradient>
 
           <View style={styles.body}>
@@ -119,8 +120,8 @@ export default function RewardCelebration({ rewards, visible, onClose }) {
             {rewards.xpGained > 0 && (
               <View style={styles.xpRow}>
                 <Ionicons name="flash" size={22} color={colors.text} />
-                <Text style={styles.xpText}>+{rewards.xpGained} XP</Text>
-                <Text style={styles.xpSub}>({rewards.totalXp} total)</Text>
+                <Text style={styles.xpText}>{tr("+{0} XP", rewards.xpGained)}</Text>
+                <Text style={styles.xpSub}>{tr("({0} total)", rewards.totalXp)}</Text>
               </View>
             )}
 
@@ -129,7 +130,7 @@ export default function RewardCelebration({ rewards, visible, onClose }) {
               <View style={styles.rankRow}>
                 <Ionicons name="arrow-up-circle" size={20} color={colors.success} />
                 <Text style={styles.rankText}>
-                  Ranked up to <Text style={{ fontWeight: '800' }}>{rewards.rank}</Text>!
+                  {tr("Ranked up to")} <Text style={{ fontWeight: '800' }}>{tr(rewards.rank)}</Text>!
                 </Text>
               </View>
             )}
@@ -138,7 +139,7 @@ export default function RewardCelebration({ rewards, visible, onClose }) {
             {newBadges.length > 0 && (
               <View style={styles.badgesWrap}>
                 <Text style={styles.badgesLabel}>
-                  New badge{newBadges.length > 1 ? 's' : ''} unlocked
+                  {tr("New badge{0} unlocked", newBadges.length > 1 ? 's' : '')}
                 </Text>
                 <View style={styles.badgesRow}>
                   {newBadges.map((b) => (
@@ -152,7 +153,7 @@ export default function RewardCelebration({ rewards, visible, onClose }) {
             )}
 
             <TouchableOpacity style={styles.cta} onPress={onClose} activeOpacity={0.85}>
-              <Text style={styles.ctaText}>Awesome!</Text>
+              <Text style={styles.ctaText}>{tr("Awesome!")}</Text>
             </TouchableOpacity>
           </View>
         </Animated.View>

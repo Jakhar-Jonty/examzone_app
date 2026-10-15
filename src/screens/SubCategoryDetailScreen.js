@@ -24,6 +24,7 @@ import { ExamCardSkeletonList } from '../components/ExamCardSkeleton';
 import { sortExams } from '../utils/examSort';
 import { trackRecentSubcategory } from '../utils/recentSubcategories';
 
+import { t as tr } from '../i18n';
 // ─── Shared Components ───────────────────────────────────
 function Header({ title, navigation, colors }) {
   return (
@@ -192,7 +193,7 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
     return (
       <ScreenWrapper>
         <View style={[tw`flex-1`, { backgroundColor: colors.surface }]}>
-          <Header title="Subcategory" navigation={navigation} colors={colors} />
+          <Header title={tr("Subcategory")} navigation={navigation} colors={colors} />
           <View style={tw`flex-1 px-5 pt-4`}>
             <ExamCardSkeletonList count={4} colors={colors} />
           </View>
@@ -206,18 +207,18 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
     return (
       <ScreenWrapper>
         <View style={[tw`flex-1`, { backgroundColor: colors.surface }]}>
-          <Header title="Subcategory" navigation={navigation} colors={colors} />
+          <Header title={tr("Subcategory")} navigation={navigation} colors={colors} />
           <View style={tw`flex-1 items-center justify-center px-10`}>
             <Ionicons name="layers-outline" size={48} color={colors.textSecondary} />
             <Text style={[tw`text-base font-semibold mt-3`, { color: colors.text }]}>
-              {error || 'Subcategory not found'}
+              {error || tr("Subcategory not found")}
             </Text>
             <TouchableOpacity
               style={[tw`mt-4 px-5 py-2.5 rounded-xl`, { backgroundColor: colors.hero }]}
               onPress={fetchSubCategory}
               activeOpacity={0.7}
             >
-              <Text style={[tw`text-sm font-semibold`, { color: colors.heroText }]}>Retry</Text>
+              <Text style={[tw`text-sm font-semibold`, { color: colors.heroText }]}>{tr("Retry")}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -308,7 +309,7 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
                   ]}
                 >
                   <Text style={[tw`text-[10px] font-semibold`, { color: colors.text }]}>
-                    {subCategory.examCount} {subCategory.examCount === 1 ? 'exam' : 'exams'}
+                    {subCategory.examCount} {subCategory.examCount === 1 ? tr("exam") : tr("exams")}
                   </Text>
                 </View>
               )}
@@ -319,7 +320,7 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
           {tiers.length > 0 && (
             <View style={tw`mb-4`}>
               <Text style={[tw`text-sm font-bold mb-2.5`, { color: colors.text }]}>
-                Filter by Tier
+                {tr("Filter by Tier")}
               </Text>
               <ScrollView
                 horizontal
@@ -343,7 +344,7 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
                       { color: !selectedTierId ? colors.text : colors.text },
                     ]}
                   >
-                    All
+                    {tr("All")}
                   </Text>
                 </TouchableOpacity>
 
@@ -400,7 +401,7 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
             <Ionicons name="search" size={18} color={colors.textSecondary} />
             <TextInput
               style={[tw`flex-1 text-sm`, { color: colors.text }]}
-              placeholder="Search exams..."
+              placeholder={tr("Search exams...")}
               placeholderTextColor={colors.textSecondary}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -418,11 +419,11 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
             {/* Section Header */}
             <View style={tw`flex-row items-center justify-between mb-3`}>
               <Text style={[tw`text-base font-bold`, { color: colors.text }]}>
-                {selectedTierName || 'Exams'}
+                {selectedTierName || tr("Exams")}
               </Text>
               {pagination.totalExams > 0 && (
                 <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>
-                  {pagination.totalExams} {pagination.totalExams === 1 ? 'exam' : 'exams'}
+                  {pagination.totalExams} {pagination.totalExams === 1 ? tr("exam") : tr("exams")}
                 </Text>
               )}
             </View>
@@ -493,7 +494,7 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
                           },
                         ]}
                       >
-                        Prev
+                        {tr("Prev")}
                       </Text>
                     </TouchableOpacity>
 
@@ -526,7 +527,7 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
                           },
                         ]}
                       >
-                        Next
+                        {tr("Next")}
                       </Text>
                       <Ionicons
                         name="chevron-forward"
@@ -544,8 +545,8 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
                 {/* Results count */}
                 {pagination.totalExams > 0 && (
                   <Text style={[tw`text-[10px] text-center mt-2`, { color: colors.textSecondary }]}>
-                    Showing {(pagination.currentPage - 1) * LIMIT + 1}–
-                    {Math.min(pagination.currentPage * LIMIT, pagination.totalExams)} of{' '}
+                    {tr("Showing")} {(pagination.currentPage - 1) * LIMIT + 1}–
+                    {Math.min(pagination.currentPage * LIMIT, pagination.totalExams)} {tr("of")}{' '}
                     {pagination.totalExams}
                   </Text>
                 )}
@@ -553,7 +554,7 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
             ) : exams.length > 0 ? (
               <View style={tw`items-center py-12`}>
                 <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>
-                  No exams match this filter
+                  {tr("No exams match this filter")}
                 </Text>
               </View>
             ) : (
@@ -568,15 +569,15 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
                   <Ionicons name="document-outline" size={24} color={colors.text} />
                 </View>
                 <Text style={[tw`text-sm font-semibold mb-1`, { color: colors.text }]}>
-                  No exams found
+                  {tr("No exams found")}
                 </Text>
                 {searchQuery ? (
                   <Text style={[tw`text-xs text-center`, { color: colors.textSecondary }]}>
-                    Try a different search term
+                    {tr("Try a different search term")}
                   </Text>
                 ) : selectedTierId ? (
                   <Text style={[tw`text-xs text-center`, { color: colors.textSecondary }]}>
-                    No exams in this tier yet
+                    {tr("No exams in this tier yet")}
                   </Text>
                 ) : null}
               </View>
@@ -595,10 +596,10 @@ export default function SubCategoryDetailScreen({ route, navigation }) {
                 <Ionicons name="folder-open-outline" size={32} color={colors.text} />
               </View>
               <Text style={[tw`text-base font-semibold mb-1`, { color: colors.text }]}>
-                No content yet
+                {tr("No content yet")}
               </Text>
               <Text style={[tw`text-sm text-center`, { color: colors.textSecondary }]}>
-                This subcategory doesn't have any tiers or exams yet.
+                {tr("This subcategory doesn't have any tiers or exams yet.")}
               </Text>
             </View>
           )}

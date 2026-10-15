@@ -13,6 +13,7 @@ import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
 import { testSeriesService } from '../services/testSeriesService';
 
+import { t as tr } from '../i18n';
 export default function MyTestSeriesScreen({ navigation }) {
   const { colors } = useTheme();
   const [items, setItems] = useState([]);
@@ -49,10 +50,10 @@ export default function MyTestSeriesScreen({ navigation }) {
       >
         <View style={styles.topRow}>
           <Ionicons name="albums" size={18} color={colors.text} />
-          <Text style={styles.title} numberOfLines={1}>{ts.title || 'Test Series'}</Text>
+          <Text style={styles.title} numberOfLines={1}>{ts.title || tr("Test Series")}</Text>
           {item.status === 'completed' && (
             <View style={styles.doneTag}>
-              <Text style={styles.doneText}>Completed</Text>
+              <Text style={styles.doneText}>{tr("Completed")}</Text>
             </View>
           )}
         </View>
@@ -61,7 +62,7 @@ export default function MyTestSeriesScreen({ navigation }) {
         </View>
         <View style={styles.metaRow}>
           <Text style={styles.meta}>
-            {p.testsCompleted || 0}/{p.totalTests || 0} tests
+            {tr("{0}/{1} tests", p.testsCompleted || 0, p.totalTests || 0)}
           </Text>
           <Text style={styles.meta}>{p.progressPercentage || 0}%</Text>
         </View>
@@ -75,7 +76,7 @@ export default function MyTestSeriesScreen({ navigation }) {
         <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={10}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Test Series</Text>
+        <Text style={styles.headerTitle}>{tr("My Test Series")}</Text>
         <View style={{ width: 24 }} />
       </View>
 
@@ -92,12 +93,12 @@ export default function MyTestSeriesScreen({ navigation }) {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="albums-outline" size={48} color={colors.textSecondary} />
-              <Text style={styles.emptyText}>You haven't enrolled in any series yet</Text>
+              <Text style={styles.emptyText}>{tr("You haven't enrolled in any series yet")}</Text>
               <TouchableOpacity
                 style={styles.browseBtn}
                 onPress={() => navigation.navigate('TestSeriesList')}
               >
-                <Text style={styles.browseText}>Browse Test Series</Text>
+                <Text style={styles.browseText}>{tr("Browse Test Series")}</Text>
               </TouchableOpacity>
             </View>
           }

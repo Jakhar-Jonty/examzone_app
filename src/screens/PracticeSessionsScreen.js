@@ -19,6 +19,7 @@ import { useFocusExam } from '../context/AppConfigContext';
 import api from '../services/api';
 import { practiceSessionService } from '../services/practiceSessionService';
 
+import { t as tr } from '../i18n';
 const SESSION_TYPES = [
   { value: 'random', label: 'Random', icon: 'shuffle' },
   { value: 'subject-wise', label: 'Subject Wise', icon: 'book-outline' },
@@ -89,15 +90,15 @@ function CreateSessionModal({ visible, onClose, onCreated, colors }) {
 
   const validate = () => {
     if (form.sessionType === 'subject-wise' && !form.subject) {
-      Alert.alert('Required', 'Select a subject');
+      Alert.alert(tr("Required"), tr("Select a subject"));
       return false;
     }
     if (form.sessionType === 'topic-wise' && form.topics.length === 0) {
-      Alert.alert('Required', 'Select at least one topic');
+      Alert.alert(tr("Required"), tr("Select at least one topic"));
       return false;
     }
     if (form.sessionType === 'difficulty-based' && form.difficulty.length === 0) {
-      Alert.alert('Required', 'Select at least one difficulty');
+      Alert.alert(tr("Required"), tr("Select at least one difficulty"));
       return false;
     }
     return true;
@@ -121,7 +122,7 @@ function CreateSessionModal({ visible, onClose, onCreated, colors }) {
       onCreated(session);
       onClose();
     } catch (err) {
-      Alert.alert('Error', err.response?.data?.message || 'Failed to create session');
+      Alert.alert(tr("Error"), err.response?.data?.message || tr("Failed to create session"));
     } finally {
       setSaving(false);
     }
@@ -137,12 +138,12 @@ function CreateSessionModal({ visible, onClose, onCreated, colors }) {
       <View style={styles.overlay}>
         <View style={styles.sheet}>
           <View style={styles.header}>
-            <Text style={styles.title}>New Practice Session</Text>
+            <Text style={styles.title}>{tr("New Practice Session")}</Text>
             <TouchableOpacity onPress={onClose}><Ionicons name="close" size={24} color={colors.text} /></TouchableOpacity>
           </View>
 
           <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
-            <Text style={styles.label}>Session Type</Text>
+            <Text style={styles.label}>{tr("Session Type")}</Text>
             <View style={styles.typeGrid}>
               {SESSION_TYPES.map((t) => (
                 <TouchableOpacity
@@ -151,20 +152,20 @@ function CreateSessionModal({ visible, onClose, onCreated, colors }) {
                   onPress={() => setForm((f) => ({ ...f, sessionType: t.value }))}
                 >
                   <Ionicons name={t.icon} size={20} color={form.sessionType === t.value ? colors.text : colors.textSecondary} />
-                  <Text style={[styles.typeLabel, form.sessionType === t.value && { color: colors.text, fontWeight: '800' }]}>{t.label}</Text>
+                  <Text style={[styles.typeLabel, form.sessionType === t.value && { color: colors.text, fontWeight: '800' }]}>{tr(t.label)}</Text>
                 </TouchableOpacity>
               ))}
             </View>
 
 {!focus && (
               <>
-            <Text style={styles.label}>Category (optional)</Text>
+            <Text style={styles.label}>{tr("Category (optional)")}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
               <TouchableOpacity
                 style={[styles.chip, !form.categoryId && styles.chipActive]}
                 onPress={() => setForm((f) => ({ ...f, categoryId: '', subject: '', topics: [] }))}
               >
-                <Text style={[styles.chipText, !form.categoryId && styles.chipTextActive]}>Any</Text>
+                <Text style={[styles.chipText, !form.categoryId && styles.chipTextActive]}>{tr("Any")}</Text>
               </TouchableOpacity>
               {categories.map((c) => (
                 <TouchableOpacity
@@ -181,7 +182,7 @@ function CreateSessionModal({ visible, onClose, onCreated, colors }) {
 
             {showSubject && form.categoryId ? (
               <>
-                <Text style={styles.label}>Subject</Text>
+                <Text style={styles.label}>{tr("Subject")}</Text>
                 {loadingTopics ? (
                   <ActivityIndicator color={colors.text} style={{ marginVertical: 8 }} />
                 ) : (
@@ -202,7 +203,7 @@ function CreateSessionModal({ visible, onClose, onCreated, colors }) {
 
             {showTopics && form.subject ? (
               <>
-                <Text style={styles.label}>Topics</Text>
+                <Text style={styles.label}>{tr("Topics")}</Text>
                 {(() => {
                   const subj = subjectsAndTopics.find((s) => s.subject === form.subject);
                   const topics = subj?.topics || [];
@@ -225,7 +226,7 @@ function CreateSessionModal({ visible, onClose, onCreated, colors }) {
 
             {showDifficulty ? (
               <>
-                <Text style={styles.label}>Difficulty</Text>
+                <Text style={styles.label}>{tr("Difficulty")}</Text>
                 <View style={styles.chipWrap}>
                   {DIFFICULTIES.map((d) => (
                     <TouchableOpacity
@@ -240,7 +241,7 @@ function CreateSessionModal({ visible, onClose, onCreated, colors }) {
               </>
             ) : null}
 
-            <Text style={styles.label}>Number of Questions</Text>
+            <Text style={styles.label}>{tr("Number of Questions")}</Text>
             <TextInput
               style={styles.input}
               value={form.questionCount}
@@ -253,10 +254,10 @@ function CreateSessionModal({ visible, onClose, onCreated, colors }) {
 
           <View style={styles.footer}>
             <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
-              <Text style={styles.cancelText}>Cancel</Text>
+              <Text style={styles.cancelText}>{tr("Cancel")}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.startBtn} onPress={submit} disabled={saving}>
-              <Text style={styles.startText}>{saving ? 'Starting...' : 'Start Session'}</Text>
+              <Text style={styles.startText}>{saving ? tr("Starting...") : tr("Start Session")}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -314,14 +315,14 @@ export default function PracticeSessionsScreen({ navigation }) {
           <View style={styles.cardTop}>
             <View style={{ flex: 1 }}>
               <Text style={styles.cardTitle}>{typeMeta?.label || s.sessionType}</Text>
-              <Text style={styles.cardMeta}>{s.totalQuestions} questions · {fmt(s.createdAt)}</Text>
+              <Text style={styles.cardMeta}>{tr("{0} questions · {1}", s.totalQuestions, fmt(s.createdAt))}</Text>
             </View>
             {s.isCompleted ? (
               <Text style={styles.accuracy}>{s.accuracy}%</Text>
             ) : (
               <TouchableOpacity style={styles.resumeBtn} onPress={() => startSession(s)}>
                 <Ionicons name="play" size={14} color={colors.heroText} />
-                <Text style={styles.resumeText}>Resume</Text>
+                <Text style={styles.resumeText}>{tr("Resume")}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -330,14 +331,14 @@ export default function PracticeSessionsScreen({ navigation }) {
               <View style={styles.statsRow}>
                 <Text style={styles.statGreen}>✓ {s.correctAnswers}</Text>
                 <Text style={styles.statRed}>✗ {s.incorrectAnswers}</Text>
-                <Text style={styles.statGray}>{s.skipped || 0} skipped</Text>
+                <Text style={styles.statGray}>{tr("{0} skipped", s.skipped || 0)}</Text>
               </View>
               <ProgressBar value={s.accuracy || 0} colors={colors} />
             </>
           )}
           <View style={[styles.badge, s.isCompleted ? styles.badgeDone : styles.badgeProgress]}>
             <Text style={[styles.badgeText, s.isCompleted ? styles.badgeTextDone : styles.badgeTextProgress]}>
-              {s.isCompleted ? 'Done' : 'In Progress'}
+              {s.isCompleted ? tr("Done") : tr("In Progress")}
             </Text>
           </View>
         </View>
@@ -351,7 +352,7 @@ export default function PracticeSessionsScreen({ navigation }) {
         <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Practice</Text>
+        <Text style={styles.headerTitle}>{tr("Practice")}</Text>
         <TouchableOpacity onPress={() => setShowCreate(true)} hitSlop={12}>
           <Ionicons name="add-circle" size={28} color={colors.text} />
         </TouchableOpacity>
@@ -360,10 +361,10 @@ export default function PracticeSessionsScreen({ navigation }) {
       {stats && stats.totalSessions > 0 && (
         <View style={styles.statsGrid}>
           {[
-            { label: 'Sessions', value: stats.totalSessions },
-            { label: 'Questions', value: stats.totalQuestions },
-            { label: 'Correct', value: stats.totalCorrect },
-            { label: 'Accuracy', value: `${stats.avgAccuracy}%` },
+            { label: tr("Sessions"), value: stats.totalSessions },
+            { label: tr("Questions"), value: stats.totalQuestions },
+            { label: tr("Correct"), value: stats.totalCorrect },
+            { label: tr("Accuracy"), value: `${stats.avgAccuracy}%` },
           ].map(({ label, value }) => (
             <View key={label} style={styles.statCard}>
               <Text style={styles.statValue}>{value}</Text>
@@ -387,10 +388,10 @@ export default function PracticeSessionsScreen({ navigation }) {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="flash-outline" size={48} color={colors.textSecondary} />
-              <Text style={styles.emptyTitle}>No practice sessions yet</Text>
-              <Text style={styles.emptyDesc}>Start a focused drill on weak areas or specific topics.</Text>
+              <Text style={styles.emptyTitle}>{tr("No practice sessions yet")}</Text>
+              <Text style={styles.emptyDesc}>{tr("Start a focused drill on weak areas or specific topics.")}</Text>
               <TouchableOpacity style={styles.emptyBtn} onPress={() => setShowCreate(true)}>
-                <Text style={styles.emptyBtnText}>Start Practice</Text>
+                <Text style={styles.emptyBtnText}>{tr("Start Practice")}</Text>
               </TouchableOpacity>
             </View>
           }

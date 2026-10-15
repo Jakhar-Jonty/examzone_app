@@ -7,6 +7,7 @@ import { formatAttemptCount, formatExamBreadcrumb, shortLanguageLabel } from '..
 import { EXAM_SORT_OPTIONS } from '../utils/examSort';
 import { useAuth } from '../context/AuthContext';
 
+import { t as tr } from '../i18n';
 // Badge tone → theme tone pair.
 const badgeTone = (tone, colors) =>
   ({
@@ -94,12 +95,12 @@ export default function ExamCard({ exam, navigation, colors, showBreadcrumb = tr
     if (exam.isPaused) {
       return (
         <>
-          <ActionButton label="Resume" icon="play" onPress={openDetail} colors={colors} variant="resume" />
+          <ActionButton label={tr("Resume")} icon="play" onPress={openDetail} colors={colors} variant="resume" />
           {attempted && exam.attemptId && (
             <>
               <View style={tw`w-2`} />
               <ActionButton
-                label="View result"
+                label={tr("View result")}
                 onPress={() => navigation.navigate('Result', { attemptId: exam.attemptId })}
                 colors={colors}
                 variant="outline"
@@ -113,14 +114,14 @@ export default function ExamCard({ exam, navigation, colors, showBreadcrumb = tr
       return (
         <>
           <ActionButton
-            label="View result"
+            label={tr("View result")}
             onPress={() => navigation.navigate('Result', { attemptId: exam.attemptId })}
             colors={colors}
           />
           {status === 'available' && (
             <>
               <View style={tw`w-2`} />
-              <ActionButton label="Re-attempt" onPress={startExam} colors={colors} variant="outline" />
+              <ActionButton label={tr("Re-attempt")} onPress={startExam} colors={colors} variant="outline" />
             </>
           )}
         </>
@@ -129,7 +130,7 @@ export default function ExamCard({ exam, navigation, colors, showBreadcrumb = tr
     if (status === 'available') {
       return (
         <ActionButton
-          label={locked ? 'Unlock with Pro' : 'Start test'}
+          label={locked ? tr("Unlock with Pro") : tr("Start test")}
           icon={locked ? 'lock-closed' : 'play'}
           onPress={startExam}
           colors={colors}
@@ -139,7 +140,7 @@ export default function ExamCard({ exam, navigation, colors, showBreadcrumb = tr
     }
     return (
       <Text style={[tw`flex-1 text-xs font-semibold text-center py-2`, { color: colors.textSecondary }]}>
-        {status === 'upcoming' ? 'Opens soon' : 'No longer available'}
+        {status === 'upcoming' ? tr("Opens soon") : tr("No longer available")}
       </Text>
     );
   })();
@@ -177,16 +178,16 @@ export default function ExamCard({ exam, navigation, colors, showBreadcrumb = tr
             <View style={tw`flex-row`}>
               {exam.isPaused && (
                 <View style={tw`mr-1`}>
-                  <Badge label="Paused" tone="paused" colors={colors} />
+                  <Badge label={tr("Paused")} tone="paused" colors={colors} />
                 </View>
               )}
-              <Badge label={exam.isPremium ? 'Pro' : 'Free'} tone={exam.isPremium ? 'pro' : 'free'} colors={colors} />
+              <Badge label={exam.isPremium ? tr("Pro") : tr("Free")} tone={exam.isPremium ? 'pro' : 'free'} colors={colors} />
             </View>
             {/* "Continue" adds nothing next to the Paused badge, so only New / For you show. */}
             {(highlightTag === 'new' || highlightTag === 'recommended') && (
               <View style={tw`mt-1`}>
                 <Badge
-                  label={highlightTag === 'recommended' ? 'For you' : 'New'}
+                  label={highlightTag === 'recommended' ? tr("For you") : tr("New")}
                   tone={highlightTag}
                   colors={colors}
                 />
@@ -199,15 +200,15 @@ export default function ExamCard({ exam, navigation, colors, showBreadcrumb = tr
           <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>
             {[
               qCount > 0 && `${qCount} Qs`,
-              exam.duration != null && `${exam.duration} min`,
-              exam.totalMarks != null && `${exam.totalMarks} marks`,
+              exam.duration != null && tr("{0} min", exam.duration),
+              exam.totalMarks != null && tr("{0} marks", exam.totalMarks),
             ]
               .filter(Boolean)
               .map((part, i) => (
                 <Text key={part}>
                   {i > 0 ? '  ·  ' : ''}
                   <Text style={[tw`font-bold`, { color: colors.text }]}>{part.split(' ')[0]}</Text>
-                  {` ${part.split(' ').slice(1).join(' ')}`}
+                  {` ${tr(part.split(' ').slice(1).join(' '))}`}
                 </Text>
               ))}
           </Text>
@@ -238,7 +239,7 @@ export default function ExamCard({ exam, navigation, colors, showBreadcrumb = tr
             )}
             {langLabel && <Meta icon="language-outline" label={langLabel} colors={colors} />}
             {stats?.topScore != null && exam.totalMarks && (
-              <Meta icon="trending-up-outline" label={`Top ${stats.topScore}/${exam.totalMarks}`} colors={colors} />
+              <Meta icon="trending-up-outline" label={tr("Top {0}/{1}", stats.topScore, exam.totalMarks)} colors={colors} />
             )}
           </View>
         )}
@@ -251,9 +252,9 @@ export default function ExamCard({ exam, navigation, colors, showBreadcrumb = tr
 
 export function ExamFilterChips({ value, onChange, colors, counts }) {
   const chips = [
-    { key: 'all', label: `All${counts?.all != null ? ` ${counts.all}` : ''}` },
-    { key: 'available', label: `Available${counts?.available != null ? ` ${counts.available}` : ''}` },
-    { key: 'attempted', label: `Attempted${counts?.attempted != null ? ` ${counts.attempted}` : ''}` },
+    { key: 'all', label: tr("All{0}", counts?.all != null ? ` ${counts.all}` : '') },
+    { key: 'available', label: tr("Available{0}", counts?.available != null ? ` ${counts.available}` : '') },
+    { key: 'attempted', label: tr("Attempted{0}", counts?.attempted != null ? ` ${counts.attempted}` : '') },
   ];
   return (
     <View style={[tw`flex-row rounded-2xl p-1 mb-3`, { backgroundColor: colors.surfaceMuted }]}>
@@ -294,7 +295,7 @@ export function examFilterCounts(exams) {
   };
 }
 
-export function ExamSearchBar({ value, onChangeText, colors, placeholder = 'Search exams...', rightAccessory, compact }) {
+export function ExamSearchBar({ value, onChangeText, colors, placeholder = tr("Search exams..."), rightAccessory, compact }) {
   const field = (
     <View
       style={[
@@ -313,7 +314,7 @@ export function ExamSearchBar({ value, onChangeText, colors, placeholder = 'Sear
         returnKeyType="search"
       />
       {value?.length > 0 && (
-        <TouchableOpacity onPress={() => onChangeText('')} activeOpacity={0.7} accessibilityLabel="Clear search">
+        <TouchableOpacity onPress={() => onChangeText('')} activeOpacity={0.7} accessibilityLabel={tr("Clear search")}>
           <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
         </TouchableOpacity>
       )}

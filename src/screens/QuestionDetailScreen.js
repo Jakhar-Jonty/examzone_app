@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
 import { getRefLabel } from '../utils/examDisplay';
 
+import { t as tr } from '../i18n';
 export default function QuestionDetailScreen({ route, navigation }) {
   const { questionId, savedQuestionId } = route.params;
   const { colors } = useTheme();
@@ -82,11 +83,11 @@ export default function QuestionDetailScreen({ route, navigation }) {
         status,
       });
       setEditing(false);
-      Alert.alert('Success', 'Question updated successfully');
+      Alert.alert(tr("Success"), tr("Question updated successfully"));
       fetchQuestion();
     } catch (error) {
       console.error('Failed to update question:', error);
-      Alert.alert('Error', 'Failed to update question');
+      Alert.alert(tr("Error"), tr("Failed to update question"));
     }
   };
 
@@ -94,19 +95,19 @@ export default function QuestionDetailScreen({ route, navigation }) {
     if (!question?._id) return;
 
     Alert.alert(
-      'Remove Question',
-      'Are you sure you want to remove this question from your question bank?',
+      tr("Remove Question"),
+      tr("Are you sure you want to remove this question from your question bank?"),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: tr("Cancel"), style: 'cancel' },
         {
-          text: 'Remove',
+          text: tr("Remove"),
           style: 'destructive',
           onPress: async () => {
             try {
               await api.delete(`/user/questions/unsave/${question._id}`);
               navigation.goBack();
             } catch (error) {
-              Alert.alert('Error', 'Failed to remove question');
+              Alert.alert(tr("Error"), tr("Failed to remove question"));
             }
           },
         },
@@ -122,7 +123,7 @@ export default function QuestionDetailScreen({ route, navigation }) {
             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
               <Ionicons name="arrow-back" size={24} color={colors.text} />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Question</Text>
+            <Text style={styles.headerTitle}>{tr("Question")}</Text>
             <View style={{ width: 24 }} />
           </View>
           <View style={styles.loadingContainer}>
@@ -141,11 +142,11 @@ export default function QuestionDetailScreen({ route, navigation }) {
             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
               <Ionicons name="arrow-back" size={24} color={colors.text} />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Question</Text>
+            <Text style={styles.headerTitle}>{tr("Question")}</Text>
             <View style={{ width: 24 }} />
           </View>
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>Question not found</Text>
+            <Text style={styles.emptyText}>{tr("Question not found")}</Text>
           </View>
         </View>
       </ScreenWrapper>
@@ -174,7 +175,7 @@ export default function QuestionDetailScreen({ route, navigation }) {
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Question Details</Text>
+          <Text style={styles.headerTitle}>{tr("Question Details")}</Text>
           <TouchableOpacity
             onPress={() => setEditing(!editing)}
             style={styles.editButton}
@@ -247,7 +248,7 @@ export default function QuestionDetailScreen({ route, navigation }) {
           {/* Options */}
           {question.options && question.options.length > 0 && (
             <View style={styles.optionsSection}>
-              <Text style={styles.sectionTitle}>Options</Text>
+              <Text style={styles.sectionTitle}>{tr("Options")}</Text>
               {question.options.map((option, index) => (
                 <View
                   key={index}
@@ -261,7 +262,7 @@ export default function QuestionDetailScreen({ route, navigation }) {
                   {option.optionLabel === question.correctAnswer && (
                     <View style={styles.correctBadge}>
                       <Ionicons name="checkmark-circle" size={16} color={colors.success} />
-                      <Text style={styles.correctText}>Correct</Text>
+                      <Text style={styles.correctText}>{tr("Correct")}</Text>
                     </View>
                   )}
                 </View>
@@ -272,7 +273,7 @@ export default function QuestionDetailScreen({ route, navigation }) {
           {/* Explanation */}
           {question.explanation && (
             <View style={styles.explanationSection}>
-              <Text style={styles.sectionTitle}>Explanation</Text>
+              <Text style={styles.sectionTitle}>{tr("Explanation")}</Text>
               <View style={styles.explanationBox}>
                 <Text style={styles.explanationText}>{question.explanation}</Text>
               </View>
@@ -282,36 +283,36 @@ export default function QuestionDetailScreen({ route, navigation }) {
           {/* Notes and Tags (Editable) */}
           {savedQuestion && (
             <View style={styles.notesSection}>
-              <Text style={styles.sectionTitle}>My Notes & Tags</Text>
+              <Text style={styles.sectionTitle}>{tr("My Notes & Tags")}</Text>
 
               {editing ? (
                 <>
                   <View style={styles.inputGroup}>
-                    <Text style={styles.inputLabel}>Notes</Text>
+                    <Text style={styles.inputLabel}>{tr("Notes")}</Text>
                     <TextInput
                       style={styles.textInput}
                       multiline
                       numberOfLines={4}
                       value={notes}
                       onChangeText={setNotes}
-                      placeholder="Add your notes here..."
+                      placeholder={tr("Add your notes here...")}
                       placeholderTextColor={colors.textSecondary}
                     />
                   </View>
 
                   <View style={styles.inputGroup}>
-                    <Text style={styles.inputLabel}>Tags (comma separated)</Text>
+                    <Text style={styles.inputLabel}>{tr("Tags (comma separated)")}</Text>
                     <TextInput
                       style={styles.textInput}
                       value={tags}
                       onChangeText={setTags}
-                      placeholder="e.g., difficult, important, math"
+                      placeholder={tr("e.g., difficult, important, math")}
                       placeholderTextColor={colors.textSecondary}
                     />
                   </View>
 
                   <View style={styles.inputGroup}>
-                    <Text style={styles.inputLabel}>Status</Text>
+                    <Text style={styles.inputLabel}>{tr("Status")}</Text>
                     <View style={styles.statusOptions}>
                       {['needs-review', 'reviewed', 'mastered'].map((s) => (
                         <TouchableOpacity
@@ -339,18 +340,18 @@ export default function QuestionDetailScreen({ route, navigation }) {
                     onPress={handleSave}
                     activeOpacity={0.7}
                   >
-                    <Text style={styles.saveButtonText}>Save Changes</Text>
+                    <Text style={styles.saveButtonText}>{tr("Save Changes")}</Text>
                   </TouchableOpacity>
                 </>
               ) : (
                 <>
                   {notes ? (
                     <View style={styles.notesBox}>
-                      <Text style={styles.notesLabel}>Notes:</Text>
+                      <Text style={styles.notesLabel}>{tr("Notes:")}</Text>
                       <Text style={styles.notesText}>{notes}</Text>
                     </View>
                   ) : (
-                    <Text style={styles.emptyNotes}>No notes added yet</Text>
+                    <Text style={styles.emptyNotes}>{tr("No notes added yet")}</Text>
                   )}
 
                   {tags && (
@@ -367,7 +368,7 @@ export default function QuestionDetailScreen({ route, navigation }) {
 
                   {savedQuestion.savedAt && (
                     <Text style={styles.savedDate}>
-                      Saved on {new Date(savedQuestion.savedAt).toLocaleDateString()}
+                      {tr("Saved on {0}", new Date(savedQuestion.savedAt).toLocaleDateString())}
                     </Text>
                   )}
                 </>
@@ -384,7 +385,7 @@ export default function QuestionDetailScreen({ route, navigation }) {
                 activeOpacity={0.7}
               >
                 <Ionicons name="trash-outline" size={20} color={colors.error} />
-                <Text style={styles.removeButtonText}>Remove from Question Bank</Text>
+                <Text style={styles.removeButtonText}>{tr("Remove from Question Bank")}</Text>
               </TouchableOpacity>
             </View>
           )}

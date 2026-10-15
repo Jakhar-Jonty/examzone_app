@@ -4,6 +4,7 @@ import tw from 'twrnc';
 import { Ionicons } from '@expo/vector-icons';
 import ExamCard from './ExamCard';
 
+import { t as tr } from '../i18n';
 export function ExamHighlightSection({
   title,
   subtitle,
@@ -64,8 +65,8 @@ export function ExamHighlightsBlock({ highlights, navigation, colors }) {
     <View style={tw`mb-2`}>
       {pausedExams.length > 0 && (
         <ExamHighlightSection
-          title="Continue"
-          subtitle="Pick up where you left off"
+          title={tr("Continue")}
+          subtitle={tr("Pick up where you left off")}
           icon="pause-circle"
           exams={pausedExams}
           navigation={navigation}
@@ -76,8 +77,8 @@ export function ExamHighlightsBlock({ highlights, navigation, colors }) {
       )}
       {newExams.length > 0 && (
         <ExamHighlightSection
-          title="New"
-          subtitle="Published in the last 48 hours"
+          title={tr("New")}
+          subtitle={tr("Published in the last 48 hours")}
           icon="sparkles"
           exams={newExams}
           navigation={navigation}
@@ -88,8 +89,8 @@ export function ExamHighlightsBlock({ highlights, navigation, colors }) {
       )}
       {recommendedExams.length > 0 && (
         <ExamHighlightSection
-          title="Recommended"
-          subtitle="Popular exams you haven't attempted yet"
+          title={tr("Recommended")}
+          subtitle={tr("Popular exams you haven't attempted yet")}
           icon="star"
           exams={recommendedExams}
           navigation={navigation}

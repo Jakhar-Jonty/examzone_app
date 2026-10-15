@@ -17,13 +17,14 @@ import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/authService';
 import { API_URL } from '../services/api';
 
+import { t as tr } from '../i18n';
 const logo = require('../../assets/examzone_logo.png');
 
 const loginErrorMessage = (error) => {
   if (!error.response) {
-    return `Cannot reach server (${API_URL}). Check internet connection and try again.`;
+    return tr("Cannot reach server ({0}). Check internet connection and try again.", API_URL);
   }
-  return error.response.data?.message || 'Login failed. Please try again.';
+  return error.response.data?.message || tr("Login failed. Please try again.");
 };
 
 const looksLikeEmail = (v) => v.includes('@');
@@ -44,11 +45,11 @@ export default function LoginScreen({ navigation }) {
   const handlePasswordLogin = async () => {
     const id = identifier.trim();
     if (!id || !password.trim()) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert(tr("Error"), tr("Please fill in all fields"));
       return;
     }
     if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
+      Alert.alert(tr("Error"), tr("Password must be at least 6 characters"));
       return;
     }
     setLoading(true);
@@ -59,7 +60,7 @@ export default function LoginScreen({ navigation }) {
       const response = await authService.login(payload);
       await login(response.token, response.user);
     } catch (error) {
-      Alert.alert('Login Failed', loginErrorMessage(error));
+      Alert.alert(tr("Login Failed"), loginErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -68,7 +69,7 @@ export default function LoginScreen({ navigation }) {
   const handleSendOtp = async () => {
     const email = otpEmail.trim().toLowerCase();
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      Alert.alert('Error', 'Enter a valid email');
+      Alert.alert(tr("Error"), tr("Enter a valid email"));
       return;
     }
     setLoading(true);
@@ -76,15 +77,15 @@ export default function LoginScreen({ navigation }) {
       const res = await authService.sendLoginOtp(email);
       setOtpHint(
         res.debugOtp
-          ? `Dev OTP: ${res.debugOtp}`
+          ? tr("Dev OTP: {0}", res.debugOtp)
           : res.mock
-            ? 'Check server logs for OTP'
+            ? tr("Check server logs for OTP")
             : ''
       );
       setOtpSent(true);
-      Alert.alert('OTP sent', res.message || 'Check your email');
+      Alert.alert(tr("OTP sent"), res.message || tr("Check your email"));
     } catch (error) {
-      Alert.alert('Could not send OTP', loginErrorMessage(error));
+      Alert.alert(tr("Could not send OTP"), loginErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -92,7 +93,7 @@ export default function LoginScreen({ navigation }) {
 
   const handleVerifyOtp = async () => {
     if (otp.trim().length !== 6) {
-      Alert.alert('Error', 'Enter the 6-digit OTP');
+      Alert.alert(tr("Error"), tr("Enter the 6-digit OTP"));
       return;
     }
     setLoading(true);
@@ -103,7 +104,7 @@ export default function LoginScreen({ navigation }) {
       });
       await login(response.token, response.user);
     } catch (error) {
-      Alert.alert('Verification failed', loginErrorMessage(error));
+      Alert.alert(tr("Verification failed"), loginErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -123,14 +124,14 @@ export default function LoginScreen({ navigation }) {
         <View style={styles.content}>
           <View style={styles.header}>
             <Image source={logo} style={styles.logo} resizeMode="contain" />
-            <Text style={styles.title}>Welcome Back</Text>
-            <Text style={styles.subtitle}>Password or email OTP</Text>
+            <Text style={styles.title}>{tr("Welcome Back")}</Text>
+            <Text style={styles.subtitle}>{tr("Password or email OTP")}</Text>
           </View>
 
           <View style={styles.tabs}>
             {[
-              { id: 'password', label: 'Password' },
-              { id: 'otp', label: 'Email OTP' },
+              { id: 'password', label: tr("Password") },
+              { id: 'otp', label: tr("Email OTP") },
             ].map((t) => {
               const active = mode === t.id;
               return (
@@ -144,7 +145,7 @@ export default function LoginScreen({ navigation }) {
                     setOtpHint('');
                   }}
                 >
-                  <Text style={[styles.tabText, active && styles.tabTextActive]}>{t.label}</Text>
+                  <Text style={[styles.tabText, active && styles.tabTextActive]}>{tr(t.label)}</Text>
                 </TouchableOpacity>
               );
             })}
@@ -154,10 +155,10 @@ export default function LoginScreen({ navigation }) {
             {mode === 'password' ? (
               <>
                 <View style={styles.inputContainer}>
-                  <Text style={styles.label}>Phone or email</Text>
+                  <Text style={styles.label}>{tr("Phone or email")}</Text>
                   <TextInput
                     style={styles.input}
-                    placeholder="Phone number or email"
+                    placeholder={tr("Phone number or email")}
                     placeholderTextColor={colors.textSecondary}
                     value={identifier}
                     onChangeText={setIdentifier}
@@ -167,15 +168,15 @@ export default function LoginScreen({ navigation }) {
                 </View>
                 <View style={styles.inputContainer}>
                   <View style={styles.labelRow}>
-                    <Text style={styles.label}>Password</Text>
+                    <Text style={styles.label}>{tr("Password")}</Text>
                     <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
-                      <Text style={styles.forgot}>Forgot?</Text>
+                      <Text style={styles.forgot}>{tr("Forgot?")}</Text>
                     </TouchableOpacity>
                   </View>
                   <View style={styles.passwordContainer}>
                     <TextInput
                       style={styles.passwordInput}
-                      placeholder="Enter your password"
+                      placeholder={tr("Enter your password")}
                       placeholderTextColor={colors.textSecondary}
                       value={password}
                       onChangeText={setPassword}
@@ -186,7 +187,7 @@ export default function LoginScreen({ navigation }) {
                       onPress={() => setShowPassword(!showPassword)}
                       style={styles.eyeButton}
                     >
-                      <Text style={styles.eyeText}>{showPassword ? 'Hide' : 'Show'}</Text>
+                      <Text style={styles.eyeText}>{showPassword ? tr("Hide") : tr("Show")}</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -198,17 +199,17 @@ export default function LoginScreen({ navigation }) {
                   {loading ? (
                     <ActivityIndicator color={colors.heroText} />
                   ) : (
-                    <Text style={styles.buttonText}>Sign In</Text>
+                    <Text style={styles.buttonText}>{tr("Sign In")}</Text>
                   )}
                 </TouchableOpacity>
               </>
             ) : !otpSent ? (
               <>
                 <View style={styles.inputContainer}>
-                  <Text style={styles.label}>Email</Text>
+                  <Text style={styles.label}>{tr("Email")}</Text>
                   <TextInput
                     style={styles.input}
-                    placeholder="you@example.com"
+                    placeholder={tr("you@example.com")}
                     placeholderTextColor={colors.textSecondary}
                     value={otpEmail}
                     onChangeText={setOtpEmail}
@@ -224,19 +225,19 @@ export default function LoginScreen({ navigation }) {
                   {loading ? (
                     <ActivityIndicator color={colors.heroText} />
                   ) : (
-                    <Text style={styles.buttonText}>Send OTP</Text>
+                    <Text style={styles.buttonText}>{tr("Send OTP")}</Text>
                   )}
                 </TouchableOpacity>
               </>
             ) : (
               <>
-                <Text style={styles.hint}>OTP sent to {otpEmail}</Text>
+                <Text style={styles.hint}>{tr("OTP sent to {0}", otpEmail)}</Text>
                 {otpHint ? <Text style={styles.devHint}>{otpHint}</Text> : null}
                 <View style={styles.inputContainer}>
-                  <Text style={styles.label}>OTP</Text>
+                  <Text style={styles.label}>{tr("OTP")}</Text>
                   <TextInput
                     style={styles.input}
-                    placeholder="6-digit code"
+                    placeholder={tr("6-digit code")}
                     placeholderTextColor={colors.textSecondary}
                     value={otp}
                     onChangeText={setOtp}
@@ -252,11 +253,11 @@ export default function LoginScreen({ navigation }) {
                   {loading ? (
                     <ActivityIndicator color={colors.heroText} />
                   ) : (
-                    <Text style={styles.buttonText}>Verify & Sign In</Text>
+                    <Text style={styles.buttonText}>{tr("Verify & Sign In")}</Text>
                   )}
                 </TouchableOpacity>
                 <TouchableOpacity onPress={handleSendOtp} disabled={loading}>
-                  <Text style={styles.linkCenter}>Resend OTP</Text>
+                  <Text style={styles.linkCenter}>{tr("Resend OTP")}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => {
@@ -264,16 +265,16 @@ export default function LoginScreen({ navigation }) {
                     setOtp('');
                   }}
                 >
-                  <Text style={styles.linkMuted}>Change email</Text>
+                  <Text style={styles.linkMuted}>{tr("Change email")}</Text>
                 </TouchableOpacity>
               </>
             )}
           </View>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
+            <Text style={styles.footerText}>{tr("Don't have an account?")} </Text>
             <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-              <Text style={styles.footerLink}>Sign Up</Text>
+              <Text style={styles.footerLink}>{tr("Sign Up")}</Text>
             </TouchableOpacity>
           </View>
         </View>

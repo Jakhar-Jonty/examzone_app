@@ -36,6 +36,7 @@ import {
 import { buildAirCopyFromPeerStats } from '../utils/airCopy';
 import { startTopicPractice } from '../utils/startTopicPractice';
 
+import { t as tr } from '../i18n';
 // ─── Helpers ─────────────────────────────────────────────
 const formatTime = (seconds) => {
   if (!seconds) return '0s';
@@ -54,11 +55,11 @@ const scoreTone = (value, colors) => {
 };
 
 const getScoreMessage = (value) => {
-  if (value >= 90) return 'Outstanding';
-  if (value >= 80) return 'Excellent';
-  if (value >= 60) return 'Good job';
-  if (value >= 40) return 'Keep practising';
-  return 'Needs improvement';
+  if (value >= 90) return tr("Outstanding");
+  if (value >= 80) return tr("Excellent");
+  if (value >= 60) return tr("Good job");
+  if (value >= 40) return tr("Keep practising");
+  return tr("Needs improvement");
 };
 
 // ─── Main screen ─────────────────────────────────────────
@@ -128,7 +129,7 @@ export default function ResultScreen({ route, navigation }) {
         } catch {}
       }
     } catch {
-      setError('Failed to load result. Pull down to retry.');
+      setError(tr("Failed to load result. Pull down to retry."));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -152,7 +153,7 @@ export default function ResultScreen({ route, navigation }) {
         setSavedQuestions((prev) => new Set(prev).add(id));
       }
     } catch (err) {
-      Alert.alert('Error', err.response?.data?.message || 'Could not update saved question');
+      Alert.alert(tr("Error"), err.response?.data?.message || tr("Could not update saved question"));
     } finally {
       setSavingQuestionId(null);
     }
@@ -175,7 +176,7 @@ export default function ResultScreen({ route, navigation }) {
         attempt: response.data.attempt,
       });
     } catch (err) {
-      Alert.alert('Error', err.response?.data?.message || 'Failed to start exam');
+      Alert.alert(tr("Error"), err.response?.data?.message || tr("Failed to start exam"));
     } finally {
       setStarting(false);
     }
@@ -185,7 +186,7 @@ export default function ResultScreen({ route, navigation }) {
     if (!result) return;
     try {
       const air = buildAirCopyFromPeerStats(peerStats);
-      const line = `I scored ${result.percentage?.toFixed(1)}% (${result.totalScore}/${result.exam?.totalMarks}) on "${result.exam?.title}" on ExamZone!`;
+      const line = tr("I scored {0}% ({1}/{2}) on \"{3}\" on ExamZone!", result.percentage?.toFixed(1), result.totalScore, result.exam?.totalMarks, result.exam?.title);
       await Share.share({ message: air ? `${air.full}\n\n${line}` : line });
     } catch {}
   };
@@ -200,7 +201,7 @@ export default function ResultScreen({ route, navigation }) {
       setStartingPracticeTopic(topic);
       await startTopicPractice({ subject, topic, questionCount: 15, navigation });
     } catch (err) {
-      Alert.alert('Error', err.response?.data?.message || 'Failed to start practice');
+      Alert.alert(tr("Error"), err.response?.data?.message || tr("Failed to start practice"));
     } finally {
       setStartingPracticeTopic(null);
     }
@@ -238,7 +239,7 @@ export default function ResultScreen({ route, navigation }) {
   if ((loading && !result) || error || !result) {
     return (
       <ScreenWrapper backgroundColor={colors.surface}>
-        <Header title="Result" navigation={navigation} colors={colors} />
+        <Header title={tr("Result")} navigation={navigation} colors={colors} />
         <View style={tw`flex-1 items-center justify-center px-10`}>
           {loading && !error ? (
             <ActivityIndicator size="large" color={colors.text} />
@@ -246,14 +247,14 @@ export default function ResultScreen({ route, navigation }) {
             <>
               <Ionicons name="alert-circle-outline" size={44} color={colors.textSecondary} />
               <Text style={[tw`text-base font-bold mt-3 text-center`, { color: colors.text }]}>
-                {error || 'Result not found'}
+                {error || tr("Result not found")}
               </Text>
               <TouchableOpacity
                 style={[tw`mt-5 px-5 py-3 rounded-2xl`, { backgroundColor: colors.hero }]}
                 onPress={fetchResult}
                 activeOpacity={0.8}
               >
-                <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>Retry</Text>
+                <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>{tr("Retry")}</Text>
               </TouchableOpacity>
             </>
           )}
@@ -268,7 +269,7 @@ export default function ResultScreen({ route, navigation }) {
   return (
     <ScreenWrapper backgroundColor={colors.surface}>
       <RewardCelebration rewards={rewards} visible={showCelebration} onClose={() => setShowCelebration(false)} />
-      <Header title={result.exam?.title || 'Result'} navigation={navigation} colors={colors} onShare={handleShare} />
+      <Header title={result.exam?.title || tr("Result")} navigation={navigation} colors={colors} onShare={handleShare} />
 
       <ScrollView
         style={tw`flex-1`}
@@ -290,7 +291,7 @@ export default function ResultScreen({ route, navigation }) {
               <Text style={[tw`text-lg font-bold`, { color: colors.heroText }]}>
                 {result.totalScore}/{result.exam?.totalMarks || 0}
               </Text>
-              <Text style={[tw`text-xs`, { color: colors.heroMuted }]}>marks</Text>
+              <Text style={[tw`text-xs`, { color: colors.heroMuted }]}>{tr("marks")}</Text>
             </View>
           </View>
           <View style={[tw`h-1.5 rounded-full overflow-hidden mt-3`, { backgroundColor: colors.heroTrack }]}>
@@ -314,24 +315,23 @@ export default function ResultScreen({ route, navigation }) {
 
           <View style={tw`flex-row mt-4`}>
             {[
-              { label: 'Correct', value: correctCount },
-              { label: 'Wrong', value: wrongCount },
-              { label: 'Skipped', value: skippedCount },
-              { label: 'Time', value: result.timeTaken > 0 ? formatTime(result.timeTaken) : '—' },
+              { label: tr("Correct"), value: correctCount },
+              { label: tr("Wrong"), value: wrongCount },
+              { label: tr("Skipped"), value: skippedCount },
+              { label: tr("Time"), value: result.timeTaken > 0 ? formatTime(result.timeTaken) : '—' },
             ].map((s, i) => (
               <View
                 key={s.label}
                 style={[tw`flex-1`, i > 0 && { borderLeftWidth: 1, borderLeftColor: colors.heroTrack, paddingLeft: 12 }]}
               >
                 <Text style={[tw`text-base font-extrabold`, { color: colors.heroText }]}>{s.value}</Text>
-                <Text style={[tw`text-[11px] mt-0.5`, { color: colors.heroMuted }]}>{s.label}</Text>
+                <Text style={[tw`text-[11px] mt-0.5`, { color: colors.heroMuted }]}>{tr(s.label)}</Text>
               </View>
             ))}
           </View>
 
           <Text style={[tw`text-[11px] mt-4`, { color: colors.heroMuted }]}>
-            Attempt #{result.attemptNumber || 1}
-            {result.endTime ? ` · ${formatDate(result.endTime)}` : ''}
+            {tr("Attempt #{0} {1}", result.attemptNumber || 1, result.endTime ? ` · ${formatDate(result.endTime)}` : '')}
           </Text>
         </View>
 
@@ -349,7 +349,7 @@ export default function ResultScreen({ route, navigation }) {
               ) : (
                 <>
                   <Ionicons name="refresh" size={17} color={colors.heroText} />
-                  <Text style={[tw`text-sm font-bold ml-2`, { color: colors.heroText }]}>Retry exam</Text>
+                  <Text style={[tw`text-sm font-bold ml-2`, { color: colors.heroText }]}>{tr("Retry exam")}</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -361,18 +361,18 @@ export default function ResultScreen({ route, navigation }) {
               activeOpacity={0.85}
             >
               <Ionicons name="close-circle-outline" size={17} color={colors.tones.red.fg} />
-              <Text style={[tw`text-sm font-bold ml-2`, { color: colors.tones.red.fg }]}>Fix {wrongCount} mistakes</Text>
+              <Text style={[tw`text-sm font-bold ml-2`, { color: colors.tones.red.fg }]}>{tr("Fix {0} mistakes", wrongCount)}</Text>
             </TouchableOpacity>
           )}
         </View>
         <View style={tw`flex-row items-center justify-between mb-5 px-1`}>
           <TouchableOpacity onPress={handleGoHome} hitSlop={10} style={tw`flex-row items-center`}>
             <Ionicons name="home-outline" size={15} color={colors.textSecondary} />
-            <Text style={[tw`text-xs font-semibold ml-1.5`, { color: colors.textSecondary }]}>Back to home</Text>
+            <Text style={[tw`text-xs font-semibold ml-1.5`, { color: colors.textSecondary }]}>{tr("Back to home")}</Text>
           </TouchableOpacity>
           {attemptStatus && !attemptStatus.canReattempt && attemptStatus.maxAttempts ? (
             <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>
-              {attemptStatus.attemptCount}/{attemptStatus.maxAttempts} attempts used
+              {tr("{0}/{1} attempts used", attemptStatus.attemptCount, attemptStatus.maxAttempts)}
             </Text>
           ) : null}
         </View>
@@ -380,9 +380,9 @@ export default function ResultScreen({ route, navigation }) {
         {/* ─── Tabs ───────────────────────────────────── */}
         <View style={[tw`flex-row p-1 rounded-2xl mb-4`, { backgroundColor: colors.surfaceMuted }]}>
           {[
-            { key: 'overview', label: 'Overview' },
-            { key: 'questions', label: `Questions (${totalAnswers})` },
-            { key: 'analytics', label: 'Analytics' },
+            { key: 'overview', label: tr("Overview") },
+            { key: 'questions', label: tr("Questions ({0})", totalAnswers) },
+            { key: 'analytics', label: tr("Analytics") },
           ].map((tab) => {
             const on = activeTab === tab.key;
             return (
@@ -392,7 +392,7 @@ export default function ResultScreen({ route, navigation }) {
                 onPress={() => setActiveTab(tab.key)}
                 activeOpacity={0.8}
               >
-                <Text style={[tw`text-xs font-bold`, { color: on ? colors.text : colors.textSecondary }]}>{tab.label}</Text>
+                <Text style={[tw`text-xs font-bold`, { color: on ? colors.text : colors.textSecondary }]}>{tr(tab.label)}</Text>
               </TouchableOpacity>
             );
           })}
@@ -401,11 +401,11 @@ export default function ResultScreen({ route, navigation }) {
         {/* ─── Overview ───────────────────────────────── */}
         {activeTab === 'overview' && (
           <View style={tw`gap-3`}>
-            <Card title="Answer breakdown" colors={colors}>
-              <BreakdownRow label="Correct" count={correctCount} total={totalAnswers} tone={colors.tones.green} colors={colors} />
-              <BreakdownRow label="Wrong" count={wrongCount} total={totalAnswers} tone={colors.tones.red} colors={colors} />
+            <Card title={tr("Answer breakdown")} colors={colors}>
+              <BreakdownRow label={tr("Correct")} count={correctCount} total={totalAnswers} tone={colors.tones.green} colors={colors} />
+              <BreakdownRow label={tr("Wrong")} count={wrongCount} total={totalAnswers} tone={colors.tones.red} colors={colors} />
               <BreakdownRow
-                label="Skipped"
+                label={tr("Skipped")}
                 count={skippedCount}
                 total={totalAnswers}
                 tone={{ fg: colors.textSecondary, bg: colors.surfaceMuted }}
@@ -415,12 +415,12 @@ export default function ResultScreen({ route, navigation }) {
             </Card>
 
             {result.timeTaken > 0 && (
-              <Card title="Time" colors={colors}>
+              <Card title={tr("Time")} colors={colors}>
                 <View style={tw`flex-row`}>
                   {[
-                    { label: 'Total', value: formatTime(result.timeTaken) },
-                    { label: 'Per question', value: formatTime(Math.floor(result.timeTaken / Math.max(1, totalAnswers))) },
-                    { label: 'Allowed', value: result.exam?.duration ? `${result.exam.duration}m` : '—' },
+                    { label: tr("Total"), value: formatTime(result.timeTaken) },
+                    { label: tr("Per question"), value: formatTime(Math.floor(result.timeTaken / Math.max(1, totalAnswers))) },
+                    { label: tr("Allowed"), value: result.exam?.duration ? `${result.exam.duration}m` : '—' },
                   ].map(({ label, value }) => (
                     <View key={label} style={tw`flex-1`}>
                       <Text style={[tw`text-base font-extrabold`, { color: colors.text }]}>{value}</Text>
@@ -431,11 +431,11 @@ export default function ResultScreen({ route, navigation }) {
               </Card>
             )}
 
-            <Card title="Exam details" colors={colors}>
+            <Card title={tr("Exam details")} colors={colors}>
               {[
-                { icon: 'document-text-outline', text: `${totalAnswers} questions` },
-                { icon: 'ribbon-outline', text: `${result.exam?.totalMarks || 0} total marks` },
-                result.exam?.duration && { icon: 'time-outline', text: `${result.exam.duration} min` },
+                { icon: 'document-text-outline', text: tr("{0} questions", totalAnswers) },
+                { icon: 'ribbon-outline', text: tr("{0} total marks", result.exam?.totalMarks || 0) },
+                result.exam?.duration && { icon: 'time-outline', text: tr("{0} min", result.exam.duration) },
                 result.exam?.category?.name && {
                   icon: 'folder-outline',
                   text: [result.exam.category.name, result.exam?.subCategory?.name].filter(Boolean).join(' · '),
@@ -473,7 +473,7 @@ export default function ResultScreen({ route, navigation }) {
                       activeOpacity={0.8}
                     >
                       <Text style={[tw`text-xs font-bold`, { color: on ? colors.heroText : colors.textSecondary }]}>
-                        {lang === 'Hindi' ? 'हिन्दी' : 'EN'}
+                        {lang === 'Hindi' ? 'हिन्दी' : tr("EN")}
                       </Text>
                     </TouchableOpacity>
                   );
@@ -483,11 +483,11 @@ export default function ResultScreen({ route, navigation }) {
 
             {sectionAnalysis?.length > 0 && (
               <ChipRow colors={colors}>
-                <Chip label="All sections" on={sectionFilter === 'all'} onPress={() => setSectionFilter('all')} colors={colors} />
+                <Chip label={tr("All sections")} on={sectionFilter === 'all'} onPress={() => setSectionFilter('all')} colors={colors} />
                 {sectionAnalysis.map((section) => (
                   <Chip
                     key={section.index}
-                    label={section.name || `Section ${section.index + 1}`}
+                    label={section.name || tr("Section {0}", section.index + 1)}
                     on={sectionFilter === String(section.index)}
                     onPress={() => setSectionFilter(String(section.index))}
                     colors={colors}
@@ -498,10 +498,10 @@ export default function ResultScreen({ route, navigation }) {
 
             <ChipRow colors={colors}>
               {[
-                { key: 'all', label: `All ${totalAnswers}` },
-                { key: 'correct', label: `Correct ${correctCount}` },
-                { key: 'wrong', label: `Wrong ${wrongCount}` },
-                { key: 'skipped', label: `Skipped ${skippedCount}` },
+                { key: 'all', label: tr("All {0}", totalAnswers) },
+                { key: 'correct', label: tr("Correct {0}", correctCount) },
+                { key: 'wrong', label: tr("Wrong {0}", wrongCount) },
+                { key: 'skipped', label: tr("Skipped {0}", skippedCount) },
               ].map(({ key, label }) => (
                 <Chip key={key} label={label} on={questionFilter === key} onPress={() => setQuestionFilter(key)} colors={colors} />
               ))}
@@ -525,7 +525,7 @@ export default function ResultScreen({ route, navigation }) {
               })
             ) : (
               <Text style={[tw`text-sm text-center py-10`, { color: colors.textSecondary }]}>
-                No questions match this filter
+                {tr("No questions match this filter")}
               </Text>
             )}
           </View>
@@ -536,48 +536,46 @@ export default function ResultScreen({ route, navigation }) {
           <View style={tw`gap-3`}>
             {peerStats?.sampleSize > 0 && (
               <Card
-                title="Compared to other students"
-                subtitle={`Based on ${peerStats.sampleSize} completed attempt${peerStats.sampleSize === 1 ? '' : 's'}`}
+                title={tr("Compared to other students")}
+                subtitle={tr("Based on {0} completed attempt{1}", peerStats.sampleSize, peerStats.sampleSize === 1 ? '' : 's')}
                 colors={colors}
               >
                 <PeerGrid
-                  title="Marks"
+                  title={tr("Marks")}
                   colors={colors}
                   cells={[
-                    { label: 'You', value: peerStats.marks.your, highlight: true },
-                    { label: 'Average', value: peerStats.marks.avg },
-                    { label: 'Highest', value: peerStats.marks.max },
-                    { label: 'Lowest', value: peerStats.marks.min },
+                    { label: tr("You"), value: peerStats.marks.your, highlight: true },
+                    { label: tr("Average"), value: peerStats.marks.avg },
+                    { label: tr("Highest"), value: peerStats.marks.max },
+                    { label: tr("Lowest"), value: peerStats.marks.min },
                   ]}
-                  footnote={`Rank #${peerStats.marks.yourRank} of ${peerStats.marks.totalRanked} · better than ${peerStats.marks.betterThanPercent}% of attempts`}
+                  footnote={tr("Rank #{0} of {1} · better than {2}% of attempts", peerStats.marks.yourRank, peerStats.marks.totalRanked, peerStats.marks.betterThanPercent)}
                 />
                 <PeerGrid
-                  title="Percentage"
+                  title={tr("Percentage")}
                   colors={colors}
                   cells={[
-                    { label: 'You', value: `${peerStats.percentage.your}%`, highlight: true },
-                    { label: 'Average', value: `${peerStats.percentage.avg}%` },
-                    { label: 'Highest', value: `${peerStats.percentage.max}%` },
-                    { label: 'Lowest', value: `${peerStats.percentage.min}%` },
+                    { label: tr("You"), value: `${peerStats.percentage.your}%`, highlight: true },
+                    { label: tr("Average"), value: `${peerStats.percentage.avg}%` },
+                    { label: tr("Highest"), value: `${peerStats.percentage.max}%` },
+                    { label: tr("Lowest"), value: `${peerStats.percentage.min}%` },
                   ]}
                 />
                 <PeerGrid
-                  title="Time taken"
+                  title={tr("Time taken")}
                   colors={colors}
                   last
                   cells={[
-                    { label: 'You', value: peerStats.time.your > 0 ? formatTime(peerStats.time.your) : '—', highlight: true },
-                    { label: 'Average', value: peerStats.time.avg != null ? formatTime(peerStats.time.avg) : '—' },
-                    { label: 'Fastest', value: peerStats.time.min != null ? formatTime(peerStats.time.min) : '—' },
-                    { label: 'Slowest', value: peerStats.time.max != null ? formatTime(peerStats.time.max) : '—' },
+                    { label: tr("You"), value: peerStats.time.your > 0 ? formatTime(peerStats.time.your) : '—', highlight: true },
+                    { label: tr("Average"), value: peerStats.time.avg != null ? formatTime(peerStats.time.avg) : '—' },
+                    { label: tr("Fastest"), value: peerStats.time.min != null ? formatTime(peerStats.time.min) : '—' },
+                    { label: tr("Slowest"), value: peerStats.time.max != null ? formatTime(peerStats.time.max) : '—' },
                   ]}
                   footnote={
                     peerStats.time.yourRank != null
-                      ? `Speed rank #${peerStats.time.yourRank} of ${peerStats.time.totalRanked}${
-                          peerStats.time.fasterThanPercent != null && peerStats.time.totalRanked > 1
+                      ? tr("Speed rank #{0} of {1}{2}", peerStats.time.yourRank, peerStats.time.totalRanked, peerStats.time.fasterThanPercent != null && peerStats.time.totalRanked > 1
                             ? ` · faster than ${peerStats.time.fasterThanPercent}% of attempts`
-                            : ''
-                        }`
+                            : '')
                       : null
                   }
                 />
@@ -585,17 +583,16 @@ export default function ResultScreen({ route, navigation }) {
             )}
 
             {previousAttempts.length > 0 && (
-              <Card title="Your attempts" colors={colors}>
+              <Card title={tr("Your attempts")} colors={colors}>
                 <View style={[tw`p-3 rounded-2xl mb-2`, { backgroundColor: colors.hero }]}>
                   <Text style={[tw`text-[11px] font-bold`, { color: colors.heroMuted }]}>
-                    THIS ATTEMPT · #{result.attemptNumber || 1}
+                    {tr("THIS ATTEMPT · #{0}", result.attemptNumber || 1)}
                   </Text>
                   <Text style={[tw`text-sm font-bold mt-1`, { color: colors.heroText }]}>
                     {result.totalScore}/{result.exam?.totalMarks || 0} · {percentage.toFixed(1)}%
                   </Text>
                   <Text style={[tw`text-xs mt-0.5`, { color: colors.heroTextSecondary }]}>
-                    {correctCount} correct · {wrongCount} wrong · {skippedCount} skipped
-                    {result.timeTaken > 0 ? ` · ${formatTime(result.timeTaken)}` : ''}
+                    {tr("{0} correct · {1} wrong · {2} skipped {3}", correctCount, wrongCount, skippedCount, result.timeTaken > 0 ? ` · ${formatTime(result.timeTaken)}` : '')}
                   </Text>
                 </View>
                 {previousAttempts.map((prev) => {
@@ -611,7 +608,7 @@ export default function ResultScreen({ route, navigation }) {
                     >
                       <View style={tw`flex-1`}>
                         <Text style={[tw`text-xs font-semibold`, { color: colors.textSecondary }]}>
-                          Attempt #{prev.attemptNumber}{prev.endTime ? ` · ${formatDate(prev.endTime)}` : ''}
+                          {tr("Attempt #{0}{1}", prev.attemptNumber, prev.endTime ? ` · ${formatDate(prev.endTime)}` : '')}
                         </Text>
                         <Text style={[tw`text-sm font-bold mt-0.5`, { color: colors.text }]}>
                           {prev.totalScore}/{result.exam?.totalMarks || 0} · {(prev.percentage || 0).toFixed(1)}%
@@ -620,7 +617,7 @@ export default function ResultScreen({ route, navigation }) {
                       {scoreDiff !== 0 && (
                         <View style={[tw`px-2 py-1 rounded-md`, { backgroundColor: diffTone.bg }]}>
                           <Text style={[tw`text-[11px] font-bold`, { color: diffTone.fg }]}>
-                            {scoreDiff > 0 ? '+' : ''}{pctDiff.toFixed(1)}% now
+                            {tr("{0}{1}% now", scoreDiff > 0 ? '+' : '', pctDiff.toFixed(1))}
                           </Text>
                         </View>
                       )}
@@ -631,7 +628,7 @@ export default function ResultScreen({ route, navigation }) {
             )}
 
             {sectionAnalysis?.length > 0 && (
-              <Card title="By section" colors={colors}>
+              <Card title={tr("By section")} colors={colors}>
                 {sectionAnalysis.map((section, i) => {
                   const tone = scoreTone(section.sectionPercentage, colors);
                   return (
@@ -641,15 +638,14 @@ export default function ResultScreen({ route, navigation }) {
                     >
                       <View style={tw`flex-row justify-between items-center`}>
                         <Text style={[tw`text-sm font-bold flex-1 pr-2`, { color: colors.text }]}>
-                          {section.name || `Section ${section.index + 1}`}
+                          {section.name || tr("Section {0}", section.index + 1)}
                         </Text>
                         <View style={[tw`px-2 py-1 rounded-md`, { backgroundColor: tone.bg }]}>
                           <Text style={[tw`text-xs font-bold`, { color: tone.fg }]}>{section.sectionPercentage.toFixed(1)}%</Text>
                         </View>
                       </View>
                       <Text style={[tw`text-xs mt-1`, { color: colors.textSecondary }]}>
-                        {section.sectionScore}/{section.sectionTotalMarks} marks · {section.correct} correct · {section.wrong} wrong · {section.unattempted} skipped
-                        {section.avgTimePerQuestion > 0 ? ` · ${formatTime(Math.round(section.avgTimePerQuestion))}/q` : ''}
+                        {tr("{0}/{1} marks · {2} correct · {3} wrong · {4} skipped {5}", section.sectionScore, section.sectionTotalMarks, section.correct, section.wrong, section.unattempted, section.avgTimePerQuestion > 0 ? ` · ${formatTime(Math.round(section.avgTimePerQuestion))}/q` : '')}
                       </Text>
                       {section.cutoff != null && (
                         <Text
@@ -658,7 +654,7 @@ export default function ResultScreen({ route, navigation }) {
                             { color: section.cutoffMet ? colors.tones.green.fg : colors.tones.red.fg },
                           ]}
                         >
-                          Cutoff {section.cutoff}: {section.cutoffMet ? 'cleared' : 'not cleared'}
+                          {tr("Cutoff {0}: {1}", section.cutoff, section.cutoffMet ? 'cleared' : 'not cleared')}
                         </Text>
                       )}
                     </View>
@@ -668,7 +664,7 @@ export default function ResultScreen({ route, navigation }) {
             )}
 
             {subjectEntries.length > 0 && (
-              <Card title="By subject" subtitle="Weakest first" colors={colors}>
+              <Card title={tr("By subject")} subtitle={tr("Weakest first")} colors={colors}>
                 {subjectEntries
                   .sort((a, b) => a[1].percentage - b[1].percentage)
                   .map(([subject, stats]) => (
@@ -676,7 +672,7 @@ export default function ResultScreen({ route, navigation }) {
                       key={subject}
                       label={subject}
                       right={`${stats.obtainedMarks.toFixed(1)}/${stats.totalMarks}`}
-                      detail={`${stats.correct} correct · ${stats.wrong} wrong · ${stats.unattempted} skipped · ${stats.accuracy.toFixed(0)}% accuracy`}
+                      detail={tr("{0} correct · {1} wrong · {2} skipped · {3}% accuracy", stats.correct, stats.wrong, stats.unattempted, stats.accuracy.toFixed(0))}
                       value={stats.percentage}
                       tone={scoreTone(stats.percentage, colors)}
                       colors={colors}
@@ -686,7 +682,7 @@ export default function ResultScreen({ route, navigation }) {
             )}
 
             {topicEntries.length > 0 && (
-              <Card title="By topic" subtitle="Weakest first — practise the red ones" colors={colors}>
+              <Card title={tr("By topic")} subtitle={tr("Weakest first — practise the red ones")} colors={colors}>
                 {topicEntries
                   .sort((a, b) => a[1].percentage - b[1].percentage)
                   .map(([topic, stats]) => (
@@ -694,7 +690,7 @@ export default function ResultScreen({ route, navigation }) {
                       <ProgressRow
                         label={topic}
                         right={`${stats.percentage.toFixed(0)}%`}
-                        detail={`${stats.correct}/${stats.total} correct · ${stats.accuracy.toFixed(0)}% accuracy`}
+                        detail={tr("{0}/{1} correct · {2}% accuracy", stats.correct, stats.total, stats.accuracy.toFixed(0))}
                         value={stats.percentage}
                         tone={scoreTone(stats.percentage, colors)}
                         colors={colors}
@@ -709,7 +705,7 @@ export default function ResultScreen({ route, navigation }) {
                         >
                           <Ionicons name="flash" size={12} color={colors.tones.orange.fg} />
                           <Text style={[tw`text-[11px] font-bold ml-1`, { color: colors.tones.orange.fg }]}>
-                            {startingPracticeTopic === topic ? 'Starting…' : 'Practise 15 questions'}
+                            {startingPracticeTopic === topic ? tr("Starting…") : tr("Practise 15 questions")}
                           </Text>
                         </TouchableOpacity>
                       )}
@@ -719,7 +715,7 @@ export default function ResultScreen({ route, navigation }) {
             )}
 
             {Object.keys(difficultyAnalysis).length > 0 && (
-              <Card title="By difficulty" colors={colors}>
+              <Card title={tr("By difficulty")} colors={colors}>
                 {['Easy', 'Medium', 'Hard']
                   .filter((d) => difficultyAnalysis[d])
                   .concat(Object.keys(difficultyAnalysis).filter((d) => !['Easy', 'Medium', 'Hard'].includes(d)))
@@ -729,11 +725,9 @@ export default function ResultScreen({ route, navigation }) {
                     return (
                       <ProgressRow
                         key={diff}
-                        label={diff}
-                        right={`${stats.accuracy.toFixed(0)}% accuracy`}
-                        detail={`${stats.correct} correct · ${stats.wrong} wrong · ${stats.unattempted} skipped${
-                          avgTime ? ` · ${formatTime(Math.round(avgTime))}/q` : ''
-                        }`}
+                        label={tr(diff)}
+                        right={tr("{0}% accuracy", stats.accuracy.toFixed(0))}
+                        detail={tr("{0} correct · {1} wrong · {2} skipped{3}", stats.correct, stats.wrong, stats.unattempted, avgTime ? ` · ${formatTime(Math.round(avgTime))}/q` : '')}
                         value={stats.accuracy}
                         tone={scoreTone(stats.accuracy, colors)}
                         colors={colors}
@@ -742,8 +736,7 @@ export default function ResultScreen({ route, navigation }) {
                   })}
                 {result.exam?.duration > 0 && timeAnalysis?.totalTime > 0 && (
                   <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>
-                    Used {formatTime(timeAnalysis.totalTime)} of {result.exam.duration}m (
-                    {((timeAnalysis.totalTime / (result.exam.duration * 60)) * 100).toFixed(0)}%)
+                    {tr("Used {0} of {1}m ( {2}%)", formatTime(timeAnalysis.totalTime), result.exam.duration, ((timeAnalysis.totalTime / (result.exam.duration * 60)) * 100).toFixed(0))}
                   </Text>
                 )}
               </Card>
@@ -757,7 +750,7 @@ export default function ResultScreen({ route, navigation }) {
                 <View style={tw`items-center py-10 px-6`}>
                   <Ionicons name="analytics-outline" size={36} color={colors.textSecondary} />
                   <Text style={[tw`text-sm mt-3 text-center`, { color: colors.textSecondary }]}>
-                    Detailed analytics appear when questions have subject, topic or difficulty tags.
+                    {tr("Detailed analytics appear when questions have subject, topic or difficulty tags.")}
                   </Text>
                 </View>
               )}
@@ -773,14 +766,14 @@ export default function ResultScreen({ route, navigation }) {
 function Header({ title, navigation, colors, onShare }) {
   return (
     <View style={tw`flex-row items-center px-3 pt-2 pb-2`}>
-      <TouchableOpacity onPress={() => navigation.goBack()} style={tw`p-2`} accessibilityLabel="Back">
+      <TouchableOpacity onPress={() => navigation.goBack()} style={tw`p-2`} accessibilityLabel={tr("Back")}>
         <Ionicons name="arrow-back" size={22} color={colors.text} />
       </TouchableOpacity>
       <Text style={[tw`flex-1 text-base font-bold text-center mx-2`, { color: colors.text }]} numberOfLines={1}>
         {title}
       </Text>
       {onShare ? (
-        <TouchableOpacity onPress={onShare} style={tw`p-2`} accessibilityLabel="Share result">
+        <TouchableOpacity onPress={onShare} style={tw`p-2`} accessibilityLabel={tr("Share result")}>
           <Ionicons name="share-outline" size={21} color={colors.text} />
         </TouchableOpacity>
       ) : (
@@ -851,7 +844,7 @@ function PeerGrid({ title, cells, footnote, colors, last }) {
               {cell.value}
             </Text>
             <Text style={[tw`text-[10px] mt-0.5`, { color: cell.highlight ? colors.heroMuted : colors.textSecondary }]}>
-              {cell.label}
+              {tr(cell.label)}
             </Text>
           </View>
         ))}
@@ -901,10 +894,10 @@ function QuestionCard({ answer, index, colors, displayLanguage, isSaved, onToggl
   const userAnswer = answer.selectedAnswer;
   const correctAnswer = question.correctAnswer;
   const status = isSkipped
-    ? { tone: { fg: colors.textSecondary, bg: colors.surfaceMuted }, icon: 'remove-circle', label: 'Skipped' }
+    ? { tone: { fg: colors.textSecondary, bg: colors.surfaceMuted }, icon: 'remove-circle', label: tr("Skipped") }
     : isCorrect
-      ? { tone: colors.tones.green, icon: 'checkmark-circle', label: 'Correct' }
-      : { tone: colors.tones.red, icon: 'close-circle', label: 'Wrong' };
+      ? { tone: colors.tones.green, icon: 'checkmark-circle', label: tr("Correct") }
+      : { tone: colors.tones.red, icon: 'close-circle', label: tr("Wrong") };
 
   return (
     <TouchableOpacity
@@ -921,7 +914,7 @@ function QuestionCard({ answer, index, colors, displayLanguage, isSaved, onToggl
             {questionText}
           </Text>
           <Text style={[tw`text-[11px] mt-0.5`, { color: status.tone.fg }]}>
-            {status.label}
+            {tr(status.label)}
             {answer.timeSpent > 0 ? <Text style={{ color: colors.textSecondary }}> · {formatTime(answer.timeSpent)}</Text> : null}
           </Text>
         </View>
@@ -933,7 +926,7 @@ function QuestionCard({ answer, index, colors, displayLanguage, isSaved, onToggl
             }}
             hitSlop={8}
             style={tw`p-1 mr-1`}
-            accessibilityLabel={isSaved ? 'Remove from saved' : 'Save question'}
+            accessibilityLabel={isSaved ? tr("Remove from saved") : tr("Save question")}
           >
             <Ionicons name={isSaved ? 'bookmark' : 'bookmark-outline'} size={18} color={isSaved ? colors.text : colors.textSecondary} />
           </TouchableOpacity>
@@ -981,12 +974,12 @@ function QuestionCard({ answer, index, colors, displayLanguage, isSaved, onToggl
 
           <View style={tw`flex-row gap-2 mt-3`}>
             {[
-              { label: 'Your answer', value: userAnswer || 'Skipped', color: status.tone.fg },
-              { label: 'Correct', value: correctAnswer, color: colors.tones.green.fg },
-              { label: 'Marks', value: `${answer.marksObtained || 0}/${question.marks || 1}`, color: colors.text },
+              { label: tr("Your answer"), value: userAnswer || tr("Skipped"), color: status.tone.fg },
+              { label: tr("Correct"), value: correctAnswer, color: colors.tones.green.fg },
+              { label: tr("Marks"), value: `${answer.marksObtained || 0}/${question.marks || 1}`, color: colors.text },
             ].map((cell) => (
               <View key={cell.label} style={[tw`flex-1 p-2.5 rounded-xl`, { backgroundColor: colors.surfaceMuted }]}>
-                <Text style={[tw`text-[10px]`, { color: colors.textSecondary }]}>{cell.label}</Text>
+                <Text style={[tw`text-[10px]`, { color: colors.textSecondary }]}>{tr(cell.label)}</Text>
                 <Text style={[tw`text-sm font-bold mt-0.5`, { color: cell.color }]}>{cell.value}</Text>
               </View>
             ))}
@@ -996,7 +989,7 @@ function QuestionCard({ answer, index, colors, displayLanguage, isSaved, onToggl
             <View style={[tw`flex-row p-3 rounded-2xl mt-3`, { backgroundColor: colors.tones.blue.bg }]}>
               <Ionicons name="bulb-outline" size={16} color={colors.tones.blue.fg} />
               <View style={tw`flex-1 ml-2`}>
-                <Text style={[tw`text-xs font-bold mb-1`, { color: colors.tones.blue.fg }]}>Explanation</Text>
+                <Text style={[tw`text-xs font-bold mb-1`, { color: colors.tones.blue.fg }]}>{tr("Explanation")}</Text>
                 <Text style={[tw`text-xs leading-5`, { color: colors.text }]}>{explanation}</Text>
               </View>
             </View>

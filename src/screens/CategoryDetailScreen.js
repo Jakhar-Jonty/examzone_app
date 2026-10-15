@@ -28,6 +28,7 @@ import {
   trackRecentSubcategory,
 } from '../utils/recentSubcategories';
 
+import { t as tr } from '../i18n';
 // ─── Shared Header ───────────────────────────────────────
 function Header({ title, navigation, colors }) {
   return (
@@ -185,7 +186,7 @@ export default function CategoryDetailScreen({ route, navigation }) {
     return (
       <ScreenWrapper>
         <View style={[tw`flex-1`, { backgroundColor: colors.surface }]}>
-          <Header title="Category" navigation={navigation} colors={colors} />
+          <Header title={tr("Category")} navigation={navigation} colors={colors} />
           <View style={tw`flex-1 px-5 pt-4`}>
             <ExamCardSkeletonList count={4} colors={colors} />
           </View>
@@ -199,18 +200,18 @@ export default function CategoryDetailScreen({ route, navigation }) {
     return (
       <ScreenWrapper>
         <View style={[tw`flex-1`, { backgroundColor: colors.surface }]}>
-          <Header title="Category" navigation={navigation} colors={colors} />
+          <Header title={tr("Category")} navigation={navigation} colors={colors} />
           <View style={tw`flex-1 items-center justify-center px-10`}>
             <Ionicons name="folder-open-outline" size={48} color={colors.textSecondary} />
             <Text style={[tw`text-base font-semibold mt-3 mb-1`, { color: colors.text }]}>
-              {error || 'Category not found'}
+              {error || tr("Category not found")}
             </Text>
             <TouchableOpacity
               style={[tw`mt-4 px-5 py-2.5 rounded-xl`, { backgroundColor: colors.hero }]}
               onPress={fetchCategory}
               activeOpacity={0.7}
             >
-              <Text style={[tw`text-sm font-semibold`, { color: colors.heroText }]}>Retry</Text>
+              <Text style={[tw`text-sm font-semibold`, { color: colors.heroText }]}>{tr("Retry")}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -310,7 +311,7 @@ export default function CategoryDetailScreen({ route, navigation }) {
                     style={[tw`px-2 py-0.5 rounded-md`, { backgroundColor: colors.cardMuted }]}
                   >
                     <Text style={[tw`text-[10px] font-semibold`, { color: colors.text }]}>
-                      {category.examCount} {category.examCount === 1 ? 'exam' : 'exams'}
+                      {category.examCount} {category.examCount === 1 ? tr("exam") : tr("exams")}
                     </Text>
                   </View>
                 )}
@@ -319,7 +320,7 @@ export default function CategoryDetailScreen({ route, navigation }) {
                     style={[tw`px-2 py-0.5 rounded-md`, { backgroundColor: colors.border }]}
                   >
                     <Text style={[tw`text-[10px] font-medium`, { color: colors.textSecondary }]}>
-                      {category.questionCount} questions
+                      {tr("{0} questions", category.questionCount)}
                     </Text>
                   </View>
                 )}
@@ -330,7 +331,7 @@ export default function CategoryDetailScreen({ route, navigation }) {
           {/* ─── Browse: Home-style subcategory tiles ──── */}
           {category.subCategories?.length > 0 ? (
             <View style={tw`mb-6`}>
-              <Text style={[tw`text-base font-bold mb-3`, { color: colors.text }]}>Browse</Text>
+              <Text style={[tw`text-base font-bold mb-3`, { color: colors.text }]}>{tr("Browse")}</Text>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -384,7 +385,7 @@ export default function CategoryDetailScreen({ route, navigation }) {
                     </Text>
                     {sub.examCount > 0 ? (
                       <Text style={[tw`text-[9px] mt-0.5`, { color: colors.textSecondary }]}>
-                        {sub.examCount} exams
+                        {tr("{0} exams", sub.examCount)}
                       </Text>
                     ) : null}
                   </TouchableOpacity>
@@ -396,7 +397,7 @@ export default function CategoryDetailScreen({ route, navigation }) {
             !isEmpty && (
               <View style={tw`mb-4`}>
                 <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>
-                  No subcategories — browse exams below.
+                  {tr("No subcategories — browse exams below.")}
                 </Text>
               </View>
             )
@@ -408,14 +409,14 @@ export default function CategoryDetailScreen({ route, navigation }) {
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 colors={colors}
-                placeholder="Search exams in this category..."
+                placeholder={tr("Search exams in this category...")}
               />
               <ExamSortChips value={sortBy} onChange={setSortBy} colors={colors} />
             </View>
           )}
 
           {searchQuery.trim() ? (
-            <SectionBlock title="Search results" colors={colors}>
+            <SectionBlock title={tr("Search results")} colors={colors}>
               <ExamFilterChips
                 value={examFilter}
                 onChange={setExamFilter}
@@ -438,7 +439,7 @@ export default function CategoryDetailScreen({ route, navigation }) {
                 </View>
               ) : (
                 <Text style={[tw`text-xs text-center py-6`, { color: colors.textSecondary }]}>
-                  No exams match your search
+                  {tr("No exams match your search")}
                 </Text>
               )}
             </SectionBlock>
@@ -446,7 +447,7 @@ export default function CategoryDetailScreen({ route, navigation }) {
             <>
           {/* ─── Category-Level Exams ─────────────────── */}
           {categoryExams.length > 0 && (
-            <SectionBlock title="Exams" colors={colors}>
+            <SectionBlock title={tr("Exams")} colors={colors}>
               <ExamFilterChips
                 value={examFilter}
                 onChange={setExamFilter}
@@ -467,7 +468,7 @@ export default function CategoryDetailScreen({ route, navigation }) {
                 </View>
               ) : (
                 <Text style={[tw`text-xs text-center py-6`, { color: colors.textSecondary }]}>
-                  No exams match this filter
+                  {tr("No exams match this filter")}
                 </Text>
               )}
             </SectionBlock>
@@ -476,7 +477,7 @@ export default function CategoryDetailScreen({ route, navigation }) {
           {/* ─── Tiers (Expandable) ───────────────────── */}
           {categoryTiers.length > 0 && (
             <SectionBlock
-              title={categoryExams.length > 0 ? 'Tiers' : 'Exams'}
+              title={categoryExams.length > 0 ? tr("Tiers") : tr("Exams")}
               colors={colors}
             >
               <View style={tw`gap-2`}>
@@ -571,7 +572,7 @@ export default function CategoryDetailScreen({ route, navigation }) {
                               <Text
                                 style={[tw`text-xs`, { color: colors.textSecondary }]}
                               >
-                                No exams match this filter
+                                {tr("No exams match this filter")}
                               </Text>
                             </View>
                           ) : (
@@ -579,7 +580,7 @@ export default function CategoryDetailScreen({ route, navigation }) {
                               <Text
                                 style={[tw`text-xs`, { color: colors.textSecondary }]}
                               >
-                                No exams in this tier
+                                {tr("No exams in this tier")}
                               </Text>
                             </View>
                           )}
@@ -607,12 +608,12 @@ export default function CategoryDetailScreen({ route, navigation }) {
                 <Ionicons name="folder-open-outline" size={32} color={colors.text} />
               </View>
               <Text style={[tw`text-base font-semibold mb-1`, { color: colors.text }]}>
-                No content yet
+                {tr("No content yet")}
               </Text>
               <Text
                 style={[tw`text-sm text-center`, { color: colors.textSecondary }]}
               >
-                This category doesn't have any subcategories, tiers, or exams yet.
+                {tr("This category doesn't have any subcategories, tiers, or exams yet.")}
               </Text>
             </View>
           )}

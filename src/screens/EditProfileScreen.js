@@ -22,6 +22,7 @@ import * as ImagePicker from 'expo-image-picker';
 import api from '../services/api';
 import { useCategories } from '../hooks/useCategories';
 
+import { t as tr } from '../i18n';
 // ─── Constants (outside component) ──────────────────────
 const GENDERS = [
   { label: 'Male', value: 'male' },
@@ -75,7 +76,7 @@ function ChipSelect({ options, selected, onSelect, multi = false, colors }) {
     <View style={tw`flex-row flex-wrap gap-2`}>
       {options.map((opt) => {
         const key = typeof opt === 'string' ? opt : opt.value || opt.key || opt._id;
-        const label = typeof opt === 'string' ? opt : opt.label || opt.name;
+        const label = tr(typeof opt === 'string' ? opt : opt.label || opt.name);
         const isActive = multi
           ? Array.isArray(selected) && selected.includes(key)
           : selected === key;
@@ -176,9 +177,9 @@ export default function EditProfileScreen({ navigation }) {
     const unsubscribe = navigation.addListener('beforeRemove', (e) => {
       if (!hasChanges || loading) return;
       e.preventDefault();
-      Alert.alert('Discard changes?', 'You have unsaved changes. Are you sure you want to go back?', [
-        { text: 'Keep Editing', style: 'cancel' },
-        { text: 'Discard', style: 'destructive', onPress: () => navigation.dispatch(e.data.action) },
+      Alert.alert(tr("Discard changes?"), tr("You have unsaved changes. Are you sure you want to go back?"), [
+        { text: tr("Keep Editing"), style: 'cancel' },
+        { text: tr("Discard"), style: 'destructive', onPress: () => navigation.dispatch(e.data.action) },
       ]);
     });
     return unsubscribe;
@@ -205,7 +206,7 @@ export default function EditProfileScreen({ navigation }) {
         await uploadImage(result.assets[0].uri);
       }
     } catch {
-      Alert.alert('Error', 'Failed to pick image');
+      Alert.alert(tr("Error"), tr("Failed to pick image"));
     }
   };
 
@@ -213,7 +214,7 @@ export default function EditProfileScreen({ navigation }) {
     try {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission Required', 'Camera access is needed.');
+        Alert.alert(tr("Permission Required"), tr("Camera access is needed."));
         return;
       }
       const result = await ImagePicker.launchCameraAsync({
@@ -226,7 +227,7 @@ export default function EditProfileScreen({ navigation }) {
         await uploadImage(result.assets[0].uri);
       }
     } catch {
-      Alert.alert('Error', 'Failed to take photo');
+      Alert.alert(tr("Error"), tr("Failed to take photo"));
     }
   };
 
@@ -249,17 +250,17 @@ export default function EditProfileScreen({ navigation }) {
         setImageUri(res.data.url);
       }
     } catch {
-      Alert.alert('Error', 'Failed to upload image');
+      Alert.alert(tr("Error"), tr("Failed to upload image"));
     } finally {
       setUploading(false);
     }
   };
 
   const showImageOptions = () => {
-    Alert.alert('Profile Photo', 'Choose an option', [
-      { text: 'Camera', onPress: takePhoto },
-      { text: 'Gallery', onPress: pickImage },
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(tr("Profile Photo"), tr("Choose an option"), [
+      { text: tr("Camera"), onPress: takePhoto },
+      { text: tr("Gallery"), onPress: pickImage },
+      { text: tr("Cancel"), style: 'cancel' },
     ]);
   };
 
@@ -277,7 +278,7 @@ export default function EditProfileScreen({ navigation }) {
   // ─── Save ──────────────────────────────────────────────
   const handleSave = async () => {
     if (!name.trim()) {
-      Alert.alert('Required', 'Name is required');
+      Alert.alert(tr("Required"), tr("Name is required"));
       return;
     }
     try {
@@ -298,12 +299,12 @@ export default function EditProfileScreen({ navigation }) {
       if (res.data.user) {
         updateUser(res.data.user);
         setHasChanges(false);
-        Alert.alert('Success', 'Profile updated', [
-          { text: 'OK', onPress: () => navigation.goBack() },
+        Alert.alert(tr("Success"), tr("Profile updated"), [
+          { text: tr("OK"), onPress: () => navigation.goBack() },
         ]);
       }
     } catch (err) {
-      Alert.alert('Error', err.response?.data?.message || 'Failed to update profile');
+      Alert.alert(tr("Error"), err.response?.data?.message || tr("Failed to update profile"));
     } finally {
       setLoading(false);
     }
@@ -340,7 +341,7 @@ export default function EditProfileScreen({ navigation }) {
           <TouchableOpacity onPress={() => navigation.goBack()} style={tw`p-2`}>
             <Ionicons name="arrow-back" size={22} color={colors.text} />
           </TouchableOpacity>
-          <Text style={[tw`text-base font-bold`, { color: colors.text }]}>Edit Profile</Text>
+          <Text style={[tw`text-base font-bold`, { color: colors.text }]}>{tr("Edit Profile")}</Text>
           <TouchableOpacity
             onPress={handleSave}
             disabled={loading}
@@ -349,7 +350,7 @@ export default function EditProfileScreen({ navigation }) {
             {loading ? (
               <ActivityIndicator size="small" color={colors.text} />
             ) : (
-              <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>Save</Text>
+              <Text style={[tw`text-sm font-semibold`, { color: colors.text }]}>{tr("Save")}</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -401,12 +402,12 @@ export default function EditProfileScreen({ navigation }) {
                 </View>
               </TouchableOpacity>
               <Text style={[tw`text-xs mt-2`, { color: colors.textSecondary }]}>
-                Tap to change photo
+                {tr("Tap to change photo")}
               </Text>
             </View>
 
             {/* ─── Basic Info ─────────────────────────── */}
-            <SectionLabel title="Basic Information" icon="person-outline" colors={colors} />
+            <SectionLabel title={tr("Basic Information")} icon="person-outline" colors={colors} />
             <View
               style={[
                 tw`rounded-2xl p-4 border`,
@@ -414,17 +415,17 @@ export default function EditProfileScreen({ navigation }) {
               ]}
             >
               <InputField
-                label="Name"
+                label={tr("Name")}
                 required
                 value={name}
                 onChangeText={setName}
-                placeholder="Your name"
+                placeholder={tr("Your name")}
               />
               <InputField
-                label="Email"
+                label={tr("Email")}
                 value={email}
                 onChangeText={setEmail}
-                placeholder="your@email.com"
+                placeholder={tr("your@email.com")}
                 keyboardType="email-address"
                 autoCapitalize="none"
               />
@@ -434,7 +435,7 @@ export default function EditProfileScreen({ navigation }) {
                 <Text
                   style={[tw`text-xs font-semibold mb-1.5 px-0.5`, { color: colors.textSecondary }]}
                 >
-                  Phone Number
+                  {tr("Phone Number")}
                 </Text>
                 <View
                   style={[
@@ -445,15 +446,15 @@ export default function EditProfileScreen({ navigation }) {
                   <Text style={[tw`text-sm`, { color: colors.text }]}>{phoneNumber}</Text>
                 </View>
                 <Text style={[tw`text-[10px] mt-1 px-0.5`, { color: colors.textSecondary }]}>
-                  Cannot be changed
+                  {tr("Cannot be changed")}
                 </Text>
               </View>
 
               <InputField
-                label="Date of Birth"
+                label={tr("Date of Birth")}
                 value={dateOfBirth}
                 onChangeText={setDateOfBirth}
-                placeholder="YYYY-MM-DD"
+                placeholder={tr("YYYY-MM-DD")}
                 keyboardType="numeric"
               />
 
@@ -462,7 +463,7 @@ export default function EditProfileScreen({ navigation }) {
                 <Text
                   style={[tw`text-xs font-semibold mb-1.5 px-0.5`, { color: colors.textSecondary }]}
                 >
-                  Bio
+                  {tr("Bio")}
                 </Text>
                 <TextInput
                   style={[
@@ -476,7 +477,7 @@ export default function EditProfileScreen({ navigation }) {
                   ]}
                   value={bio}
                   onChangeText={setBio}
-                  placeholder="Tell us about yourself..."
+                  placeholder={tr("Tell us about yourself...")}
                   placeholderTextColor={colors.textSecondary}
                   multiline
                   numberOfLines={3}
@@ -491,7 +492,7 @@ export default function EditProfileScreen({ navigation }) {
             </View>
 
             {/* ─── Gender ─────────────────────────────── */}
-            <SectionLabel title="Gender" icon="male-female-outline" colors={colors} />
+            <SectionLabel title={tr("Gender")} icon="male-female-outline" colors={colors} />
             <View
               style={[
                 tw`rounded-2xl p-4 border`,
@@ -507,7 +508,7 @@ export default function EditProfileScreen({ navigation }) {
             </View>
 
             {/* ─── Location ───────────────────────────── */}
-            <SectionLabel title="Location" icon="location-outline" colors={colors} />
+            <SectionLabel title={tr("Location")} icon="location-outline" colors={colors} />
             <View
               style={[
                 tw`rounded-2xl p-4 border`,
@@ -519,7 +520,7 @@ export default function EditProfileScreen({ navigation }) {
                 <Text
                   style={[tw`text-xs font-semibold mb-1.5 px-0.5`, { color: colors.textSecondary }]}
                 >
-                  State
+                  {tr("State")}
                 </Text>
                 <TouchableOpacity
                   style={[
@@ -535,7 +536,7 @@ export default function EditProfileScreen({ navigation }) {
                       { color: state ? colors.text : colors.textSecondary },
                     ]}
                   >
-                    {state || 'Select your state'}
+                    {state || tr("Select your state")}
                   </Text>
                   <Ionicons
                     name={showStateDropdown ? 'chevron-up' : 'chevron-down'}
@@ -585,17 +586,17 @@ export default function EditProfileScreen({ navigation }) {
               </View>
 
               <InputField
-                label="City"
+                label={tr("City")}
                 value={city}
                 onChangeText={setCity}
-                placeholder="Your city"
+                placeholder={tr("Your city")}
               />
             </View>
 
             {/* ─── Exam Preparation (hidden in focus mode) ── */}
             {!focus && (
               <>
-            <SectionLabel title="Exam Preparation" icon="school-outline" colors={colors} />
+            <SectionLabel title={tr("Exam Preparation")} icon="school-outline" colors={colors} />
             <View
               style={[
                 tw`rounded-2xl p-4 border`,
@@ -619,7 +620,7 @@ export default function EditProfileScreen({ navigation }) {
             )}
 
             {/* ─── Language ───────────────────────────── */}
-            <SectionLabel title="Preferred Language" icon="language-outline" colors={colors} />
+            <SectionLabel title={tr("Preferred Language")} icon="language-outline" colors={colors} />
             <View
               style={[
                 tw`rounded-2xl p-4 border`,
@@ -635,7 +636,7 @@ export default function EditProfileScreen({ navigation }) {
             </View>
 
             {/* ─── Study Preferences ──────────────────── */}
-            <SectionLabel title="Preferences" icon="settings-outline" colors={colors} />
+            <SectionLabel title={tr("Preferences")} icon="settings-outline" colors={colors} />
             <View
               style={[
                 tw`rounded-2xl p-4 border`,
@@ -647,7 +648,7 @@ export default function EditProfileScreen({ navigation }) {
                 <Text
                   style={[tw`text-xs font-semibold mb-2 px-0.5`, { color: colors.textSecondary }]}
                 >
-                  Daily Study Goal
+                  {tr("Daily Study Goal")}
                 </Text>
                 <ChipSelect
                   options={STUDY_GOALS.map((m) => ({ key: m, label: `${m}m` }))}
@@ -660,20 +661,20 @@ export default function EditProfileScreen({ navigation }) {
               {/* Toggles */}
               {[
                 {
-                  label: 'Push Notifications',
+                  label: tr("Push Notifications"),
                   key: 'notificationsEnabled',
                 },
                 {
-                  label: 'Show Answers During Test',
+                  label: tr("Show Answers During Test"),
                   key: 'showAnswersDuringTest',
                 },
                 {
-                  label: 'Show Explanations After Test',
+                  label: tr("Show Explanations After Test"),
                   key: 'showExplanationsAfterTest',
                 },
-                { label: 'Enable Timer', key: 'enableTimer' },
+                { label: tr("Enable Timer"), key: 'enableTimer' },
                 {
-                  label: 'Enable Negative Marking',
+                  label: tr("Enable Negative Marking"),
                   key: 'enableNegativeMarking',
                 },
               ].map((toggle, i, arr) => (
@@ -711,7 +712,7 @@ export default function EditProfileScreen({ navigation }) {
               ) : (
                 <>
                   <Ionicons name="checkmark-circle" size={18} color={colors.heroText} />
-                  <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>Save Changes</Text>
+                  <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>{tr("Save Changes")}</Text>
                 </>
               )}
             </TouchableOpacity>

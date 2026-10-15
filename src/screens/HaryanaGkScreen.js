@@ -10,6 +10,7 @@ import { practiceSessionService } from '../services/practiceSessionService';
 import { currentAffairsService, dayLabel, pickLang } from '../services/currentAffairsService';
 import { useAuth } from '../context/AuthContext';
 
+import { t as tr } from '../i18n';
 const SUBJECT = 'Haryana GK';
 const TOPIC_TONES = ['orange', 'blue', 'purple', 'red', 'green', 'orange', 'blue'];
 const TEST_SIZE = 15;
@@ -40,7 +41,7 @@ export default function HaryanaGkScreen({ navigation }) {
       const res = await api.get('/haryana-gk/overview');
       setData(res.data);
     } catch {
-      Alert.alert('Haryana GK', 'Could not load the Haryana GK hub. Pull down to retry.');
+      Alert.alert(tr("Haryana GK"), tr("Could not load the Haryana GK hub. Pull down to retry."));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -60,7 +61,7 @@ export default function HaryanaGkScreen({ navigation }) {
       const { session } = await practiceSessionService.create(request);
       navigation.navigate('PracticeInterface', { sessionId: session._id, sessionType: session.sessionType });
     } catch (e) {
-      Alert.alert('Could not start', e?.response?.data?.message || 'Please try again.');
+      Alert.alert(tr("Could not start"), e?.response?.data?.message || tr("Please try again."));
     } finally {
       setStarting(null);
     }
@@ -83,11 +84,11 @@ export default function HaryanaGkScreen({ navigation }) {
   return (
     <ScreenWrapper backgroundColor={colors.surface}>
       <View style={tw`flex-row items-center px-3 pt-2 pb-2`}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={tw`p-2`} accessibilityLabel="Back">
+        <TouchableOpacity onPress={() => navigation.goBack()} style={tw`p-2`} accessibilityLabel={tr("Back")}>
           <Ionicons name="arrow-back" size={22} color={colors.text} />
         </TouchableOpacity>
         <View style={tw`flex-1 ml-1`}>
-          <Text style={[tw`text-xl font-extrabold`, { color: colors.text }]}>Haryana GK</Text>
+          <Text style={[tw`text-xl font-extrabold`, { color: colors.text }]}>{tr("Haryana GK")}</Text>
           <Text style={[tw`text-xs`, { color: colors.textSecondary }]}>हरियाणा सामान्य ज्ञान</Text>
         </View>
       </View>
@@ -113,18 +114,18 @@ export default function HaryanaGkScreen({ navigation }) {
         >
           {/* ─── Summary ─────────────────────────────── */}
           <View style={[tw`p-5 rounded-3xl mb-5`, { backgroundColor: colors.hero }]}>
-            <Text style={[tw`text-[11px] font-bold tracking-widest`, { color: colors.heroMuted }]}>YOUR HARYANA GK</Text>
+            <Text style={[tw`text-[11px] font-bold tracking-widest`, { color: colors.heroMuted }]}>{tr("YOUR HARYANA GK")}</Text>
             <View style={tw`flex-row items-end mt-1`}>
               <Text style={[tw`text-4xl font-extrabold`, { color: colors.heroText }]}>
                 {overall?.accuracy != null ? overall.accuracy : '—'}
                 {overall?.accuracy != null ? <Text style={[tw`text-xl`, { color: colors.heroTextSecondary }]}>%</Text> : null}
               </Text>
               <Text style={[tw`text-xs ml-2 mb-1.5`, { color: colors.heroTextSecondary }]}>
-                {overall?.attempted ? `accuracy · ${overall.attempted} answered` : 'Start a topic to see your accuracy'}
+                {overall?.attempted ? tr("accuracy · {0} answered", overall.attempted) : tr("Start a topic to see your accuracy")}
               </Text>
             </View>
             <Text style={[tw`text-xs mt-1`, { color: colors.heroMuted }]}>
-              {data?.totalQuestions || 0} questions across {data?.topics?.filter((t) => t.questionCount).length || 0} topics
+              {tr("{0} questions across {1} topics", data?.totalQuestions || 0, data?.topics?.filter((t) => t.questionCount).length || 0)}
             </Text>
 
             <View style={tw`flex-row gap-2.5 mt-4`}>
@@ -139,7 +140,7 @@ export default function HaryanaGkScreen({ navigation }) {
                 ) : (
                   <>
                     <Ionicons name="shuffle" size={16} color={colors.hero} />
-                    <Text style={[tw`text-sm font-bold ml-1.5`, { color: colors.hero }]}>Mixed test</Text>
+                    <Text style={[tw`text-sm font-bold ml-1.5`, { color: colors.hero }]}>{tr("Mixed test")}</Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -155,7 +156,7 @@ export default function HaryanaGkScreen({ navigation }) {
                   <>
                     <Ionicons name="time-outline" size={16} color={colors.heroText} />
                     <Text style={[tw`text-sm font-bold ml-1.5`, { color: colors.heroText }]}>
-                      Past papers{data?.pyqCount ? ` · ${data.pyqCount}` : ''}
+                      {tr("Past papers{0}", data?.pyqCount ? ` · ${data.pyqCount}` : '')}
                     </Text>
                   </>
                 )}
@@ -167,9 +168,9 @@ export default function HaryanaGkScreen({ navigation }) {
           {news?.items?.length > 0 && (
             <View style={tw`mb-5`}>
               <View style={tw`flex-row items-center justify-between mb-3`}>
-                <Text style={[tw`text-lg font-extrabold`, { color: colors.text }]}>Current affairs</Text>
+                <Text style={[tw`text-lg font-extrabold`, { color: colors.text }]}>{tr("Current affairs")}</Text>
                 <TouchableOpacity onPress={() => navigation.navigate('CurrentAffairs')} style={tw`py-1 pl-3`}>
-                  <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>See all</Text>
+                  <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>{tr("See all")}</Text>
                 </TouchableOpacity>
               </View>
               <View style={[tw`rounded-3xl overflow-hidden`, card]}>
@@ -189,7 +190,7 @@ export default function HaryanaGkScreen({ navigation }) {
                       </Text>
                       <Text style={[tw`text-xs mt-0.5`, { color: colors.textSecondary }]}>
                         {dayLabel(it.date, news.today)}
-                        {it.questionCount ? ` · ${it.questionCount} MCQs` : ''}
+                        {it.questionCount ? tr(" · {0} MCQs", it.questionCount) : ''}
                       </Text>
                     </View>
                     <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
@@ -200,7 +201,7 @@ export default function HaryanaGkScreen({ navigation }) {
           )}
 
           {/* ─── Topics ──────────────────────────────── */}
-          <Text style={[tw`text-lg font-extrabold mb-3`, { color: colors.text }]}>Topics</Text>
+          <Text style={[tw`text-lg font-extrabold mb-3`, { color: colors.text }]}>{tr("Topics")}</Text>
           {(data?.topics || []).map((topic, i) => {
             const tone = colors.tones[TOPIC_TONES[i % TOPIC_TONES.length]];
             const empty = !topic.questionCount;
@@ -212,7 +213,7 @@ export default function HaryanaGkScreen({ navigation }) {
                 disabled={empty || !!starting}
                 activeOpacity={0.85}
                 style={[tw`p-4 rounded-3xl mb-2.5`, card, empty && { opacity: 0.6 }]}
-                accessibilityLabel={`${topic.label}, ${topic.questionCount} questions${empty ? ', coming soon' : ''}`}
+                accessibilityLabel={tr("{0}, {1} questions{2}", topic.label, topic.questionCount, empty ? ', coming soon' : '')}
               >
                 <View style={tw`flex-row items-center`}>
                   <View style={[tw`w-11 h-11 rounded-2xl items-center justify-center mr-3`, { backgroundColor: tone.bg }]}>
@@ -221,16 +222,16 @@ export default function HaryanaGkScreen({ navigation }) {
                   <View style={tw`flex-1`}>
                     <View style={tw`flex-row items-center`}>
                       <Text style={[tw`text-[15px] font-bold`, { color: colors.text }]} numberOfLines={1}>
-                        {topic.label}
+                        {tr(topic.label)}
                       </Text>
                       {weak && (
                         <View style={[tw`ml-2 px-1.5 py-0.5 rounded-md`, { backgroundColor: colors.tones.red.bg }]}>
-                          <Text style={[tw`text-[10px] font-bold`, { color: colors.tones.red.fg }]}>WEAK</Text>
+                          <Text style={[tw`text-[10px] font-bold`, { color: colors.tones.red.fg }]}>{tr("WEAK")}</Text>
                         </View>
                       )}
                     </View>
                     <Text style={[tw`text-xs mt-0.5`, { color: colors.textSecondary }]}>
-                      {topic.labelHindi} · {empty ? 'Coming soon' : `${topic.questionCount} questions`}
+                      {topic.labelHindi} · {empty ? tr("Coming soon") : tr("{0} questions", topic.questionCount)}
                     </Text>
                   </View>
                   {starting === topic.key ? (
@@ -238,7 +239,7 @@ export default function HaryanaGkScreen({ navigation }) {
                   ) : !empty ? (
                     <View style={tw`items-end`}>
                       <Text style={[tw`text-sm font-extrabold`, { color: topic.accuracy == null ? colors.textSecondary : colors.text }]}>
-                        {topic.accuracy == null ? 'New' : `${topic.accuracy}%`}
+                        {topic.accuracy == null ? tr("New") : `${topic.accuracy}%`}
                       </Text>
                       <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
                     </View>
@@ -259,7 +260,7 @@ export default function HaryanaGkScreen({ navigation }) {
           })}
 
           <Text style={[tw`text-xs text-center mt-3 px-6`, { color: colors.textSecondary }]}>
-            Each topic test has up to {TEST_SIZE} questions. Wrong answers go to your Wrong Book.
+            {tr("Each topic test has up to {0} questions. Wrong answers go to your Wrong Book.", TEST_SIZE)}
           </Text>
         </ScrollView>
       )}

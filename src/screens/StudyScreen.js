@@ -18,6 +18,7 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useFocusExam } from '../context/AppConfigContext';
 
+import { t as tr } from '../i18n';
 export default function StudyScreen({ navigation, route }) {
   const { colors } = useTheme();
   const { user } = useAuth();
@@ -388,7 +389,7 @@ export default function StudyScreen({ navigation, route }) {
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Study</Text>
+          <Text style={styles.headerTitle}>{tr("Study")}</Text>
         </View>
 
         {/* Quick actions — compact row so Articles / Question Bank stay on screen */}
@@ -401,7 +402,7 @@ export default function StudyScreen({ navigation, route }) {
             <View style={[styles.quickIcon, { backgroundColor: colors.tones.red.bg }]}>
               <Ionicons name="close-circle-outline" size={18} color={colors.tones.red.fg} />
             </View>
-            <Text style={styles.quickTitle} numberOfLines={1}>Wrong Book</Text>
+            <Text style={styles.quickTitle} numberOfLines={1}>{tr("Wrong Book")}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.quickTile}
@@ -411,7 +412,7 @@ export default function StudyScreen({ navigation, route }) {
             <View style={[styles.quickIcon, { backgroundColor: colors.tones.blue.bg }]}>
               <Ionicons name="book-outline" size={18} color={colors.tones.blue.fg} />
             </View>
-            <Text style={styles.quickTitle} numberOfLines={1}>PYQ</Text>
+            <Text style={styles.quickTitle} numberOfLines={1}>{tr("PYQ")}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.quickTile}
@@ -421,7 +422,7 @@ export default function StudyScreen({ navigation, route }) {
             <View style={[styles.quickIcon, { backgroundColor: colors.tones.orange.bg }]}>
               <Ionicons name="flash-outline" size={18} color={colors.tones.orange.fg} />
             </View>
-            <Text style={styles.quickTitle} numberOfLines={1}>Practice</Text>
+            <Text style={styles.quickTitle} numberOfLines={1}>{tr("Practice")}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.quickTile}
@@ -431,7 +432,7 @@ export default function StudyScreen({ navigation, route }) {
             <View style={[styles.quickIcon, { backgroundColor: colors.tones.purple.bg }]}>
               <Ionicons name="calendar-outline" size={18} color={colors.tones.purple.fg} />
             </View>
-            <Text style={styles.quickTitle} numberOfLines={1}>Plans</Text>
+            <Text style={styles.quickTitle} numberOfLines={1}>{tr("Plans")}</Text>
           </TouchableOpacity>
         </View>
 
@@ -445,8 +446,8 @@ export default function StudyScreen({ navigation, route }) {
             <Ionicons name="map-outline" size={18} color={colors.heroAccent} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.hrTitle}>Haryana GK</Text>
-            <Text style={styles.hrSub} numberOfLines={1}>Topic tests · history, districts, culture, schemes</Text>
+            <Text style={styles.hrTitle}>{tr("Haryana GK")}</Text>
+            <Text style={styles.hrSub} numberOfLines={1}>{tr("Topic tests · history, districts, culture, schemes")}</Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={colors.heroTextSecondary} />
         </TouchableOpacity>
@@ -464,7 +465,7 @@ export default function StudyScreen({ navigation, route }) {
               color={activeTab === 'articles' ? colors.text : colors.textSecondary}
             />
             <Text style={[styles.tabText, activeTab === 'articles' && styles.tabTextActive]}>
-              Articles
+              {tr("Articles")}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -478,7 +479,7 @@ export default function StudyScreen({ navigation, route }) {
               color={activeTab === 'questionBank' ? colors.text : colors.textSecondary}
             />
             <Text style={[styles.tabText, activeTab === 'questionBank' && styles.tabTextActive]}>
-              Question Bank
+              {tr("Question Bank")}
             </Text>
           </TouchableOpacity>
         </View>
@@ -489,7 +490,7 @@ export default function StudyScreen({ navigation, route }) {
             <Ionicons name="search" size={20} color={colors.textSecondary} style={styles.searchIcon} />
             <TextInput
               style={styles.searchInput}
-              placeholder={`Search ${activeTab === 'articles' ? 'articles' : 'questions'}...`}
+              placeholder={tr("Search {0}...", tr(activeTab === 'articles' ? 'articles' : 'questions'))}
               placeholderTextColor={colors.textSecondary}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -536,11 +537,11 @@ export default function StudyScreen({ navigation, route }) {
               {filteredArticles.length === 0 ? (
                 <View style={styles.emptyContainer}>
                   <Ionicons name="document-text-outline" size={64} color={colors.textSecondary} />
-                  <Text style={styles.emptyText}>No articles found</Text>
+                  <Text style={styles.emptyText}>{tr("No articles found")}</Text>
                   <Text style={styles.emptySubtext}>
                     {searchQuery || getActiveFiltersCount() > 0
-                      ? 'Try adjusting your search or filters'
-                      : 'Check back later for new articles'}
+                      ? tr("Try adjusting your search or filters")
+                      : tr("Check back later for new articles")}
                   </Text>
                 </View>
               ) : (
@@ -580,7 +581,7 @@ export default function StudyScreen({ navigation, route }) {
                         {article.isPremium && (
                           <View style={styles.premiumBadge}>
                             <Ionicons name="diamond" size={11} color={colors.tones.purple.fg} />
-                            <Text style={styles.premiumText}>PRO</Text>
+                            <Text style={styles.premiumText}>{tr("PRO")}</Text>
                           </View>
                         )}
                         {article.createdAt && (
@@ -600,11 +601,11 @@ export default function StudyScreen({ navigation, route }) {
               {filteredQuestions.length === 0 ? (
                 <View style={styles.emptyContainer}>
                   <Ionicons name="bookmark-outline" size={64} color={colors.textSecondary} />
-                  <Text style={styles.emptyText}>No saved questions</Text>
+                  <Text style={styles.emptyText}>{tr("No saved questions")}</Text>
                   <Text style={styles.emptySubtext}>
                     {searchQuery || getActiveFiltersCount() > 0
-                      ? 'Try adjusting your search or filters'
-                      : 'Save questions from exam results to build your question bank'}
+                      ? tr("Try adjusting your search or filters")
+                      : tr("Save questions from exam results to build your question bank")}
                   </Text>
                 </View>
               ) : (
@@ -667,7 +668,7 @@ export default function StudyScreen({ navigation, route }) {
                           activeOpacity={0.7}
                         >
                           <Ionicons name="eye-outline" size={17} color={colors.text} />
-                          <Text style={styles.actionText}>View</Text>
+                          <Text style={styles.actionText}>{tr("View")}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                           style={[styles.actionButton, styles.unsaveButton]}
@@ -675,7 +676,7 @@ export default function StudyScreen({ navigation, route }) {
                           activeOpacity={0.7}
                         >
                           <Ionicons name="bookmark" size={17} color={colors.tones.red.fg} />
-                          <Text style={[styles.actionText, styles.unsaveText]}>Remove</Text>
+                          <Text style={[styles.actionText, styles.unsaveText]}>{tr("Remove")}</Text>
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -696,7 +697,7 @@ export default function StudyScreen({ navigation, route }) {
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Filters</Text>
+                <Text style={styles.modalTitle}>{tr("Filters")}</Text>
                 <TouchableOpacity
                   onPress={() => setShowFilters(false)}
                   style={styles.modalCloseButton}
@@ -711,7 +712,7 @@ export default function StudyScreen({ navigation, route }) {
                     {/* Category Filter (hidden in focus mode) */}
                     {!focus && (
                     <View style={styles.filterGroup}>
-                      <Text style={styles.filterLabel}>Category</Text>
+                      <Text style={styles.filterLabel}>{tr("Category")}</Text>
                       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterChips}>
                         <TouchableOpacity
                           style={[
@@ -723,7 +724,7 @@ export default function StudyScreen({ navigation, route }) {
                           <Text style={[
                             styles.filterChipText,
                             !articleFilters.category && styles.filterChipTextActive,
-                          ]}>All</Text>
+                          ]}>{tr("All")}</Text>
                         </TouchableOpacity>
                         {getUniqueCategories().map((cat) => (
                           <TouchableOpacity
@@ -746,7 +747,7 @@ export default function StudyScreen({ navigation, route }) {
 
                     {/* Premium Filter */}
                     <View style={styles.filterGroup}>
-                      <Text style={styles.filterLabel}>Type</Text>
+                      <Text style={styles.filterLabel}>{tr("Type")}</Text>
                       <View style={styles.filterRow}>
                         {['', 'free', 'premium'].map((type) => (
                           <TouchableOpacity
@@ -761,7 +762,7 @@ export default function StudyScreen({ navigation, route }) {
                               styles.filterOptionText,
                               articleFilters.isPremium === type && styles.filterOptionTextActive,
                             ]}>
-                              {type === '' ? 'All' : type === 'free' ? 'Free' : 'Premium'}
+                              {type === '' ? tr("All") : type === 'free' ? tr("Free") : tr("Premium")}
                             </Text>
                           </TouchableOpacity>
                         ))}
@@ -770,7 +771,7 @@ export default function StudyScreen({ navigation, route }) {
 
                     {/* Sort */}
                     <View style={styles.filterGroup}>
-                      <Text style={styles.filterLabel}>Sort By</Text>
+                      <Text style={styles.filterLabel}>{tr("Sort By")}</Text>
                       <View style={styles.filterRow}>
                         {['createdAt', 'title'].map((sort) => (
                           <TouchableOpacity
@@ -785,7 +786,7 @@ export default function StudyScreen({ navigation, route }) {
                               styles.filterOptionText,
                               articleFilters.sortBy === sort && styles.filterOptionTextActive,
                             ]}>
-                              {sort === 'createdAt' ? 'Date' : 'Title'}
+                              {sort === 'createdAt' ? tr("Date") : tr("Title")}
                             </Text>
                           </TouchableOpacity>
                         ))}
@@ -793,7 +794,7 @@ export default function StudyScreen({ navigation, route }) {
                     </View>
 
                     <View style={styles.filterGroup}>
-                      <Text style={styles.filterLabel}>Order</Text>
+                      <Text style={styles.filterLabel}>{tr("Order")}</Text>
                       <View style={styles.filterRow}>
                         {['desc', 'asc'].map((order) => (
                           <TouchableOpacity
@@ -808,7 +809,7 @@ export default function StudyScreen({ navigation, route }) {
                               styles.filterOptionText,
                               articleFilters.sortOrder === order && styles.filterOptionTextActive,
                             ]}>
-                              {order === 'desc' ? 'Newest' : 'Oldest'}
+                              {order === 'desc' ? tr("Newest") : tr("Oldest")}
                             </Text>
                           </TouchableOpacity>
                         ))}
@@ -820,7 +821,7 @@ export default function StudyScreen({ navigation, route }) {
                     {/* Category Filter (hidden in focus mode) */}
                     {!focus && (
                     <View style={styles.filterGroup}>
-                      <Text style={styles.filterLabel}>Category</Text>
+                      <Text style={styles.filterLabel}>{tr("Category")}</Text>
                       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterChips}>
                         <TouchableOpacity
                           style={[
@@ -832,7 +833,7 @@ export default function StudyScreen({ navigation, route }) {
                           <Text style={[
                             styles.filterChipText,
                             !questionFilters.category && styles.filterChipTextActive,
-                          ]}>All</Text>
+                          ]}>{tr("All")}</Text>
                         </TouchableOpacity>
                         {getUniqueCategories().map((cat) => (
                           <TouchableOpacity
@@ -856,7 +857,7 @@ export default function StudyScreen({ navigation, route }) {
                     {/* Subject Filter */}
                     {qCategory && availableSubjects.length > 0 && (
                       <View style={styles.filterGroup}>
-                        <Text style={styles.filterLabel}>Subject</Text>
+                        <Text style={styles.filterLabel}>{tr("Subject")}</Text>
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterChips}>
                           <TouchableOpacity
                             style={[
@@ -868,7 +869,7 @@ export default function StudyScreen({ navigation, route }) {
                             <Text style={[
                               styles.filterChipText,
                               !questionFilters.subject && styles.filterChipTextActive,
-                            ]}>All</Text>
+                            ]}>{tr("All")}</Text>
                           </TouchableOpacity>
                           {availableSubjects.map((subject) => (
                             <TouchableOpacity
@@ -892,7 +893,7 @@ export default function StudyScreen({ navigation, route }) {
                     {/* Topic Filter */}
                     {questionFilters.subject && availableTopics.length > 0 && (
                       <View style={styles.filterGroup}>
-                        <Text style={styles.filterLabel}>Topic</Text>
+                        <Text style={styles.filterLabel}>{tr("Topic")}</Text>
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterChips}>
                           <TouchableOpacity
                             style={[
@@ -904,7 +905,7 @@ export default function StudyScreen({ navigation, route }) {
                             <Text style={[
                               styles.filterChipText,
                               !questionFilters.topic && styles.filterChipTextActive,
-                            ]}>All</Text>
+                            ]}>{tr("All")}</Text>
                           </TouchableOpacity>
                           {availableTopics.map((topic) => (
                             <TouchableOpacity
@@ -927,7 +928,7 @@ export default function StudyScreen({ navigation, route }) {
 
                     {/* Status Filter */}
                     <View style={styles.filterGroup}>
-                      <Text style={styles.filterLabel}>Status</Text>
+                      <Text style={styles.filterLabel}>{tr("Status")}</Text>
                       <View style={styles.filterRow}>
                         {['', 'needs-review', 'reviewed', 'mastered'].map((status) => (
                           <TouchableOpacity
@@ -942,7 +943,7 @@ export default function StudyScreen({ navigation, route }) {
                               styles.filterOptionText,
                               questionFilters.status === status && styles.filterOptionTextActive,
                             ]}>
-                              {status === '' ? 'All' : status.replace('-', ' ')}
+                              {status === '' ? tr("All") : status.replace('-', ' ')}
                             </Text>
                           </TouchableOpacity>
                         ))}
@@ -951,7 +952,7 @@ export default function StudyScreen({ navigation, route }) {
 
                     {/* Difficulty Filter */}
                     <View style={styles.filterGroup}>
-                      <Text style={styles.filterLabel}>Difficulty</Text>
+                      <Text style={styles.filterLabel}>{tr("Difficulty")}</Text>
                       <View style={styles.filterRow}>
                         {['', 'Easy', 'Medium', 'Hard'].map((difficulty) => (
                           <TouchableOpacity
@@ -966,7 +967,7 @@ export default function StudyScreen({ navigation, route }) {
                               styles.filterOptionText,
                               questionFilters.difficulty === difficulty && styles.filterOptionTextActive,
                             ]}>
-                              {difficulty || 'All'}
+                              {difficulty ? tr(difficulty) : tr("All")}
                             </Text>
                           </TouchableOpacity>
                         ))}
@@ -975,7 +976,7 @@ export default function StudyScreen({ navigation, route }) {
 
                     {/* Sort */}
                     <View style={styles.filterGroup}>
-                      <Text style={styles.filterLabel}>Sort By</Text>
+                      <Text style={styles.filterLabel}>{tr("Sort By")}</Text>
                       <View style={styles.filterRow}>
                         {['savedAt', 'status'].map((sort) => (
                           <TouchableOpacity
@@ -990,7 +991,7 @@ export default function StudyScreen({ navigation, route }) {
                               styles.filterOptionText,
                               questionFilters.sortBy === sort && styles.filterOptionTextActive,
                             ]}>
-                              {sort === 'savedAt' ? 'Date' : 'Status'}
+                              {sort === 'savedAt' ? tr("Date") : tr("Status")}
                             </Text>
                           </TouchableOpacity>
                         ))}
@@ -998,7 +999,7 @@ export default function StudyScreen({ navigation, route }) {
                     </View>
 
                     <View style={styles.filterGroup}>
-                      <Text style={styles.filterLabel}>Order</Text>
+                      <Text style={styles.filterLabel}>{tr("Order")}</Text>
                       <View style={styles.filterRow}>
                         {['desc', 'asc'].map((order) => (
                           <TouchableOpacity
@@ -1013,7 +1014,7 @@ export default function StudyScreen({ navigation, route }) {
                               styles.filterOptionText,
                               questionFilters.sortOrder === order && styles.filterOptionTextActive,
                             ]}>
-                              {order === 'desc' ? 'Newest' : 'Oldest'}
+                              {order === 'desc' ? tr("Newest") : tr("Oldest")}
                             </Text>
                           </TouchableOpacity>
                         ))}
@@ -1029,7 +1030,7 @@ export default function StudyScreen({ navigation, route }) {
                   onPress={clearFilters}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.clearFiltersText}>Clear All</Text>
+                  <Text style={styles.clearFiltersText}>{tr("Clear All")}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.applyFiltersButton}
@@ -1041,7 +1042,7 @@ export default function StudyScreen({ navigation, route }) {
                   }}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.applyFiltersText}>Apply</Text>
+                  <Text style={styles.applyFiltersText}>{tr("Apply")}</Text>
                 </TouchableOpacity>
               </View>
             </View>
