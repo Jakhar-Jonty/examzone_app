@@ -13,6 +13,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import tw from 'twrnc';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusExam } from '../context/AppConfigContext';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
@@ -192,6 +193,7 @@ export default function DashboardScreen({ navigation }) {
   };
 
   // ─── Derived data ──────────────────────────────────────
+  const focus = useFocusExam();
   const targetExams = stats?.targetExams || [];
   const target =
     targetExams.find((t) => idOf(t.category) === selectedTargetId) || targetExams[0] || null;
@@ -449,7 +451,8 @@ export default function DashboardScreen({ navigation }) {
             </View>
           </View>
 
-          {/* ─── Target exam ──────────────────────────── */}
+          {/* ─── Target exam (hidden in focus mode: everything is the focus exam) ── */}
+          {!focus && (
           <TouchableOpacity
             onPress={chooseTarget}
             activeOpacity={0.85}
@@ -475,6 +478,7 @@ export default function DashboardScreen({ navigation }) {
               <Ionicons name="chevron-down" size={16} color={colors.textSecondary} />
             </View>
           </TouchableOpacity>
+          )}
 
           {/* ─── Error ────────────────────────────────── */}
           {error && (

@@ -11,6 +11,7 @@ import tw from 'twrnc';
 import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { useFocusExam } from '../context/AppConfigContext';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
 import ExamCard, { ExamSearchBar, filterExamsByChip } from '../components/ExamCard';
@@ -47,6 +48,7 @@ function deriveDifficultyLabel(difficultyDistribution) {
 export default function ExamsScreen({ navigation }) {
   const { colors } = useTheme();
   const { user } = useAuth();
+  const focus = useFocusExam();
 
   const [exams, setExams] = useState([]);
   const [highlights, setHighlights] = useState(null);
@@ -280,9 +282,10 @@ export default function ExamsScreen({ navigation }) {
     setSortBy('newest');
   };
 
+  // Focus mode: one exam family, so no category filter
   const profileCategories = useMemo(
-    () => filterCategoriesForUser(categories, user),
-    [categories, user]
+    () => (focus ? [] : filterCategoriesForUser(categories, user)),
+    [categories, user, focus]
   );
 
   const sheetFiltersCount =
@@ -519,7 +522,9 @@ export default function ExamsScreen({ navigation }) {
                     >
                     {searchQuery || activeFiltersCount > 0
                         ? 'Try adjusting your filters or search.'
-                        : user?.examPreparations?.length
+                        : focus
+                          ? `No ${focus.name} exams are available yet.`
+                          : user?.examPreparations?.length
                           ? 'No exams are available for your categories yet.'
                           : 'Add exam categories in your profile to see exams here.'}
                   </Text>

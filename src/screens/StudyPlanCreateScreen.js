@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
+import { useFocusExam } from '../context/AppConfigContext';
 import api from '../services/api';
 import { studyPlanService } from '../services/studyPlanService';
 
@@ -38,6 +39,7 @@ export default function StudyPlanCreateScreen({ navigation }) {
   const [subjectsAndTopics, setSubjectsAndTopics] = useState([]);
   const [loadingTopics, setLoadingTopics] = useState(false);
 
+  const focus = useFocusExam();
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -46,6 +48,10 @@ export default function StudyPlanCreateScreen({ navigation }) {
     studyHoursPerDay: '4',
     categoryId: '',
   });
+  // Focus mode: the category is always the focus exam (picker hidden)
+  useEffect(() => {
+    if (focus) setForm((f) => (f.categoryId ? f : { ...f, categoryId: String(focus.id) }));
+  }, [focus]);
 
   const [selectedTopicKeys, setSelectedTopicKeys] = useState(new Set());
   const [expandedSubjects, setExpandedSubjects] = useState(new Set());
@@ -208,6 +214,8 @@ export default function StudyPlanCreateScreen({ navigation }) {
               placeholderTextColor={colors.textSecondary}
               multiline
             />
+{!focus && (
+              <>
             <Text style={styles.label}>Target Exam (optional)</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }}>
               <TouchableOpacity
@@ -226,6 +234,8 @@ export default function StudyPlanCreateScreen({ navigation }) {
                 </TouchableOpacity>
               ))}
             </ScrollView>
+              </>
+            )}
             <Text style={styles.label}>Start Date</Text>
             <TextInput style={styles.input} value={form.startDate} onChangeText={(v) => setForm((f) => ({ ...f, startDate: v }))} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textSecondary} />
             <Text style={styles.label}>End Date *</Text>

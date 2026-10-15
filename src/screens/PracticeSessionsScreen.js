@@ -15,6 +15,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
+import { useFocusExam } from '../context/AppConfigContext';
 import api from '../services/api';
 import { practiceSessionService } from '../services/practiceSessionService';
 
@@ -39,6 +40,7 @@ function ProgressBar({ value, colors }) {
 }
 
 function CreateSessionModal({ visible, onClose, onCreated, colors }) {
+  const focus = useFocusExam();
   const [form, setForm] = useState({
     sessionType: 'random',
     categoryId: '',
@@ -47,6 +49,10 @@ function CreateSessionModal({ visible, onClose, onCreated, colors }) {
     difficulty: [],
     questionCount: '20',
   });
+  // Focus mode: the category is always the focus exam (picker hidden)
+  useEffect(() => {
+    if (focus) setForm((f) => (f.categoryId ? f : { ...f, categoryId: String(focus.id) }));
+  }, [focus]);
   const [categories, setCategories] = useState([]);
   const [subjectsAndTopics, setSubjectsAndTopics] = useState([]);
   const [loadingTopics, setLoadingTopics] = useState(false);
@@ -150,6 +156,8 @@ function CreateSessionModal({ visible, onClose, onCreated, colors }) {
               ))}
             </View>
 
+{!focus && (
+              <>
             <Text style={styles.label}>Category (optional)</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
               <TouchableOpacity
@@ -168,6 +176,8 @@ function CreateSessionModal({ visible, onClose, onCreated, colors }) {
                 </TouchableOpacity>
               ))}
             </ScrollView>
+              </>
+            )}
 
             {showSubject && form.categoryId ? (
               <>

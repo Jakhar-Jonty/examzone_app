@@ -15,6 +15,7 @@ import {
 import tw from 'twrnc';
 import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
+import { useFocusExam } from '../context/AppConfigContext';
 import { useAuth } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -114,6 +115,7 @@ export default function EditProfileScreen({ navigation }) {
   const { colors } = useTheme();
   const { user, updateUser } = useAuth();
   const { categories, loading: categoriesLoading } = useCategories();
+  const focus = useFocusExam();
 
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -590,7 +592,9 @@ export default function EditProfileScreen({ navigation }) {
               />
             </View>
 
-            {/* ─── Exam Preparation ───────────────────── */}
+            {/* ─── Exam Preparation (hidden in focus mode) ── */}
+            {!focus && (
+              <>
             <SectionLabel title="Exam Preparation" icon="school-outline" colors={colors} />
             <View
               style={[
@@ -610,6 +614,9 @@ export default function EditProfileScreen({ navigation }) {
                 />
               )}
             </View>
+
+              </>
+            )}
 
             {/* ─── Language ───────────────────────────── */}
             <SectionLabel title="Preferred Language" icon="language-outline" colors={colors} />

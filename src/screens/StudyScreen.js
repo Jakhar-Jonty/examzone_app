@@ -16,10 +16,12 @@ import { useTheme } from '../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useFocusExam } from '../context/AppConfigContext';
 
 export default function StudyScreen({ navigation, route }) {
   const { colors } = useTheme();
   const { user } = useAuth();
+  const focus = useFocusExam();
   const initialTab = route?.params?.initialTab || 'articles';
   const [activeTab, setActiveTab] = useState(initialTab);
   const [articles, setArticles] = useState([]);
@@ -47,6 +49,8 @@ export default function StudyScreen({ navigation, route }) {
     sortBy: 'savedAt',
     sortOrder: 'desc',
   });
+  // Focus mode: the focus exam is the implied category (its chips are hidden)
+  const qCategory = questionFilters.category || (focus ? String(focus.id) : '');
 
   const [subjectsAndTopics, setSubjectsAndTopics] = useState([]);
   const [availableSubjects, setAvailableSubjects] = useState([]);
@@ -80,7 +84,7 @@ export default function StudyScreen({ navigation, route }) {
   }, [searchQuery, articles, savedQuestions, articleFilters, questionFilters]);
 
   useEffect(() => {
-    if (questionFilters.category) {
+    if (qCategory) {
       fetchSubjectsAndTopics();
     } else {
       setSubjectsAndTopics([]);
@@ -88,16 +92,16 @@ export default function StudyScreen({ navigation, route }) {
       setAvailableTopics([]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [questionFilters.category]);
+  }, [qCategory]);
 
   useEffect(() => {
-    if (questionFilters.category && subjectsAndTopics.length > 0) {
+    if (qCategory && subjectsAndTopics.length > 0) {
       // Compare category as string (handle both ObjectId string and category code)
       const uniqueSubjects = [...new Set(
         subjectsAndTopics
           .filter(st => {
             const stCategory = st.category?.toString() || st.category || '';
-            const filterCategory = questionFilters.category?.toString() || questionFilters.category || '';
+            const filterCategory = qCategory?.toString() || qCategory || '';
             return stCategory === filterCategory || st.categoryName === filterCategory;
           })
           .map(st => st.subject)
@@ -107,14 +111,14 @@ export default function StudyScreen({ navigation, route }) {
     } else {
       setAvailableSubjects([]);
     }
-  }, [questionFilters.category, subjectsAndTopics]);
+  }, [qCategory, subjectsAndTopics]);
 
   useEffect(() => {
-    if (questionFilters.subject && questionFilters.category && subjectsAndTopics.length > 0) {
+    if (questionFilters.subject && qCategory && subjectsAndTopics.length > 0) {
       const subjectData = subjectsAndTopics.find(s => {
         const subjectMatch = s.subject?.toLowerCase() === questionFilters.subject.toLowerCase();
         const stCategory = s.category?.toString() || s.category || '';
-        const filterCategory = questionFilters.category?.toString() || questionFilters.category || '';
+        const filterCategory = qCategory?.toString() || qCategory || '';
         const categoryMatch = stCategory === filterCategory || s.categoryName === filterCategory;
         return subjectMatch && categoryMatch;
       });
@@ -126,7 +130,7 @@ export default function StudyScreen({ navigation, route }) {
     } else {
       setAvailableTopics([]);
     }
-  }, [questionFilters.subject, questionFilters.category, subjectsAndTopics]);
+  }, [questionFilters.subject, qCategory, subjectsAndTopics]);
 
   const fetchArticles = async () => {
     try {
@@ -210,7 +214,7 @@ export default function StudyScreen({ navigation, route }) {
 
   const fetchSubjectsAndTopics = async () => {
     try {
-      const queryParams = questionFilters.category ? `?category=${questionFilters.category}` : '';
+      const queryParams = qCategory ? `?category=${qCategory}` : '';
       const response = await api.get(`/user/subjects-topics${queryParams}`);
       setSubjectsAndTopics(response.data?.subjectsAndTopics || []);
     } catch (error) {
@@ -704,7 +708,8 @@ export default function StudyScreen({ navigation, route }) {
               <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
                 {activeTab === 'articles' ? (
                   <>
-                    {/* Category Filter */}
+                    {/* Category Filter (hidden in focus mode) */}
+                    {!focus && (
                     <View style={styles.filterGroup}>
                       <Text style={styles.filterLabel}>Category</Text>
                       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterChips}>
@@ -737,6 +742,7 @@ export default function StudyScreen({ navigation, route }) {
                         ))}
                       </ScrollView>
                     </View>
+                    )}
 
                     {/* Premium Filter */}
                     <View style={styles.filterGroup}>
@@ -811,7 +817,8 @@ export default function StudyScreen({ navigation, route }) {
                   </>
                 ) : (
                   <>
-                    {/* Category Filter */}
+                    {/* Category Filter (hidden in focus mode) */}
+                    {!focus && (
                     <View style={styles.filterGroup}>
                       <Text style={styles.filterLabel}>Category</Text>
                       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterChips}>
@@ -844,9 +851,10 @@ export default function StudyScreen({ navigation, route }) {
                         ))}
                       </ScrollView>
                     </View>
+                    )}
 
                     {/* Subject Filter */}
-                    {questionFilters.category && availableSubjects.length > 0 && (
+                    {qCategory && availableSubjects.length > 0 && (
                       <View style={styles.filterGroup}>
                         <Text style={styles.filterLabel}>Subject</Text>
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterChips}>
