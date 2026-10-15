@@ -6,9 +6,10 @@ import api from './api';
  * enroll (free instant; paid uses mock payment for now), and list my series.
  */
 export const testSeriesService = {
-  list: async ({ category, search, page = 1, limit = 20 } = {}) => {
+  list: async ({ category, search, subExam, page = 1, limit = 30 } = {}) => {
     const params = new URLSearchParams();
     if (category) params.set('category', category);
+    if (subExam) params.set('subExam', subExam);
     if (search) params.set('search', search);
     params.set('page', page);
     params.set('limit', limit);
@@ -18,7 +19,7 @@ export const testSeriesService = {
 
   detail: async (id) => {
     const res = await api.get(`/test-series/${id}`);
-    return res.data; // { series, enrollment, isEnrolled, progress }
+    return res.data; // { series, access, canAccess, isEnrolled, nextIndex, progress }
   },
 
   // Free series: call with no body. Paid series: pass { paymentId, isMock }.

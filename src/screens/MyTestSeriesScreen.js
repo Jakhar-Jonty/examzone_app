@@ -51,11 +51,15 @@ export default function MyTestSeriesScreen({ navigation }) {
         <View style={styles.topRow}>
           <Ionicons name="albums" size={18} color={colors.text} />
           <Text style={styles.title} numberOfLines={1}>{ts.title || tr("Test Series")}</Text>
-          {item.status === 'completed' && (
+          {item.expired ? (
+            <View style={[styles.doneTag, { backgroundColor: colors.tones.red.bg }]}>
+              <Text style={[styles.doneText, { color: colors.tones.red.fg }]}>{tr("Expired")}</Text>
+            </View>
+          ) : (item.status === 'completed' || (p.totalTests > 0 && p.testsCompleted >= p.totalTests)) ? (
             <View style={styles.doneTag}>
               <Text style={styles.doneText}>{tr("Completed")}</Text>
             </View>
-          )}
+          ) : null}
         </View>
         <View style={styles.bar}>
           <View style={[styles.barFill, { width: `${p.progressPercentage || 0}%` }]} />
