@@ -11,7 +11,8 @@ import tw from 'twrnc';
 import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
-import { useFocusExam } from '../context/AppConfigContext';
+import { useFocusExam, useSubExam, matchesSubExam } from '../context/AppConfigContext';
+import SubExamChips from '../components/SubExamChips';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
 import ExamCard, { ExamSearchBar, filterExamsByChip } from '../components/ExamCard';
@@ -49,6 +50,9 @@ export default function ExamsScreen({ navigation }) {
   const { colors } = useTheme();
   const { user } = useAuth();
   const focus = useFocusExam();
+  const { selectedId: subExamId } = useSubExam();
+  const subExamRef = useRef(subExamId);
+  subExamRef.current = subExamId;
 
   const [exams, setExams] = useState([]);
   const [highlights, setHighlights] = useState(null);
@@ -103,12 +107,12 @@ export default function ExamsScreen({ navigation }) {
     const delay = searchQuery.trim() ? 400 : 0;
     const t = setTimeout(() => fetchExams(1, false), delay);
     return () => clearTimeout(t);
-  }, [filters, searchQuery, examFilter, examTypeFilter, sortBy]);
+  }, [filters, searchQuery, examFilter, examTypeFilter, sortBy, subExamId]);
 
   const applyPyqClientFilters = (examList) => {
     let filtered = [...(examList || [])];
 
-    filtered = filtered.filter((exam) => exam.examType === 'pyq');
+    filtered = filtered.filter((exam) => exam.examType === 'pyq' && matchesSubExam(exam, subExamRef.current));
 
     const q = searchQueryRef.current.trim().toLowerCase();
     if (q) {
@@ -190,6 +194,7 @@ export default function ExamsScreen({ navigation }) {
 
       const q = searchQueryRef.current.trim();
       if (q) params.append('search', q);
+      if (subExamRef.current) params.append('subExam', subExamRef.current);
 
       const attemptStatus = examFilterToAttemptStatus(examFilterRef.current);
       if (attemptStatus) params.append('attemptStatus', attemptStatus);
@@ -437,6 +442,7 @@ export default function ExamsScreen({ navigation }) {
               </TouchableOpacity>
             }
           />
+          <SubExamChips style={tw`mt-2.5 mb-1.5`} />
 
           <ScrollView
             horizontal

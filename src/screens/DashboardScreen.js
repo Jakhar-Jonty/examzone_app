@@ -13,7 +13,8 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import tw from 'twrnc';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusExam } from '../context/AppConfigContext';
+import { useFocusExam, useSubExam, matchesSubExam } from '../context/AppConfigContext';
+import SubExamChips from '../components/SubExamChips';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
@@ -194,10 +195,12 @@ export default function DashboardScreen({ navigation }) {
 
   // ─── Derived data ──────────────────────────────────────
   const focus = useFocusExam();
+  const { selectedId: subExamId } = useSubExam();
   const targetExams = stats?.targetExams || [];
   const target =
     targetExams.find((t) => idOf(t.category) === selectedTargetId) || targetExams[0] || null;
-  const inTarget = (exam) => !target || !exam.category || idOf(exam.category) === idOf(target.category);
+  const inTarget = (exam) =>
+    (!target || !exam.category || idOf(exam.category) === idOf(target.category)) && matchesSubExam(exam, subExamId);
 
   const currentStreak = stats?.streak?.currentStreak || 0;
   const totalAttempts = Number(stats?.stats?.totalAttempts) || 0;
@@ -450,6 +453,9 @@ export default function DashboardScreen({ navigation }) {
               </TouchableOpacity>
             </View>
           </View>
+
+          {/* ─── Sub-exam (focus mode; only once 2+ sub-exams have exams) ── */}
+          <SubExamChips style={tw`mb-5`} />
 
           {/* ─── Target exam (hidden in focus mode: everything is the focus exam) ── */}
           {!focus && (
