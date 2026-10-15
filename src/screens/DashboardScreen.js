@@ -212,6 +212,8 @@ export default function DashboardScreen({ navigation }) {
     ...targetExamsList.filter((e) => e.isAttempted),
   ].slice(0, 3);
   const liveTests = (stats?.upcomingExams || []).filter(inTarget);
+  // Haryana GK hub is promoted for HSSC/Haryana aspirants (and before a goal is set)
+  const showHaryanaGk = !target || /hssc|haryana|\bcet\b/i.test(target.name || '');
   const recentResults = (stats?.recentExamResults || []).slice(0, 3);
   const dailyQuiz = stats?.dailyQuiz || null;
   const dailyQuizDone = !!dailyQuiz?.isCompleted;
@@ -597,6 +599,26 @@ export default function DashboardScreen({ navigation }) {
             <QuickTile icon="close-circle-outline" tone={colors.tones.red} label="Wrong Book" subtitle="Fix mistakes"
               colors={colors} onPress={() => navigation.navigate('StudyTab', { screen: 'WrongBook', initial: false })} />
           </View>
+
+          {/* ─── Haryana GK hub ───────────────────────── */}
+          {showHaryanaGk && (
+            <TouchableOpacity
+              onPress={() => navigation.navigate('StudyTab', { screen: 'HaryanaGk', initial: false })}
+              activeOpacity={0.85}
+              style={[tw`flex-row items-center p-4 rounded-3xl mb-6`, { backgroundColor: colors.hero }]}
+            >
+              <View style={[tw`w-10 h-10 rounded-xl items-center justify-center mr-3`, { backgroundColor: colors.heroRaised }]}>
+                <Ionicons name="map-outline" size={20} color={colors.heroAccent} />
+              </View>
+              <View style={tw`flex-1`}>
+                <Text style={[tw`text-sm font-bold`, { color: colors.heroText }]}>Haryana GK</Text>
+                <Text style={[tw`text-xs mt-0.5`, { color: colors.heroTextSecondary }]} numberOfLines={1}>
+                  Topic tests for HSSC · हरियाणा सामान्य ज्ञान
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.heroTextSecondary} />
+            </TouchableOpacity>
+          )}
 
           {/* ─── Live tests ───────────────────────────── */}
           {liveTests.length > 0 && (

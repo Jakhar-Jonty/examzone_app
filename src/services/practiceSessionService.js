@@ -16,11 +16,13 @@ export const practiceSessionService = {
     return res.data;
   },
 
-  create: async ({ sessionType, filters, questionCount }) => {
+  // strict: never widen filters if too few questions match (hub topic tests)
+  create: async ({ sessionType, filters, questionCount, strict }) => {
     const res = await api.post('/practice-sessions', {
       sessionType,
       filters,
       questionCount,
+      ...(strict ? { strict: true } : {}),
     });
     return res.data;
   },

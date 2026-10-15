@@ -431,6 +431,22 @@ export default function StudyScreen({ navigation, route }) {
           </TouchableOpacity>
         </View>
 
+        {/* Haryana GK hub — slim banner */}
+        <TouchableOpacity
+          style={styles.hrBanner}
+          onPress={() => navigation.navigate('HaryanaGk')}
+          activeOpacity={0.85}
+        >
+          <View style={styles.hrIcon}>
+            <Ionicons name="map-outline" size={18} color={colors.heroAccent} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.hrTitle}>Haryana GK</Text>
+            <Text style={styles.hrSub} numberOfLines={1}>Topic tests · history, districts, culture, schemes</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.heroTextSecondary} />
+        </TouchableOpacity>
+
         {/* Tab Selector */}
         <View style={styles.tabContainer}>
           <TouchableOpacity
@@ -1069,6 +1085,27 @@ const createStyles = (colors) =>
       justifyContent: 'center',
     },
     quickTitle: { fontSize: 11, fontWeight: '700', color: colors.text },
+    hrBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      marginHorizontal: 16,
+      marginBottom: 8,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      borderRadius: 16,
+      backgroundColor: colors.hero,
+    },
+    hrIcon: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.heroRaised,
+    },
+    hrTitle: { fontSize: 14, fontWeight: '800', color: colors.heroText },
+    hrSub: { fontSize: 11, color: colors.heroTextSecondary, marginTop: 1 },
     tabContainer: {
       flexDirection: 'row',
       marginHorizontal: 16,
