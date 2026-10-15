@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../services/api';
 
@@ -42,19 +43,26 @@ export function AppConfigProvider({ children }) {
         if (sub) setStoredSubExamId(sub);
       })
       .catch(() => {});
-    api
-      .get('/config')
-      .then((res) => {
-        const next = { focus: res.data?.focus || null };
-        if (cancelled) return;
-        setConfig({ ...next, loaded: true });
-        AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next)).catch(() => {});
-      })
-      .catch(() => {
-        if (!cancelled) setConfig((c) => ({ ...c, loaded: true }));
-      });
+    const refresh = () =>
+      api
+        .get('/config')
+        .then((res) => {
+          const next = { focus: res.data?.focus || null };
+          if (cancelled) return;
+          setConfig({ ...next, loaded: true });
+          AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next)).catch(() => {});
+        })
+        .catch(() => {
+          if (!cancelled) setConfig((c) => ({ ...c, loaded: true }));
+        });
+    refresh();
+    // pick up admin changes (new sub-exams, focus switched off) when the app comes back
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') refresh();
+    });
     return () => {
       cancelled = true;
+      sub.remove();
     };
   }, []);
 
