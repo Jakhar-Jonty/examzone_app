@@ -7,6 +7,8 @@ import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
 import { practiceSessionService } from '../services/practiceSessionService';
+import { currentAffairsService, dayLabel, pickLang } from '../services/currentAffairsService';
+import { useAuth } from '../context/AuthContext';
 
 const SUBJECT = 'Haryana GK';
 const TOPIC_TONES = ['orange', 'blue', 'purple', 'red', 'green', 'orange', 'blue'];
@@ -21,12 +23,19 @@ const WEAK_MIN_ATTEMPTS = 5;
  */
 export default function HaryanaGkScreen({ navigation }) {
   const { colors } = useTheme();
+  const { user } = useAuth();
+  const hindi = user?.preferredLanguage === 'Hindi';
   const [data, setData] = useState(null);
+  const [news, setNews] = useState(null); // latest current affairs
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [starting, setStarting] = useState(null); // key of the test being started
 
   const load = async () => {
+    currentAffairsService
+      .list({ limit: 3 })
+      .then(setNews)
+      .catch(() => setNews(null));
     try {
       const res = await api.get('/haryana-gk/overview');
       setData(res.data);
@@ -153,6 +162,42 @@ export default function HaryanaGkScreen({ navigation }) {
               </TouchableOpacity>
             </View>
           </View>
+
+          {/* ─── Current affairs ─────────────────────── */}
+          {news?.items?.length > 0 && (
+            <View style={tw`mb-5`}>
+              <View style={tw`flex-row items-center justify-between mb-3`}>
+                <Text style={[tw`text-lg font-extrabold`, { color: colors.text }]}>Current affairs</Text>
+                <TouchableOpacity onPress={() => navigation.navigate('CurrentAffairs')} style={tw`py-1 pl-3`}>
+                  <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>See all</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={[tw`rounded-3xl overflow-hidden`, card]}>
+                {news.items.slice(0, 3).map((it, i) => (
+                  <TouchableOpacity
+                    key={it._id}
+                    onPress={() => navigation.navigate('CurrentAffairDetail', { id: it._id, hindi })}
+                    activeOpacity={0.85}
+                    style={[tw`flex-row items-center px-4 py-3.5`, i > 0 && { borderTopWidth: 1, borderTopColor: colors.border }]}
+                  >
+                    <View style={[tw`w-10 h-10 rounded-xl items-center justify-center mr-3`, { backgroundColor: colors.tones.blue.bg }]}>
+                      <Ionicons name="newspaper-outline" size={18} color={colors.tones.blue.fg} />
+                    </View>
+                    <View style={tw`flex-1`}>
+                      <Text style={[tw`text-sm font-bold`, { color: colors.text }]} numberOfLines={2}>
+                        {pickLang(hindi, it.title, it.titleHindi)}
+                      </Text>
+                      <Text style={[tw`text-xs mt-0.5`, { color: colors.textSecondary }]}>
+                        {dayLabel(it.date, news.today)}
+                        {it.questionCount ? ` · ${it.questionCount} MCQs` : ''}
+                      </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          )}
 
           {/* ─── Topics ──────────────────────────────── */}
           <Text style={[tw`text-lg font-extrabold mb-3`, { color: colors.text }]}>Topics</Text>
