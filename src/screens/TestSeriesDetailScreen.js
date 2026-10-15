@@ -20,6 +20,7 @@ export default function TestSeriesDetailScreen({ route, navigation }) {
   const { colors } = useTheme();
   const [data, setData] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -87,6 +88,22 @@ export default function TestSeriesDetailScreen({ route, navigation }) {
     navigation.navigate('ExamDetail', { examId: entry.exam?._id || entry.exam });
   };
 
+  // Save to / remove from My Series without starting a test
+  const toggleSaved = async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      if (isEnrolled) await testSeriesService.unenroll(id);
+      else await testSeriesService.enroll(id);
+      setData((d) => ({ ...d, isEnrolled: !isEnrolled }));
+    } catch (e) {
+      Alert.alert(tr('Could not update'), tr(e?.response?.data?.message || 'Please try again.'));
+    } finally {
+      setSaving(false);
+    }
+  };
+  const canSave = canAccess && !(isEnrolled && data.enrollment?.isPaid);
+
   const buy = () => {
     const price = accessLabel({ ...series, access });
     Alert.alert(tr('Enroll'), tr('This series costs {0}. Continue? (mock payment)', price), [
@@ -139,6 +156,29 @@ export default function TestSeriesDetailScreen({ route, navigation }) {
         <Text style={[tw`flex-1 text-base font-bold ml-1`, { color: colors.text }]} numberOfLines={1}>
           {tr('Test Series')}
         </Text>
+        {canSave && (
+          <TouchableOpacity
+            onPress={toggleSaved}
+            disabled={saving}
+            activeOpacity={0.85}
+            accessibilityLabel={isEnrolled ? tr('Remove from My Series') : tr('Save to My Series')}
+            style={[
+              tw`flex-row items-center px-3 h-9 rounded-full mr-2`,
+              isEnrolled ? { backgroundColor: colors.hero } : { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
+            ]}
+          >
+            {saving ? (
+              <ActivityIndicator size="small" color={isEnrolled ? colors.heroText : colors.text} />
+            ) : (
+              <>
+                <Ionicons name={isEnrolled ? 'bookmark' : 'bookmark-outline'} size={14} color={isEnrolled ? colors.heroAccent : colors.text} />
+                <Text style={[tw`text-xs font-bold ml-1`, { color: isEnrolled ? colors.heroText : colors.text }]}>
+                  {isEnrolled ? tr('Saved') : tr('Save')}
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+        )}
       </View>
 
       <ScrollView contentContainerStyle={tw`px-5 pt-1 pb-36`} showsVerticalScrollIndicator={false}>

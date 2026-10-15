@@ -28,6 +28,12 @@ export const testSeriesService = {
     return res.data; // { message, enrollment }
   },
 
+  // Remove a saved (free/premium) series from My Series
+  unenroll: async (id) => {
+    const res = await api.delete(`/test-series/${id}/enroll`);
+    return res.data;
+  },
+
   myEnrollments: async () => {
     const res = await api.get('/test-series/me/enrollments');
     return res.data; // { enrollments: [{ ...enrollment, progress }] }

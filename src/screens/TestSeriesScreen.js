@@ -19,6 +19,21 @@ export default function TestSeriesScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(false);
+  const [savingId, setSavingId] = useState(null);
+
+  const toggleSaved = async (s) => {
+    if (savingId) return;
+    setSavingId(s._id);
+    try {
+      if (s.isEnrolled) await testSeriesService.unenroll(s._id);
+      else await testSeriesService.enroll(s._id);
+      setSeries((list) => list.map((x) => (x._id === s._id ? { ...x, isEnrolled: !x.isEnrolled } : x)));
+    } catch {
+      // leave as is; the detail page explains errors
+    } finally {
+      setSavingId(null);
+    }
+  };
 
   const load = useCallback(async () => {
     try {
@@ -149,6 +164,20 @@ export default function TestSeriesScreen({ navigation }) {
                         {accessLabel(s)}
                       </Text>
                     </View>
+                    {s.canAccess && (
+                      <TouchableOpacity
+                        onPress={() => toggleSaved(s)}
+                        hitSlop={8}
+                        style={tw`ml-2 pt-0.5`}
+                        accessibilityLabel={s.isEnrolled ? tr('Remove from My Series') : tr('Save to My Series')}
+                      >
+                        {savingId === s._id ? (
+                          <ActivityIndicator size="small" color={colors.text} />
+                        ) : (
+                          <Ionicons name={s.isEnrolled ? 'bookmark' : 'bookmark-outline'} size={20} color={colors.text} />
+                        )}
+                      </TouchableOpacity>
+                    )}
                   </View>
                   {done > 0 && (
                     <View style={tw`mt-3`}>
