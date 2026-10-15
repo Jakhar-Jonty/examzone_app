@@ -109,6 +109,13 @@ export const routeFromNotification = (navigation, data = {}) => {
   if (data.notificationId) notificationApi.markRead(data.notificationId).catch(() => {});
   if (data.screen === 'exam' && data.examId) {
     navigation.navigate('ExamDetail', { examId: data.examId });
+  } else if (data.screen === 'live-mock') {
+    navigation.navigate('LiveMock');
+  } else if (data.screen === 'current-affair' && data.id) {
+    navigation.navigate('MainTabs', {
+      screen: 'StudyTab',
+      params: { screen: 'CurrentAffairDetail', params: { id: data.id }, initial: false },
+    });
   } else if (data.screen === 'daily-quiz') {
     navigation.navigate('MainTabs', { screen: 'HomeTab', params: { screen: 'Dashboard' } });
   } else {

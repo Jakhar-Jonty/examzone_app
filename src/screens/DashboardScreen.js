@@ -25,6 +25,7 @@ import { testSeriesService } from '../services/testSeriesService';
 import { notificationApi } from '../services/notificationService';
 import { practiceSessionService } from '../services/practiceSessionService';
 import { studyPlanService } from '../services/studyPlanService';
+import { liveMockService, countdown, liveWhen } from '../services/liveMockService';
 import { t as tr } from '../i18n';
 
 const PRACTICE_TYPE_LABELS = {
@@ -125,6 +126,7 @@ export default function DashboardScreen({ navigation }) {
   const [activeAttempt, setActiveAttempt] = useState(null);
   const [activePractice, setActivePractice] = useState(null);
   const [studyPlan, setStudyPlan] = useState(null);
+  const [liveMock, setLiveMock] = useState(null); // { current, lastResult }
   const [unreadCount, setUnreadCount] = useState(0);
   const [updates, setUpdates] = useState([]);
   const [selectedTargetId, setSelectedTargetId] = useState(null);
@@ -156,6 +158,7 @@ export default function DashboardScreen({ navigation }) {
           studyPlanService.list().catch(() => ({ plans: [] })),
           notificationApi.list(1, 3).catch(() => ({ notifications: [] })),
         ]);
+      liveMockService.overview().then(setLiveMock).catch(() => {});
 
       setStats(statsRes.data);
       setAvailableExams(examsRes.data?.exams || []);
@@ -568,6 +571,9 @@ export default function DashboardScreen({ navigation }) {
               </Text>
             </TouchableOpacity>
           </View>
+
+          {/* ─── All-Haryana live mock ──────────────────── */}
+          <LiveMockCard data={liveMock} colors={colors} onPress={() => navigation.navigate('LiveMock')} />
 
           {/* ─── Daily quiz (when not already the hero) ── */}
           {!hero.isDailyQuiz && (
@@ -1022,6 +1028,45 @@ function SeriesCard({ series, onPress, colors }) {
           </Text>
         </View>
       </View>
+    </TouchableOpacity>
+  );
+}
+
+/** Home card for the weekly live mock: countdown → LIVE → your rank. */
+function LiveMockCard({ data, colors, onPress }) {
+  const current = data?.current;
+  const last = data?.lastResult;
+  const recentResult = last?.me?.ranked && Date.now() - new Date(last.liveEndsAt).getTime() < 3 * 24 * 3600 * 1000;
+  if (!current && !recentResult) return null;
+
+  const live = current?.state === 'live';
+  let title;
+  let subtitle;
+  if (recentResult) {
+    title = tr('Your Haryana rank #{0} of {1}', last.me.rank, last.participants);
+    subtitle = tr('{0} · {1}/{2}', last.title, last.me.score, last.totalMarks);
+  } else if (live) {
+    title = tr('All-Haryana live mock is LIVE');
+    subtitle = tr('{0} left · {1} questions · {2} min', countdown(current.liveEndsAt) || '', current.totalQuestions, current.duration);
+  } else {
+    title = tr('All-Haryana Live Mock');
+    subtitle = tr('{0} · starts in {1}', liveWhen(current.scheduledTime), countdown(current.scheduledTime) || '');
+  }
+
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.85}
+      style={[tw`flex-row items-center p-4 rounded-3xl mb-4`, { backgroundColor: colors.card, borderWidth: 1, borderColor: live ? colors.tones.red.fg : colors.border }]}
+    >
+      <View style={[tw`w-10 h-10 rounded-xl items-center justify-center mr-3`, { backgroundColor: live ? colors.tones.red.bg : colors.tones.orange.bg }]}>
+        <Ionicons name={live ? 'radio' : 'trophy-outline'} size={20} color={live ? colors.tones.red.fg : colors.tones.orange.fg} />
+      </View>
+      <View style={tw`flex-1`}>
+        <Text style={[tw`text-sm font-bold`, { color: colors.text }]} numberOfLines={1}>{title}</Text>
+        <Text style={[tw`text-xs mt-0.5`, { color: colors.textSecondary }]} numberOfLines={1}>{subtitle}</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
     </TouchableOpacity>
   );
 }
