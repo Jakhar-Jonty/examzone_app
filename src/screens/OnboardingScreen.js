@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useFocusExam, useSubExam } from '../context/AppConfigContext';
 import api from '../services/api';
+import StableTextInput from '../components/StableTextInput';
 import { t as tr, setLanguage } from '../i18n';
 
 const mark = require('../../assets/examzone_mark.png');
@@ -189,12 +190,13 @@ export default function OnboardingScreen({ route }) {
         {showCode ? (
           <View style={[tw`mt-6 p-4 rounded-3xl`, card]}>
             <Text style={[tw`text-sm font-bold mb-2`, { color: colors.text }]}>{tr('Have a friend’s code?')}</Text>
-            <TextInput
+            <StableTextInput
               value={code}
               onChangeText={(v) => {
-                setCode(v.toUpperCase());
+                setCode(v);
                 setCodeError('');
               }}
+              transform={(v) => v.trim().toUpperCase()}
               placeholder={tr('Enter code')}
               placeholderTextColor={colors.textSecondary}
               autoCapitalize="characters"

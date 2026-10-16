@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
 import { referralService, inviteMessage, shareOnWhatsApp } from '../services/referralService';
+import StableTextInput from '../components/StableTextInput';
 import { t as tr } from '../i18n';
 
 /** Refer & earn: share your code, track friends, or enter a friend's code. */
@@ -15,6 +16,7 @@ export default function ReferScreen({ navigation }) {
   const [ref, setRef] = useState(null);
   const [copied, setCopied] = useState(false);
   const [code, setCode] = useState('');
+  const [codeKey, setCodeKey] = useState(0);
   const [applying, setApplying] = useState(false);
 
   const load = async () => {
@@ -44,6 +46,7 @@ export default function ReferScreen({ navigation }) {
       const res = await referralService.apply(code.trim());
       Alert.alert(tr('Code applied'), tr(res.message));
       setCode('');
+      setCodeKey((k) => k + 1);
       load();
     } catch (e) {
       Alert.alert(tr('Could not apply'), tr(e?.response?.data?.message || 'Please try again.'));
@@ -147,9 +150,11 @@ export default function ReferScreen({ navigation }) {
             <View style={[tw`p-4 rounded-3xl`, card]}>
               <Text style={[tw`text-sm font-bold mb-2`, { color: colors.text }]}>{tr('Have a friend’s code?')}</Text>
               <View style={tw`flex-row gap-2`}>
-                <TextInput
+                <StableTextInput
+                  resetKey={codeKey}
                   value={code}
-                  onChangeText={(v) => setCode(v.toUpperCase())}
+                  onChangeText={setCode}
+                  transform={(v) => v.trim().toUpperCase()}
                   placeholder={tr('Enter code')}
                   placeholderTextColor={colors.textSecondary}
                   autoCapitalize="characters"

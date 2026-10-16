@@ -16,6 +16,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/authService';
 import { API_URL } from '../services/api';
+import StableTextInput from '../components/StableTextInput';
 import { t as tr } from '../i18n';
 
 const logo = require('../../assets/examzone_logo.png');
@@ -38,6 +39,7 @@ export default function LoginScreen({ navigation }) {
   const [otpEmail, setOtpEmail] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState('');
+  const [otpKey, setOtpKey] = useState(0); // bump to clear the OTP field
   const [otpHint, setOtpHint] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -142,6 +144,7 @@ export default function LoginScreen({ navigation }) {
                     setMode(t.id);
                     setOtpSent(false);
                     setOtp('');
+                    setOtpKey((k) => k + 1);
                     setOtpHint('');
                   }}
                 >
@@ -235,12 +238,15 @@ export default function LoginScreen({ navigation }) {
                 {otpHint ? <Text style={styles.devHint}>{otpHint}</Text> : null}
                 <View style={styles.inputContainer}>
                   <Text style={styles.label}>{tr("OTP")}</Text>
-                  <TextInput
+                  <StableTextInput
+                    resetKey={otpKey}
                     style={styles.input}
                     placeholder={tr("6-digit code")}
                     placeholderTextColor={colors.textSecondary}
                     value={otp}
                     onChangeText={setOtp}
+                    transform={(v) => v.replace(/\D/g, '').slice(0, 6)}
+                    textContentType="oneTimeCode"
                     keyboardType="number-pad"
                     maxLength={6}
                   />
@@ -263,6 +269,7 @@ export default function LoginScreen({ navigation }) {
                   onPress={() => {
                     setOtpSent(false);
                     setOtp('');
+                    setOtpKey((k) => k + 1);
                   }}
                 >
                   <Text style={styles.linkMuted}>{tr("Change email")}</Text>

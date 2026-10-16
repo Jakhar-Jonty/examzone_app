@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import tw from 'twrnc';
 import { useTheme } from '../context/ThemeContext';
 import { authService } from '../services/authService';
+import StableTextInput from '../components/StableTextInput';
 import { t as tr } from '../i18n';
 
 const mark = require('../../assets/examzone_mark.png');
@@ -48,6 +49,7 @@ export default function SignUpScreen({ navigation }) {
 
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
+  const [otpKey, setOtpKey] = useState(0); // bump to clear the OTP field
   const [otpHint, setOtpHint] = useState('');
   const [signupToken, setSignupToken] = useState('');
 
@@ -79,6 +81,7 @@ export default function SignUpScreen({ navigation }) {
             : ''
       );
       setOtp('');
+      setOtpKey((k) => k + 1);
       setStep(2);
       Alert.alert(tr("OTP sent"), res.message || tr("Check {0}", clean));
     } catch (error) {
@@ -187,12 +190,16 @@ export default function SignUpScreen({ navigation }) {
               ) : null}
               <View>
                 <Text style={labelStyle}>{tr("6-digit OTP")}</Text>
-                <TextInput
+                <StableTextInput
+                  resetKey={otpKey}
                   style={inputStyle}
                   placeholder="••••••"
                   placeholderTextColor={colors.textSecondary}
                   value={otp}
-                  onChangeText={(v) => setOtp(v.replace(/\D/g, '').slice(0, 6))}
+                  onChangeText={setOtp}
+                  transform={(v) => v.replace(/\D/g, '').slice(0, 6)}
+                  textContentType="oneTimeCode"
+                  autoComplete="sms-otp"
                   keyboardType="number-pad"
                   maxLength={6}
                 />
@@ -213,6 +220,7 @@ export default function SignUpScreen({ navigation }) {
                   onPress={() => {
                     setStep(1);
                     setOtp('');
+                    setOtpKey((k) => k + 1);
                     setOtpHint('');
                   }}
                   disabled={loading}
@@ -263,12 +271,13 @@ export default function SignUpScreen({ navigation }) {
               </View>
               <View>
                 <Text style={labelStyle}>{tr("Phone (optional)")}</Text>
-                <TextInput
+                <StableTextInput
                   style={inputStyle}
                   placeholder={tr("10-digit mobile")}
                   placeholderTextColor={colors.textSecondary}
                   value={phoneNumber}
-                  onChangeText={(v) => setPhoneNumber(v.replace(/\D/g, '').slice(0, 10))}
+                  onChangeText={setPhoneNumber}
+                  transform={(v) => v.replace(/\D/g, '').slice(0, 10)}
                   keyboardType="phone-pad"
                   maxLength={10}
                 />

@@ -14,6 +14,7 @@ import {
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/authService';
+import StableTextInput from '../components/StableTextInput';
 import { t as tr } from '../i18n';
 
 export default function ForgotPasswordScreen({ navigation }) {
@@ -126,12 +127,14 @@ export default function ForgotPasswordScreen({ navigation }) {
           <>
             {hint ? <Text style={styles.hint}>{tr(hint)}</Text> : null}
             <Text style={styles.label}>{tr("OTP")}</Text>
-            <TextInput
+            <StableTextInput
               style={styles.input}
               placeholder={tr("6-digit code")}
               placeholderTextColor={colors.textSecondary}
               value={otp}
               onChangeText={setOtp}
+              transform={(v) => v.replace(/\D/g, '').slice(0, 6)}
+              textContentType="oneTimeCode"
               keyboardType="number-pad"
               maxLength={6}
             />
