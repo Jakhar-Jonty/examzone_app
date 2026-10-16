@@ -24,7 +24,7 @@ import {
   getLocalizedQuestionText,
   getLocalizedQuestionOptions,
 } from '../utils/questionLanguage';
-import { t as tr } from '../i18n';
+import { t as tr, isHindi } from '../i18n';
 
 export default function ExamInterfaceScreen({ route, navigation }) {
   const { examId, attemptId, exam: initialExam, attempt: initialAttempt } = route.params;
@@ -65,6 +65,29 @@ export default function ExamInterfaceScreen({ route, navigation }) {
   const [showAppSwitchWarning, setShowAppSwitchWarning] = useState(false);
   const [showBackNavigationDialog, setShowBackNavigationDialog] = useState(false);
   const [showSectionExpiryDialog, setShowSectionExpiryDialog] = useState(false);
+  // CBT-style palette: questions you never opened are "not visited"
+  const [visited, setVisited] = useState(() => new Set([0]));
+  useEffect(() => {
+    setVisited((v) => (v.has(currentQuestionIndex) ? v : new Set(v).add(currentQuestionIndex)));
+  }, [currentQuestionIndex]);
+  // one-time "5 minutes / 1 minute left" banners
+  const [timeWarning, setTimeWarning] = useState(null);
+  const warnedRef = useRef({ five: false, one: false });
+  useEffect(() => {
+    if (timeRemaining == null) return;
+    let msg = null;
+    if (timeRemaining <= 60 && timeRemaining > 0 && !warnedRef.current.one) {
+      warnedRef.current.one = true;
+      msg = tr('1 minute left — submit soon');
+    } else if (timeRemaining <= 300 && timeRemaining > 60 && !warnedRef.current.five) {
+      warnedRef.current.five = true;
+      msg = tr('5 minutes left');
+    }
+    if (!msg) return;
+    setTimeWarning(msg);
+    const t = setTimeout(() => setTimeWarning(null), 5000);
+    return () => clearTimeout(t);
+  }, [timeRemaining]);
 
   // ─── Refs ──────────────────────────────────────────────
   const sectionTimerIntervalsRef = useRef({});
@@ -318,7 +341,8 @@ export default function ExamInterfaceScreen({ route, navigation }) {
       }
 
       if (currentExam.language === 'Both') {
-        setDisplayLanguage(user?.preferredLanguage === 'Hindi' ? 'Hindi' : 'English');
+        // the paper starts in the app's language (the EN/हिन्दी toggle)
+        setDisplayLanguage(isHindi() || user?.preferredLanguage === 'Hindi' ? 'Hindi' : 'English');
       } else {
         setDisplayLanguage(currentExam.language || 'English');
       }
@@ -1089,7 +1113,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
     if (marked && answered) return 'marked-answered';
     if (marked) return 'marked';
     if (answered) return 'answered';
-    return 'unanswered';
+    return visited.has(index) ? 'unanswered' : 'not-visited';
   };
 
   const getPaletteColor = (status) => {
@@ -1100,7 +1124,9 @@ export default function ExamInterfaceScreen({ route, navigation }) {
         return { bg: colors.tones.purple.bg, fg: colors.tones.purple.fg };
       case 'marked-answered':
         return { bg: colors.tones.purple.bg, fg: colors.tones.purple.fg, ring: colors.tones.green.fg };
-      default:
+      case 'unanswered':
+        return { bg: colors.tones.red.bg, fg: colors.tones.red.fg };
+      default: // not visited
         return { bg: colors.surfaceMuted, fg: colors.textSecondary };
     }
   };
@@ -1109,6 +1135,10 @@ export default function ExamInterfaceScreen({ route, navigation }) {
   const currentQuestion = questions[currentQuestionIndex];
   const currentAnswer = answers[currentQuestionIndex];
   const isMarked = markedForReview.has(currentQuestion?._id || currentQuestion);
+  const currentQId = String(currentQuestion?._id || currentQuestion || '');
+  const questionMarks =
+    (exam?.questionMarks && (exam.questionMarks[currentQId] ?? exam.questionMarks.get?.(currentQId))) || currentQuestion?.marks || 1;
+  const negativeMarks = exam?.enableNegativeMarking ? Number(exam?.negativeMarksPerQuestion) || 0 : 0;
   const questionNumber = currentQuestionIndex + 1;
   const totalQuestions = questions.length;
   const answeredCount = answers.filter((a) => a.selectedAnswer !== null).length;
@@ -1333,6 +1363,13 @@ export default function ExamInterfaceScreen({ route, navigation }) {
           </View>
         </View>
 
+        {timeWarning && (
+          <View style={[tw`mx-4 mb-1 px-3 py-2 rounded-xl flex-row items-center`, { backgroundColor: colors.tones.red.bg }]}>
+            <Ionicons name="alarm-outline" size={16} color={colors.tones.red.fg} />
+            <Text style={[tw`ml-2 text-sm font-bold`, { color: colors.tones.red.fg }]}>{timeWarning}</Text>
+          </View>
+        )}
+
         {/* ─── Question Card (scrollable area) ───────────── */}
         <ScrollView
           style={tw`flex-1`}
@@ -1356,24 +1393,13 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                 ) : null}
               </View>
 
-              <TouchableOpacity
-                style={[
-                  tw`flex-row items-center px-3 py-1.5 rounded-full`,
-                  { backgroundColor: isMarked ? colors.tones.purple.bg : colors.surfaceMuted },
-                ]}
-                onPress={handleMarkForReview}
-                activeOpacity={0.7}
-                accessibilityLabel={isMarked ? tr("Unmark for review") : tr("Mark for review")}
-              >
-                <Ionicons
-                  name={isMarked ? 'bookmark' : 'bookmark-outline'}
-                  size={14}
-                  color={isMarked ? colors.tones.purple.fg : colors.textSecondary}
-                />
-                <Text style={[tw`text-xs font-bold ml-1`, { color: isMarked ? colors.tones.purple.fg : colors.textSecondary }]}>
-                  {isMarked ? tr("Marked") : tr("Mark")}
+              {/* marking scheme (Mark for review lives in the bottom bar) */}
+              <View style={[tw`flex-row items-center px-2.5 py-1 rounded-full`, { backgroundColor: colors.surfaceMuted }]}>
+                <Text style={[tw`text-xs font-bold`, { color: colors.tones.green.fg }]}>+{questionMarks}</Text>
+                <Text style={[tw`text-xs font-bold ml-2`, { color: negativeMarks ? colors.tones.red.fg : colors.textSecondary }]}>
+                  {negativeMarks ? `−${negativeMarks}` : tr('no negative')}
                 </Text>
-              </TouchableOpacity>
+              </View>
             </View>
 
             {/* Question Image */}
@@ -1549,6 +1575,7 @@ export default function ExamInterfaceScreen({ route, navigation }) {
               {/* Legend */}
               <View style={[tw`flex-row flex-wrap gap-3 pt-3 border-t`, { borderColor: colors.border }]}>
                 {[
+                  { label: tr("Not visited"), status: 'not-visited' },
                   { label: tr("Not answered"), status: 'unanswered' },
                   { label: tr("Answered"), status: 'answered' },
                   { label: tr("Marked"), status: 'marked' },
@@ -1563,6 +1590,19 @@ export default function ExamInterfaceScreen({ route, navigation }) {
                   );
                 })}
               </View>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowQuestionPalette(false);
+                  handleSubmit();
+                }}
+                activeOpacity={0.85}
+                style={[tw`mt-4 h-12 rounded-2xl flex-row items-center justify-center`, { backgroundColor: colors.hero }]}
+              >
+                <Ionicons name="checkmark-circle" size={18} color={colors.heroAccent} />
+                <Text style={[tw`text-[15px] font-bold ml-1.5`, { color: colors.heroText }]}>
+                  {tr('Submit exam · {0}/{1} answered', answeredCount, totalQuestions)}
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
         </Modal>
@@ -1577,7 +1617,9 @@ export default function ExamInterfaceScreen({ route, navigation }) {
               </Text>
               {answeredCount < totalQuestions && (
                 <Text style={[tw`text-sm font-semibold mb-3`, { color: colors.tones.red.fg }]}>
-                  {tr("{0} question{1} still unanswered.", totalQuestions - answeredCount, totalQuestions - answeredCount === 1 ? ' is' : 's are')}
+                  {totalQuestions - answeredCount === 1
+                    ? tr('1 question is still unanswered.')
+                    : tr('{0} questions are still unanswered.', totalQuestions - answeredCount)}
                 </Text>
               )}
               <Text style={[tw`text-sm mb-5`, { color: colors.textSecondary }]}>
