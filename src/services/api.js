@@ -26,9 +26,10 @@ const api = axios.create({
 
 api.interceptors.request.use(
   async (config) => {
-    const token = await AsyncStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    // an explicit header wins (onboarding calls the API before the token is stored)
+    if (!config.headers.Authorization) {
+      const token = await AsyncStorage.getItem('token');
+      if (token) config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
