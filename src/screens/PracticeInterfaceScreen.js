@@ -21,7 +21,7 @@ import {
   getLocalizedExplanation,
   hasHindiContent,
 } from '../utils/questionLanguage';
-import { t as tr } from '../i18n';
+import { t as tr, isHindi } from '../i18n';
 
 const SESSION_TYPE_LABELS = {
   random: 'Random',
@@ -106,7 +106,7 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const questionStartRef = useRef(Date.now());
-  const [language, setLanguage] = useState(user?.preferredLanguage === 'Hindi' ? 'Hindi' : 'English');
+  const [language, setLanguage] = useState(isHindi() || user?.preferredLanguage === 'Hindi' ? 'Hindi' : 'English');
 
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -119,10 +119,13 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
   const [showPalette, setShowPalette] = useState(false);
   const [showFinishDialog, setShowFinishDialog] = useState(false);
 
+  // the topic / subject is more useful than the generic session type
+  const focusName = sessionMeta.filters?.topics?.length === 1 ? sessionMeta.filters.topics[0] : sessionMeta.filters?.subject;
   const sessionTitle = tr(
-    SESSION_TYPE_LABELS[sessionMeta.sessionType] ||
-    SESSION_TYPE_LABELS[sessionType] ||
-    'Practice'
+    focusName ||
+      SESSION_TYPE_LABELS[sessionMeta.sessionType] ||
+      SESSION_TYPE_LABELS[sessionType] ||
+      'Practice'
   );
 
   useEffect(() => {
@@ -136,7 +139,7 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
         const qs = session.questions || [];
         setQuestions(qs);
         if (session.sessionType) {
-          setSessionMeta({ sessionType: session.sessionType });
+          setSessionMeta({ sessionType: session.sessionType, filters: session.filters || {} });
         }
 
         const states = {};
@@ -386,6 +389,30 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
             );
           })}
 
+          {revealed && !skipped && (
+            <View
+              style={[
+                styles.feedback,
+                { backgroundColor: selected === currentQuestion.correctAnswer ? colors.tones.green.bg : colors.tones.red.bg },
+              ]}
+            >
+              <Ionicons
+                name={selected === currentQuestion.correctAnswer ? 'checkmark-circle' : 'close-circle'}
+                size={18}
+                color={selected === currentQuestion.correctAnswer ? colors.tones.green.fg : colors.tones.red.fg}
+              />
+              <Text
+                style={[
+                  styles.feedbackText,
+                  { color: selected === currentQuestion.correctAnswer ? colors.tones.green.fg : colors.tones.red.fg },
+                ]}
+              >
+                {selected === currentQuestion.correctAnswer
+                  ? tr('Correct!')
+                  : tr('Wrong · Answer: {0}', correctOpt ? `${correctOpt.label}. ${correctOpt.text}` : currentQuestion.correctAnswer)}
+              </Text>
+            </View>
+          )}
           {revealed && skipped && (
             <View style={styles.infoBox}>
               <Text style={styles.infoText}>
@@ -406,37 +433,47 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 8) }]}>
         <View style={styles.navRow}>
           <TouchableOpacity
-            style={[styles.navBtn, currentIndex === 0 && styles.navBtnDisabled]}
+            style={[styles.iconBtn, currentIndex === 0 && styles.navBtnDisabled]}
             disabled={currentIndex === 0}
             onPress={() => goToQuestion(currentIndex - 1)}
+            accessibilityLabel={tr('Previous question')}
           >
-            <Text style={styles.navBtnText}>{tr("Previous")}</Text>
+            <Ionicons name="chevron-back" size={20} color={colors.text} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.navBtn} onPress={handleMarkForReview}>
-            <Text style={styles.navBtnText}>{isMarked ? tr("Unmark") : tr("Mark")}</Text>
-          </TouchableOpacity>
-          {!revealed && (
-            <TouchableOpacity style={styles.navBtn} onPress={handleSkip}>
-              <Text style={styles.navBtnText}>{tr("Skip")}</Text>
-            </TouchableOpacity>
-          )}
           <TouchableOpacity
-            style={[styles.navBtn, currentIndex === questions.length - 1 && styles.navBtnDisabled]}
-            disabled={currentIndex === questions.length - 1}
-            onPress={() => goToQuestion(currentIndex + 1)}
+            style={[styles.navBtn, isMarked && { backgroundColor: colors.tones.purple.bg, borderColor: colors.tones.purple.bg }]}
+            onPress={handleMarkForReview}
           >
-            <Text style={styles.navBtnText}>{tr("Next")}</Text>
+            <Ionicons name={isMarked ? 'bookmark' : 'bookmark-outline'} size={15} color={isMarked ? colors.tones.purple.fg : colors.text} />
+            <Text style={[styles.navBtnText, isMarked && { color: colors.tones.purple.fg }]}>{isMarked ? tr('Marked') : tr('Mark')}</Text>
           </TouchableOpacity>
+          {(() => {
+            const isLast = currentIndex === questions.length - 1;
+            const allDone = answeredCount >= questions.length;
+            if (!revealed) {
+              return (
+                <TouchableOpacity style={[styles.primaryAction, styles.primaryActionMuted]} onPress={handleSkip}>
+                  <Text style={styles.primaryActionMutedText}>{tr('Skip')}</Text>
+                  <Ionicons name="play-skip-forward" size={14} color={colors.text} />
+                </TouchableOpacity>
+              );
+            }
+            if (isLast || allDone) {
+              return (
+                <TouchableOpacity style={styles.primaryAction} onPress={() => setShowFinishDialog(true)} disabled={completing}>
+                  <Ionicons name="flag" size={15} color={colors.heroAccent} />
+                  <Text style={styles.primaryActionText}>{completing ? tr('Finishing...') : tr('Finish session')}</Text>
+                </TouchableOpacity>
+              );
+            }
+            return (
+              <TouchableOpacity style={styles.primaryAction} onPress={() => goToQuestion(currentIndex + 1)}>
+                <Text style={styles.primaryActionText}>{tr('Next question')}</Text>
+                <Ionicons name="chevron-forward" size={16} color={colors.heroText} />
+              </TouchableOpacity>
+            );
+          })()}
         </View>
-        <TouchableOpacity
-          style={styles.finishBtn}
-          onPress={() => setShowFinishDialog(true)}
-          disabled={completing}
-        >
-          <Text style={styles.finishBtnText}>
-            {completing ? tr("Finishing...") : tr("Finish Session")}
-          </Text>
-        </TouchableOpacity>
       </View>
 
       <Modal visible={showPalette} animationType="slide" transparent>
@@ -470,6 +507,16 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
                   </View>
                 ))}
               </View>
+              <TouchableOpacity
+                style={[styles.primaryAction, { marginTop: 16, flex: 0, height: 48 }]}
+                onPress={() => {
+                  setShowPalette(false);
+                  setShowFinishDialog(true);
+                }}
+              >
+                <Ionicons name="flag" size={15} color={colors.heroAccent} />
+                <Text style={styles.primaryActionText}>{tr('Finish session · {0}/{1} done', answeredCount, questions.length)}</Text>
+              </TouchableOpacity>
             </ScrollView>
           </View>
         </View>
@@ -574,16 +621,42 @@ const makeStyles = (colors) => ({
     borderTopColor: colors.border,
     backgroundColor: colors.card,
   },
-  navRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
+  navRow: { flexDirection: 'row', gap: 8, marginBottom: 6 },
+  iconBtn: {
+    width: 46,
+    height: 46,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surfaceMuted,
+  },
   navBtn: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 10,
+    flexDirection: 'row',
+    gap: 5,
+    paddingHorizontal: 14,
+    height: 46,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: colors.border,
     alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: colors.card,
   },
+  primaryAction: {
+    flex: 1,
+    flexDirection: 'row',
+    gap: 6,
+    height: 46,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.hero,
+  },
+  primaryActionText: { color: colors.heroText, fontWeight: '800', fontSize: 15 },
+  primaryActionMuted: { backgroundColor: colors.surfaceMuted },
+  primaryActionMutedText: { color: colors.text, fontWeight: '700', fontSize: 14 },
+  feedback: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4, padding: 12, borderRadius: 12 },
+  feedbackText: { flex: 1, fontSize: 14, fontWeight: '700' },
   navBtnDisabled: { opacity: 0.4 },
   navBtnText: { fontSize: 13, fontWeight: '600', color: colors.text },
   finishBtn: {
