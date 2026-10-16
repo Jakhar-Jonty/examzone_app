@@ -2,8 +2,8 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
-// HTTPS via Vercel proxy → EC2 (works on Android + iOS, no cleartext needed).
-const PROD_API_URL = 'https://examprepzone.vercel.app/api';
+// HTTPS straight to the API server (no hop through the web project).
+const PROD_API_URL = 'https://examzone-server.vercel.app/api';
 // Direct EC2 HTTP — only if EXPO_PUBLIC_API_URL is set AND native cleartext is enabled.
 const EC2_API_URL = 'http://13.233.215.71/api';
 

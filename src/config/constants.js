@@ -9,7 +9,7 @@ const API_URL = __DEV__
       ios: 'http://localhost:6001/api', // iOS simulator
       default: 'http://localhost:6001/api',
     })
-  : 'https://examprepzone.vercel.app/api'; // Production URL
+  : 'https://examzone-server.vercel.app/api'; // Production URL
 
 export { API_URL };
 
