@@ -2,9 +2,9 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
-// HTTPS straight to the API server (no hop through the web project).
-const PROD_API_URL = 'https://examzone-server.vercel.app/api';
-// Direct EC2 HTTP — only if EXPO_PUBLIC_API_URL is set AND native cleartext is enabled.
+// HTTPS straight to the API server on EC2 (domain can move servers without a new APK).
+const PROD_API_URL = 'https://api.ez.zonty.in/api';
+// Old EC2 IP over plain HTTP — only if EXPO_PUBLIC_API_URL is set AND native cleartext is enabled.
 const EC2_API_URL = 'http://13.233.215.71/api';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL
