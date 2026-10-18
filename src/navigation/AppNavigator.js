@@ -1,10 +1,9 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
-import * as Notifications from 'expo-notifications';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { routeFromNotification } from '../services/notificationService';
+import { routeFromNotification, Notifications } from '../services/notificationService';
 
 // Auth
 import LoginScreen from '../screens/LoginScreen';
@@ -65,6 +64,7 @@ function useNotificationTaps(isAuthenticated) {
   );
 
   useEffect(() => {
+    if (!Notifications) return undefined; // Expo Go on Android: no push
     const sub = Notifications.addNotificationResponseReceivedListener(onResponse);
     Notifications.getLastNotificationResponseAsync().then((r) => r && onResponse(r)).catch(() => {});
     return () => sub.remove();

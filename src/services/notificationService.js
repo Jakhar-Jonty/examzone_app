@@ -1,7 +1,6 @@
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
-import * as Notifications from 'expo-notifications';
 import api from './api';
 
 /**
@@ -11,8 +10,14 @@ import api from './api';
  * Delivery uses the Expo push service (see server utils/pushService.js).
  */
 
+// Expo Go on Android has no remote push since SDK 53 and logs an error as soon
+// as expo-notifications loads, so it is only loaded in real builds.
+const pushUnsupported =
+  Platform.OS === 'android' && Constants.executionEnvironment === 'storeClient';
+export const Notifications = pushUnsupported ? null : require('expo-notifications');
+
 // Foreground behaviour — show banner + play sound even when app is open.
-Notifications.setNotificationHandler({
+Notifications?.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowBanner: true,
     shouldShowList: true,
@@ -30,7 +35,7 @@ let cachedToken = null;
  */
 export const registerForPush = async () => {
   try {
-    if (!Device.isDevice) return null; // push tokens only work on real devices
+    if (!Notifications || !Device.isDevice) return null; // push tokens only work on real devices, not Expo Go
 
     const { status: existing } = await Notifications.getPermissionsAsync();
     let status = existing;

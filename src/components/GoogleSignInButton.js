@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, Alert, Platform } from 'react-native';
+import Constants from 'expo-constants';
 import tw from 'twrnc';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
@@ -12,8 +13,10 @@ import { t as tr } from '../i18n';
 // package name + signing SHA-1 to exist in the same Google Cloud project.
 const WEB_CLIENT_ID = '724155815254-1a8798degtds7ekh2htcvles8dlgf4i6.apps.googleusercontent.com';
 
-// iOS needs its own OAuth client + URL scheme, which we don't have yet
-export const googleSignInAvailable = Platform.OS === 'android';
+// iOS needs its own OAuth client + URL scheme, which we don't have yet;
+// Expo Go doesn't include the native module (it works in real builds only)
+export const googleSignInAvailable =
+  Platform.OS === 'android' && Constants.executionEnvironment !== 'storeClient';
 
 const getIdToken = async () => {
   // loaded lazily so a build without the native module can't crash at start-up
