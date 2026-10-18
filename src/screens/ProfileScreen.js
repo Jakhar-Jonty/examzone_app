@@ -6,13 +6,19 @@ import {
   TouchableOpacity,
   Alert,
   Image,
+  Linking,
 } from 'react-native';
+import Constants from 'expo-constants';
 import tw from 'twrnc';
 import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
+import api from '../services/api';
 import { t as tr } from '../i18n';
+
+const WEB_URL = 'https://examprepzone.vercel.app';
+const APP_VERSION = Constants.expoConfig?.version || '';
 
 const THEME_OPTIONS = [
   { key: 'light', icon: 'sunny', label: 'Light' },
@@ -34,6 +40,27 @@ export default function ProfileScreen({ navigation }) {
       { text: tr("Cancel"), style: 'cancel' },
       { text: tr("Logout"), style: 'destructive', onPress: () => logout() },
     ]);
+  };
+
+  const deleteAccount = async () => {
+    try {
+      await api.delete('/user/account', { data: { confirm: 'DELETE' } });
+      Alert.alert(tr("Account deleted"), tr("Your account has been deleted."));
+      logout();
+    } catch (e) {
+      Alert.alert(tr("Delete account"), tr(e?.response?.data?.message || 'Could not delete the account. Please try again.'));
+    }
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      tr("Delete your account?"),
+      tr("This permanently deletes your profile, test history and progress. It cannot be undone."),
+      [
+        { text: tr("Cancel"), style: 'cancel' },
+        { text: tr("Delete permanently"), style: 'destructive', onPress: deleteAccount },
+      ]
+    );
   };
 
   const menuSections = [
@@ -118,6 +145,14 @@ export default function ProfileScreen({ navigation }) {
           onPress: () =>
             navigation.navigate('StudyTab', { screen: 'StudyPlans', initial: false }),
         },
+      ],
+    },
+    {
+      title: tr("Legal & support"),
+      items: [
+        { icon: 'mail-outline', label: tr("Contact Us"), onPress: () => Linking.openURL(`${WEB_URL}/contact`) },
+        { icon: 'shield-checkmark-outline', label: tr("Privacy Policy"), onPress: () => Linking.openURL(`${WEB_URL}/privacy`) },
+        { icon: 'document-text-outline', label: tr("Terms of Service"), onPress: () => Linking.openURL(`${WEB_URL}/terms`) },
       ],
     },
   ];
@@ -302,7 +337,7 @@ export default function ProfileScreen({ navigation }) {
             ]}
           >
             <Text style={[tw`text-sm font-medium`, { color: colors.text }]}>{tr("Version")}</Text>
-            <Text style={[tw`text-sm`, { color: colors.textSecondary }]}>1.0.0</Text>
+            <Text style={[tw`text-sm`, { color: colors.textSecondary }]}>{APP_VERSION}</Text>
           </View>
         </View>
 
@@ -321,6 +356,13 @@ export default function ProfileScreen({ navigation }) {
               {tr("Logout")}
             </Text>
           </TouchableOpacity>
+          {user?.role !== 'admin' && (
+            <TouchableOpacity onPress={handleDeleteAccount} style={tw`items-center py-4`} activeOpacity={0.7}>
+              <Text style={[tw`text-xs font-semibold underline`, { color: colors.textSecondary }]}>
+                {tr("Delete account")}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
     </ScreenWrapper>
