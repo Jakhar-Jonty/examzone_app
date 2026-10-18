@@ -17,7 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
 import { t as tr } from '../i18n';
 
-const WEB_URL = 'https://examprepzone.vercel.app';
+const WEB_URL = 'https://exam.zonty.in';
 const APP_VERSION = Constants.expoConfig?.version || '';
 
 const THEME_OPTIONS = [
