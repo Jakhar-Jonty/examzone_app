@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import { useFocusExam, useSubExam, matchesSubExam } from '../context/AppConfigCo
 import SubExamChips from '../components/SubExamChips';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../services/api';
 import ScreenWrapper from '../components/ScreenWrapper';
 import { ExamCardSkeletonList } from '../components/ExamCardSkeleton';
@@ -139,53 +140,94 @@ export default function DashboardScreen({ navigation }) {
     }, [])
   );
 
+  // Home data, one request (older servers without /home get the 12 separate calls)
+  const loadHome = async () => {
+    try {
+      return (await api.get('/home')).data;
+    } catch (e) {
+      if (e?.response?.status !== 404) throw e;
+    }
+    const [statsRes, wordRes, quoteRes, examsRes, progressData, seriesRes, activeRes, practiceRes, plansRes, notifRes, liveMockRes] =
+      await Promise.all([
+        api.get('/user/dashboard-stats').catch(() => ({ data: null })),
+        api.get('/user/word-of-day').catch(() => ({ data: null })),
+        api.get('/user/motivational-quote').catch(() => ({ data: null })),
+        api.get('/exams/available').catch(() => ({ data: { exams: [] } })),
+        gamificationService.getMyProgress().catch(() => null),
+        testSeriesService.list({ limit: 6 }).catch(() => ({ series: [] })),
+        api.get('/exams/active-attempt').then((r) => r.data).catch(() => null),
+        practiceSessionService.list({ limit: 8 }).catch(() => ({ sessions: [] })),
+        studyPlanService.list().catch(() => ({ plans: [] })),
+        notificationApi.list(1, 3).catch(() => ({ notifications: [] })),
+        liveMockService.overview().catch(() => null),
+      ]);
+    let activePractice = (practiceRes?.sessions || []).find((s) => !s.isCompleted) || null;
+    if (activePractice) {
+      const detail = await practiceSessionService.get(activePractice._id).catch(() => null);
+      activePractice = { ...activePractice, answeredCount: detail?.session?.answers?.length || 0 };
+    }
+    return {
+      stats: statsRes.data,
+      wordOfDay: wordRes.data?.wordOfDay || wordRes.data?.word || wordRes.data,
+      quote: quoteRes.data?.quote || quoteRes.data?.motivationalQuote || quoteRes.data,
+      exams: examsRes.data?.exams || [],
+      progress: progressData,
+      testSeries: seriesRes?.series || [],
+      activeAttempt: activeRes?.attempt || null,
+      unreadCount: notifRes?.unreadCount || 0,
+      updates: notifRes?.notifications || [],
+      activePractice,
+      studyPlans: plansRes?.plans || [],
+      liveMock: liveMockRes,
+    };
+  };
+
+  const applyHome = (home) => {
+    setStats(home.stats);
+    setAvailableExams(home.exams || []);
+    setProgress(home.progress);
+    setTestSeries(home.testSeries || []);
+    setActiveAttempt(home.activeAttempt || null);
+    setUnreadCount(home.unreadCount || 0);
+    setStudyPlan(pickActiveStudyPlan(home.studyPlans || []));
+    setUpdates(home.updates || []);
+    setActivePractice(home.activePractice || null);
+    setLiveMock(home.liveMock || null);
+    setWordOfDay(home.wordOfDay || null);
+    setQuote(home.quote || null);
+  };
+
+  const cacheKey = `@homeCache:${user?._id || user?.id || ''}`;
+  const hasData = useRef(false); // read inside the focus callback, which keeps the first render's state
+
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const [statsRes, wordRes, quoteRes, examsRes, progressData, seriesRes, activeRes, unreadRes, practiceRes, plansRes, notifRes] =
-        await Promise.all([
-          api.get('/user/dashboard-stats').catch(() => ({ data: null })),
-          api.get('/user/word-of-day').catch(() => ({ data: null })),
-          api.get('/user/motivational-quote').catch(() => ({ data: null })),
-          api.get('/exams/available').catch(() => ({ data: { exams: [] } })),
-          gamificationService.getMyProgress().catch(() => null),
-          testSeriesService.list({ limit: 6 }).catch(() => ({ series: [] })),
-          api.get('/exams/active-attempt').then((r) => r.data).catch(() => null),
-          notificationApi.unreadCount().catch(() => ({ unreadCount: 0 })),
-          practiceSessionService.list({ limit: 8 }).catch(() => ({ sessions: [] })),
-          studyPlanService.list().catch(() => ({ plans: [] })),
-          notificationApi.list(1, 3).catch(() => ({ notifications: [] })),
-        ]);
-      liveMockService.overview().then(setLiveMock).catch(() => {});
-
-      setStats(statsRes.data);
-      setAvailableExams(examsRes.data?.exams || []);
-      setProgress(progressData);
-      setTestSeries(seriesRes?.series || []);
-      setActiveAttempt(activeRes?.attempt || null);
-      setUnreadCount(unreadRes?.unreadCount || 0);
-      setStudyPlan(pickActiveStudyPlan(plansRes?.plans || []));
-      setUpdates(notifRes?.notifications || []);
-      if (wordRes.data) setWordOfDay(wordRes.data?.wordOfDay || wordRes.data?.word || wordRes.data);
-      if (quoteRes.data) setQuote(quoteRes.data?.quote || quoteRes.data?.motivationalQuote || quoteRes.data);
-
-      const inProgress = (practiceRes?.sessions || []).find((s) => !s.isCompleted);
-      if (inProgress) {
-        try {
-          const detail = await practiceSessionService.get(inProgress._id);
-          setActivePractice({ ...inProgress, answeredCount: detail?.session?.answers?.length || 0 });
-        } catch {
-          setActivePractice(inProgress);
+      // first open: show the last Home straight away while the fresh one loads
+      if (!hasData.current) {
+        const cached = await AsyncStorage.getItem(cacheKey).catch(() => null);
+        if (cached) {
+          try {
+            applyHome(JSON.parse(cached));
+            hasData.current = true;
+          } catch {
+            // ignore a corrupt cache
+          }
         }
-      } else {
-        setActivePractice(null);
       }
 
-      if (!statsRes.data) setError(tr("Unable to load your dashboard. Pull down to retry."));
+      const home = await loadHome();
+      applyHome(home);
+      if (home.stats) {
+        hasData.current = true;
+        AsyncStorage.setItem(cacheKey, JSON.stringify(home)).catch(() => {});
+      } else {
+        setError(tr("Unable to load your dashboard. Pull down to retry."));
+      }
     } catch {
-      setError(tr("Something went wrong. Pull down to retry."));
+      if (!hasData.current) setError(tr("Something went wrong. Pull down to retry."));
     } finally {
       setLoading(false);
       setRefreshing(false);
