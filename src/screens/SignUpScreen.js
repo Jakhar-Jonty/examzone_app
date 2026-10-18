@@ -16,6 +16,7 @@ import tw from 'twrnc';
 import { useTheme } from '../context/ThemeContext';
 import { authService } from '../services/authService';
 import StableTextInput from '../components/StableTextInput';
+import GoogleSignInButton from '../components/GoogleSignInButton';
 import { t as tr } from '../i18n';
 
 const mark = require('../../assets/examzone_mark.png');
@@ -295,6 +296,8 @@ export default function SignUpScreen({ navigation }) {
               </TouchableOpacity>
             </View>
           )}
+
+          {step === 1 && <GoogleSignInButton navigation={navigation} />}
 
           {step === 1 && (
             <TouchableOpacity style={tw`mt-8 items-center`} onPress={() => navigation.navigate('Login')}>

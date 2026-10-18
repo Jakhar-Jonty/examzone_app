@@ -2,7 +2,7 @@
   "expo": {
     "name": "GoPrep",
     "slug": "goprep-mobile",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -37,7 +37,7 @@
       "edgeToEdgeEnabled": true,
       "package": "com.goprep.mobile",
       "googleServicesFile": "./google-services.json",
-      "versionCode": 8,
+      "versionCode": 9,
       "usesCleartextTraffic": true,
       "permissions": [
         "CAMERA",

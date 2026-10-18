@@ -17,6 +17,7 @@ import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/authService';
 import { API_URL } from '../services/api';
 import StableTextInput from '../components/StableTextInput';
+import GoogleSignInButton from '../components/GoogleSignInButton';
 import { t as tr } from '../i18n';
 
 const logo = require('../../assets/examzone_logo.png');
@@ -277,6 +278,8 @@ export default function LoginScreen({ navigation }) {
               </>
             )}
           </View>
+
+          <GoogleSignInButton navigation={navigation} />
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>{tr("Don't have an account?")} </Text>

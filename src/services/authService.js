@@ -64,6 +64,11 @@ export const authService = {
     return response.data;
   },
 
+  google: async (idToken) => {
+    const response = await api.post('/auth/google', { idToken });
+    return response.data; // { token, user, isNewUser }
+  },
+
   forgotPassword: async (email) => {
     const response = await api.post('/auth/forgot-password', { email });
     return response.data;
