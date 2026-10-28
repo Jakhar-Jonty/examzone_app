@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
 import { getRefLabel } from '../utils/examDisplay';
 import { t as tr } from '../i18n';
+import ReportQuestionButton from '../components/ReportQuestionButton';
 
 export default function QuestionDetailScreen({ route, navigation }) {
   const { questionId, savedQuestionId } = route.params;
@@ -279,6 +280,8 @@ export default function QuestionDetailScreen({ route, navigation }) {
               </View>
             </View>
           )}
+
+          <ReportQuestionButton questionId={question._id} style={{ marginTop: -8, marginBottom: 24 }} />
 
           {/* Notes and Tags (Editable) */}
           {savedQuestion && (

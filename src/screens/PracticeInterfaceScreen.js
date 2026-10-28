@@ -22,6 +22,7 @@ import {
   hasHindiContent,
 } from '../utils/questionLanguage';
 import { t as tr, isHindi } from '../i18n';
+import ReportQuestionButton from '../components/ReportQuestionButton';
 
 const SESSION_TYPE_LABELS = {
   random: 'Random',
@@ -427,6 +428,8 @@ export default function PracticeInterfaceScreen({ route, navigation }) {
               <Text style={styles.explanationText}>{explanation}</Text>
             </View>
           ) : null}
+
+          {revealed ? <ReportQuestionButton key={currentId} questionId={currentId} style={{ marginTop: 12 }} /> : null}
         </View>
       </ScrollView>
 

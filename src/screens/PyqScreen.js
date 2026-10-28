@@ -16,6 +16,7 @@ import { practiceSessionService } from '../services/practiceSessionService';
 import { buildPyqPaperHtml, pyqPdfFileName } from '../utils/pyqPaperPdf';
 import { downloadPyqPdf, printPyqHtml } from '../utils/exportPyqPdf';
 import { t as tr } from '../i18n';
+import ReportQuestionButton from '../components/ReportQuestionButton';
 
 const MAX_PAPER = 100;
 
@@ -452,6 +453,7 @@ export default function PyqScreen({ navigation }) {
                           {q.explanation ? (
                             <Text style={styles.answerExpl}>{q.explanation}</Text>
                           ) : null}
+                          <ReportQuestionButton questionId={q._id} style={{ marginTop: 8 }} />
                         </View>
                       ) : null}
                     </View>

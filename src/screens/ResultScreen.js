@@ -40,6 +40,7 @@ import * as Sharing from 'expo-sharing';
 import ResultShareCard from '../components/ResultShareCard';
 import { referralService, inviteMessage } from '../services/referralService';
 import { t as tr } from '../i18n';
+import ReportQuestionButton from '../components/ReportQuestionButton';
 
 // ─── Helpers ─────────────────────────────────────────────
 const formatTime = (seconds) => {
@@ -1030,6 +1031,8 @@ function QuestionCard({ answer, index, colors, displayLanguage, isSaved, onToggl
               </View>
             </View>
           ) : null}
+
+          <ReportQuestionButton questionId={questionId} style={tw`mt-3`} />
         </View>
       )}
     </TouchableOpacity>
