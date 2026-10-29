@@ -685,6 +685,22 @@ export default function DashboardScreen({ navigation }) {
             </TouchableOpacity>
           )}
 
+          {/* ─── HSSC exam info ───────────────────────── */}
+          <TouchableOpacity
+            onPress={() => navigation.navigate('HsscInfo')}
+            activeOpacity={0.85}
+            style={[tw`flex-row items-center p-4 rounded-3xl mb-4`, card]}
+          >
+            <View style={[tw`w-10 h-10 rounded-xl items-center justify-center mr-3`, { backgroundColor: colors.tones.blue.bg }]}>
+              <Ionicons name="information-circle-outline" size={20} color={colors.tones.blue.fg} />
+            </View>
+            <View style={tw`flex-1`}>
+              <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>{tr("HSSC CET info")}</Text>
+              <Text style={[tw`text-xs mt-0.5`, { color: colors.textSecondary }]}>{tr("Pattern, syllabus, marking")}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+          </TouchableOpacity>
+
           {/* ─── Quick actions ────────────────────────── */}
           <View style={tw`flex-row flex-wrap justify-between mb-2`}>
             <QuickTile icon="play-circle-outline" tone={colors.tones.green} label={tr("Mock test")} subtitle={tr("Full exam")}

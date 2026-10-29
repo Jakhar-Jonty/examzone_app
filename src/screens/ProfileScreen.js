@@ -135,6 +135,11 @@ export default function ProfileScreen({ navigation }) {
             }),
         },
         {
+          icon: 'information-circle-outline',
+          label: tr("HSSC CET info"),
+          onPress: () => navigation.navigate('HomeTab', { screen: 'HsscInfo', initial: false }),
+        },
+        {
           icon: 'flash-outline',
           label: tr("Practice Sessions"),
           onPress: () =>

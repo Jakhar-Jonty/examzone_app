@@ -6,6 +6,7 @@ import QuoteDetailScreen from '../screens/QuoteDetailScreen';
 import CategoriesScreen from '../screens/CategoriesScreen';
 import CategoryDetailScreen from '../screens/CategoryDetailScreen';
 import SubCategoryDetailScreen from '../screens/SubCategoryDetailScreen';
+import HsscInfoScreen from '../screens/HsscInfoScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -18,6 +19,7 @@ export default function HomeStack() {
       <Stack.Screen name="Categories" component={CategoriesScreen} />
       <Stack.Screen name="CategoryDetail" component={CategoryDetailScreen} />
       <Stack.Screen name="SubCategoryDetail" component={SubCategoryDetailScreen} />
+      <Stack.Screen name="HsscInfo" component={HsscInfoScreen} />
     </Stack.Navigator>
   );
 }
