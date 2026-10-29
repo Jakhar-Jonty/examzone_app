@@ -1,4 +1,5 @@
 import React from 'react';
+import { withSentry } from './src/utils/sentry';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import './global.css';
@@ -24,7 +25,7 @@ function AppContent() {
   );
 }
 
-export default function App() {
+function App() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
@@ -38,3 +39,4 @@ export default function App() {
   );
 }
 
+export default withSentry(App);
