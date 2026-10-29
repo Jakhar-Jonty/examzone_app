@@ -245,6 +245,17 @@ export default function HaryanaGkScreen({ navigation }) {
                     </View>
                   ) : null}
                 </View>
+                {topic.hasNotes && (
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate('HaryanaGkNotes', { topicKey: topic.key, topicLabel: empty ? null : topic.label })}
+                    hitSlop={8}
+                    style={tw`flex-row items-center self-start mt-3`}
+                    accessibilityRole="button"
+                  >
+                    <Ionicons name="reader-outline" size={14} color={colors.text} />
+                    <Text style={[tw`text-xs font-bold ml-1 underline`, { color: colors.text }]}>{tr("Read notes")}</Text>
+                  </TouchableOpacity>
+                )}
                 {!empty && topic.accuracy != null && (
                   <View style={[tw`h-1.5 rounded-full overflow-hidden mt-3`, { backgroundColor: colors.surfaceMuted }]}>
                     <View

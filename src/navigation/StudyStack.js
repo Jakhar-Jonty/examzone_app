@@ -11,6 +11,7 @@ import StudyPlanCreateScreen from '../screens/StudyPlanCreateScreen';
 import WrongBookScreen from '../screens/WrongBookScreen';
 import PyqScreen from '../screens/PyqScreen';
 import HaryanaGkScreen from '../screens/HaryanaGkScreen';
+import HaryanaGkNotesScreen from '../screens/HaryanaGkNotesScreen';
 import CurrentAffairsScreen from '../screens/CurrentAffairsScreen';
 import CurrentAffairDetailScreen from '../screens/CurrentAffairDetailScreen';
 
@@ -23,6 +24,7 @@ export default function StudyStack() {
       <Stack.Screen name="WrongBook" component={WrongBookScreen} />
       <Stack.Screen name="Pyq" component={PyqScreen} />
       <Stack.Screen name="HaryanaGk" component={HaryanaGkScreen} />
+      <Stack.Screen name="HaryanaGkNotes" component={HaryanaGkNotesScreen} />
       <Stack.Screen name="CurrentAffairs" component={CurrentAffairsScreen} />
       <Stack.Screen name="CurrentAffairDetail" component={CurrentAffairDetailScreen} />
       <Stack.Screen name="ArticleDetail" component={ArticleDetailScreen} />
