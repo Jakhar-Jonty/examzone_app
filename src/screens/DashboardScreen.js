@@ -28,6 +28,7 @@ import { practiceSessionService } from '../services/practiceSessionService';
 import { studyPlanService } from '../services/studyPlanService';
 import { liveMockService, countdown, liveWhen } from '../services/liveMockService';
 import { t as tr } from '../i18n';
+import { features } from '../config/features';
 
 const PRACTICE_TYPE_LABELS = {
   random: 'Random',
@@ -249,6 +250,8 @@ export default function DashboardScreen({ navigation }) {
     (!target || !exam.category || idOf(exam.category) === idOf(target.category)) && matchesSubExam(exam, subExamId);
 
   const currentStreak = stats?.streak?.currentStreak || 0;
+  const todayDone = stats?.today?.completed || 0;
+  const todayGoal = stats?.today?.goal || 3;
   const totalAttempts = Number(stats?.stats?.totalAttempts) || 0;
   const averageScore = parseFloat(stats?.stats?.averageScore);
   const xp = progress?.xp || 0;
@@ -270,6 +273,22 @@ export default function DashboardScreen({ navigation }) {
   const dailyQuizDone = !!dailyQuiz?.isCompleted;
 
   // ─── Actions ───────────────────────────────────────────
+  const setDailyGoal = async (goal) => {
+    setStats((s) => (s ? { ...s, today: { ...(s.today || {}), goal } } : s));
+    try {
+      const res = await api.put('/user/profile', { preferences: { dailyTestGoal: goal } });
+      if (res.data?.user) updateUser(res.data.user);
+    } catch {
+      // keep the local change; it syncs on the next save
+    }
+  };
+
+  const changeDailyGoal = () =>
+    Alert.alert(tr("Daily goal"), tr("How many tests or practice sets a day?"), [
+      ...[1, 3, 5].map((g) => ({ text: tr("{0} a day", g), onPress: () => setDailyGoal(g) })),
+      { text: tr("Cancel"), style: 'cancel' },
+    ]);
+
   const openPracticeSession = (session) =>
     navigation.navigate('StudyTab', {
       screen: 'PracticeInterface',
@@ -585,6 +604,25 @@ export default function DashboardScreen({ navigation }) {
 
           {/* ─── Stats + rank ─────────────────────────── */}
           <View style={[tw`p-4 rounded-3xl mb-4`, card]}>
+            {/* Daily goal (set in onboarding; tap to change) */}
+            <TouchableOpacity onPress={changeDailyGoal} activeOpacity={0.8} accessibilityRole="button" style={tw`mb-4`}>
+              <View style={tw`flex-row items-center justify-between mb-2`}>
+                <Text style={[tw`text-sm font-bold`, { color: colors.text }]}>
+                  {todayDone >= todayGoal ? tr("Today's goal done!") : tr("Today's goal")}
+                </Text>
+                <Text style={[tw`text-xs font-semibold`, { color: colors.textSecondary }]}>
+                  {tr("{0} of {1} tests", Math.min(todayDone, todayGoal), todayGoal)}
+                </Text>
+              </View>
+              <View style={tw`flex-row gap-1.5`}>
+                {Array.from({ length: todayGoal }).map((_, i) => (
+                  <View
+                    key={i}
+                    style={[tw`flex-1 h-2 rounded-full`, { backgroundColor: i < todayDone ? colors.tones.green.fg : colors.surfaceMuted }]}
+                  />
+                ))}
+              </View>
+            </TouchableOpacity>
             <View style={tw`flex-row`}>
               <Stat icon="flame" iconColor={colors.tones.orange.fg} label={tr("Streak")} colors={colors}
                 value={String(currentStreak)} unit={currentStreak === 1 ? tr('day') : tr('days')} />
@@ -700,7 +738,7 @@ export default function DashboardScreen({ navigation }) {
           )}
 
           {/* ─── Study plan ───────────────────────────── */}
-          {studyPlan && (() => {
+          {features.studyPlans && studyPlan && (() => {
             const { completed, total, pct } = computePlanProgress(studyPlan);
             return (
               <TouchableOpacity

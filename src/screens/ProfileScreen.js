@@ -16,6 +16,7 @@ import { useAuth } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
 import { t as tr } from '../i18n';
+import { features } from '../config/features';
 
 const WEB_URL = 'https://exam.zonty.in';
 const APP_VERSION = Constants.expoConfig?.version || '';
@@ -139,13 +140,13 @@ export default function ProfileScreen({ navigation }) {
           onPress: () =>
             navigation.navigate('StudyTab', { screen: 'PracticeSessions', initial: false }),
         },
-        {
+        features.studyPlans && {
           icon: 'calendar-outline',
           label: tr("Study Plans"),
           onPress: () =>
             navigation.navigate('StudyTab', { screen: 'StudyPlans', initial: false }),
         },
-      ],
+      ].filter(Boolean),
     },
     {
       title: tr("Legal & support"),

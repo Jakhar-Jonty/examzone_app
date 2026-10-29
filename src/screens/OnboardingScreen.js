@@ -70,7 +70,7 @@ export default function OnboardingScreen({ route }) {
           return;
         }
       }
-      const res = await api.put('/user/profile', { preferredLanguage: lang }, auth).catch(() => null);
+      const res = await api.put('/user/profile', { preferredLanguage: lang, preferences: { dailyTestGoal: goal } }, auth).catch(() => null);
       nextUser = res?.data?.user || { ...user, preferredLanguage: lang };
       await AsyncStorage.setItem('@dailyGoal', String(goal)).catch(() => {});
       if (subExam) selectSubExam(subExam);

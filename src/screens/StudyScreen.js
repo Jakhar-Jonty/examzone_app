@@ -18,6 +18,7 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useFocusExam } from '../context/AppConfigContext';
 import { t as tr } from '../i18n';
+import { features } from '../config/features';
 
 export default function StudyScreen({ navigation, route }) {
   const { colors } = useTheme();
@@ -424,16 +425,18 @@ export default function StudyScreen({ navigation, route }) {
             </View>
             <Text style={styles.quickTitle} numberOfLines={1}>{tr("Practice")}</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.quickTile}
-            onPress={() => navigation.navigate('StudyPlans')}
-            activeOpacity={0.85}
-          >
-            <View style={[styles.quickIcon, { backgroundColor: colors.tones.purple.bg }]}>
-              <Ionicons name="calendar-outline" size={18} color={colors.tones.purple.fg} />
-            </View>
-            <Text style={styles.quickTitle} numberOfLines={1}>{tr("Plans")}</Text>
-          </TouchableOpacity>
+          {features.studyPlans && (
+            <TouchableOpacity
+              style={styles.quickTile}
+              onPress={() => navigation.navigate('StudyPlans')}
+              activeOpacity={0.85}
+            >
+              <View style={[styles.quickIcon, { backgroundColor: colors.tones.purple.bg }]}>
+                <Ionicons name="calendar-outline" size={18} color={colors.tones.purple.fg} />
+              </View>
+              <Text style={styles.quickTitle} numberOfLines={1}>{tr("Plans")}</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Haryana GK hub — slim banner */}
