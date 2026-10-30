@@ -40,6 +40,7 @@ import * as Sharing from 'expo-sharing';
 import ResultShareCard from '../components/ResultShareCard';
 import { referralService, inviteMessage } from '../services/referralService';
 import { t as tr } from '../i18n';
+import { practiceSessionService } from '../services/practiceSessionService';
 import ReportQuestionButton from '../components/ReportQuestionButton';
 
 // ─── Helpers ─────────────────────────────────────────────
@@ -233,6 +234,23 @@ export default function ResultScreen({ route, navigation }) {
     }
   };
 
+  // practise the weakest section of a full mock (subject-wide, 15 questions)
+  const handleStartPracticeSubject = async (subject) => {
+    if (startingPracticeTopic) return;
+    try {
+      setStartingPracticeTopic(`subject:${subject}`);
+      const { session } = await practiceSessionService.create({ sessionType: 'subject-wise', filters: { subject }, questionCount: 15 });
+      navigation.navigate('MainTabs', {
+        screen: 'StudyTab',
+        params: { screen: 'PracticeInterface', params: { sessionId: session._id }, initial: false },
+      });
+    } catch (err) {
+      Alert.alert(tr("Error"), err.response?.data?.message || tr("Failed to start practice"));
+    } finally {
+      setStartingPracticeTopic(null);
+    }
+  };
+
   // ─── Computed ──────────────────────────────────────────
   const percentage = result?.percentage || 0;
   const totalAnswers = result?.answers?.length || 0;
@@ -246,6 +264,11 @@ export default function ResultScreen({ route, navigation }) {
   const timeAnalysis = result ? calculateTimeAnalysis(result) : null;
   const subjectEntries = Object.entries(subjectTopicAnalysis.subjects).filter(([s]) => s !== 'Unknown');
   const topicEntries = Object.entries(subjectTopicAnalysis.topics).filter(([t]) => t !== 'Unknown');
+  // full-length papers (mocks, previous year papers) get a section-wise result up front
+  const sectionWise = totalAnswers >= 50 && subjectEntries.length >= 2
+    ? [...subjectEntries].sort((a, b) => a[1].percentage - b[1].percentage)
+    : [];
+  const weakestSection = sectionWise[0]?.[0];
 
   const filteredAnswers =
     result?.answers?.filter((a) => {
@@ -438,6 +461,40 @@ export default function ResultScreen({ route, navigation }) {
         {/* ─── Overview ───────────────────────────────── */}
         {activeTab === 'overview' && (
           <View style={tw`gap-3`}>
+            {sectionWise.length > 0 && (
+              <Card title={tr("Section-wise result")} subtitle={tr("Weakest first")} colors={colors}>
+                {sectionWise.map(([subject, stats]) => (
+                  <ProgressRow
+                    key={subject}
+                    label={tr(subject)}
+                    right={`${stats.obtainedMarks.toFixed(0)}/${stats.totalMarks.toFixed(0)}`}
+                    detail={tr("{0} correct · {1} wrong · {2} skipped · {3}% accuracy", stats.correct, stats.wrong, stats.unattempted, stats.accuracy.toFixed(0))}
+                    value={stats.percentage}
+                    tone={scoreTone(stats.percentage, colors)}
+                    colors={colors}
+                  />
+                ))}
+                {weakestSection && (
+                  <TouchableOpacity
+                    onPress={() => handleStartPracticeSubject(weakestSection)}
+                    disabled={!!startingPracticeTopic}
+                    activeOpacity={0.85}
+                    style={[tw`mt-2 h-12 rounded-2xl items-center justify-center flex-row`, { backgroundColor: colors.hero }]}
+                  >
+                    {startingPracticeTopic === `subject:${weakestSection}` ? (
+                      <ActivityIndicator color={colors.heroText} />
+                    ) : (
+                      <>
+                        <Ionicons name="flash-outline" size={16} color={colors.heroText} />
+                        <Text style={[tw`text-sm font-bold ml-1.5`, { color: colors.heroText }]}>
+                          {tr("Practise {0} · 15 questions", tr(weakestSection))}
+                        </Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                )}
+              </Card>
+            )}
             <Card title={tr("Answer breakdown")} colors={colors}>
               <BreakdownRow label={tr("Correct")} count={correctCount} total={totalAnswers} tone={colors.tones.green} colors={colors} />
               <BreakdownRow label={tr("Wrong")} count={wrongCount} total={totalAnswers} tone={colors.tones.red} colors={colors} />
